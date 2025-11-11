@@ -1,0 +1,257 @@
+/* Brand palette overrides (charte: #28A745, #FFC107, #007BFF, #5C757D) */
+:root {
+  --bs-primary: #007BFF;
+  --bs-success: #28A745;
+  --bs-warning: #FFC107;
+  --bs-secondary: #5C757D;
+  --brand-dark: #0e1b2a;
+  --bs-link-color: var(--bs-primary);
+  /* Themeable component variables */
+  --profile-hero-bg: linear-gradient(135deg, #0b3a6c, #155a9b);
+  --cta-bg: #0b3a6c;
+  --hero-btn-bg: #FFC107;
+  --hero-btn-color: #000000;
+  /* Base body variables for light mode */
+  --bs-body-bg: #ffffff;
+  --bs-body-color: #0e1b2a;
+  --bs-border-color: #dee2e6;
+  --bs-border-color-translucent: rgba(0,0,0,0.12);
+}
+
+body {
+  background-color: var(--bs-body-bg);
+  color: var(--bs-body-color);
+  /* Offset for fixed-top navbar (matches navbar/logo height) */
+  padding-top: 96px;
+  /* Override index.css flex centering so padding works */
+  display: block !important;
+  place-items: initial !important;
+  min-height: auto !important;
+}
+
+a {
+  color: var(--bs-primary);
+}
+a:hover { color: #0066d6; }
+
+#root {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  text-align: initial;
+}
+
+/* Compact header spacing without changing the logo size */
+.navbar-compact {
+  padding-top: 4px !important;
+  padding-bottom: 4px !important;
+}
+.navbar-compact .navbar-brand {
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  margin-right: .75rem;
+}
+.navbar-compact .nav-link {
+  padding-top: .25rem !important;
+  padding-bottom: .25rem !important;
+}
+.navbar-compact .container-fluid {
+  min-height: auto;
+}
+
+@media (max-width: 576px) {
+  /* Slightly reduce logo on very small screens to avoid overflow */
+  .navbar-compact .navbar-brand img { height: 72px !important; }
+}
+
+/* Nav main links: 20px and bold */
+.nav-main .nav-link {
+  font-size: 20px !important;
+  font-weight: 700 !important;
+  transition: color .2s ease-in-out;
+}
+
+/* Hover color same as logo (brand green) */
+.nav-main .nav-link:hover {
+  color: #28A745 !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1200px) {
+  .nav-main .nav-link { font-size: 18px !important; }
+}
+
+@media (max-width: 992px) {
+  .navbar-compact { padding-top: 2px !important; padding-bottom: 2px !important; }
+  .navbar-compact .navbar-brand img { height: 96px; }
+  .hero-section h1.display-4 { font-size: 2.5rem; }
+  .hero-cta .btn { padding: .75rem 1.75rem; }
+  /* Adjust body offset when navbar/logo smaller */
+  body { padding-top: 88px; }
+}
+
+@media (max-width: 768px) {
+  .nav-main .nav-link { font-size: 16px !important; }
+  .navbar-compact .navbar-brand img { height: 84px; }
+  .hero-section h1.display-4 { font-size: 2rem; }
+  .hero-inner { padding-top: 1.25rem !important; padding-bottom: 1.25rem !important; }
+  body { padding-top: 80px; }
+}
+
+@media (max-width: 576px) {
+  .navbar-compact .navbar-brand img { height: 72px !important; }
+  .hero-section h1.display-4 { font-size: 1.75rem; }
+  .hero-section .lead { font-size: 1rem; }
+  .hero-cta { gap: .5rem !important; }
+  .hero-cta .btn { width: 100%; max-width: 320px; }
+  body { padding-top: 72px; }
+}
+
+/* Footer responsiveness */
+footer .container-fluid { padding-left: 1rem; padding-right: 1rem; }
+@media (max-width: 576px) {
+  footer .row > [class^="col-"] { margin-bottom: 1rem; }
+}
+
+/* ==========================
+   Dark theme support
+   ========================== */
+body.theme-dark {
+  background-color: #0b0e11;
+  color: #e7edf3;
+  /* Dark variants of component variables */
+  --profile-hero-bg: linear-gradient(135deg, #071a31, #0e2a4a);
+  --cta-bg: #0e2a4a;
+  --hero-btn-bg: #FFC107; /* conserve contraste */
+  --hero-btn-color: #000000;
+  /* Override Bootstrap body variables so all blocks follow dark theme */
+  --bs-body-bg: #0f1113;
+  --bs-body-color: #e7edf3;
+  --bs-border-color: #1c2229;
+  --bs-border-color-translucent: rgba(255,255,255,0.12);
+}
+
+/* Navbar */
+body.theme-dark .navbar {
+  background-color: var(--card) !important;
+  border-color: var(--border) !important;
+}
+body.theme-dark .navbar .navbar-brand img { filter: none; }
+body.theme-dark .nav-main .nav-link { color: #cfd6dd !important; }
+body.theme-dark .nav-main .nav-link:hover { color: #28A745 !important; }
+
+/* Ensure bg-body utilities follow dark theme */
+body.theme-dark .bg-body { background-color: var(--bs-body-bg) !important; }
+body.theme-dark .bg-light { background-color: var(--card) !important; }
+body.theme-dark .btn-light {
+  background-color: var(--card) !important;
+  color: var(--text) !important;
+  border-color: var(--border) !important;
+}
+body.theme-dark .modal-content {
+  background-color: var(--card) !important;
+  color: var(--text) !important;
+  border-color: var(--border) !important;
+}
+body.theme-dark .list-group-item {
+  background-color: var(--card) !important;
+  color: var(--text) !important;
+  border-color: var(--border) !important;
+}
+
+/* Pagination and inputs in dark mode */
+body.theme-dark .page-link {
+  background-color: var(--card) !important;
+  color: var(--text) !important;
+  border-color: var(--border) !important;
+}
+body.theme-dark .page-item.disabled .page-link {
+  color: var(--muted) !important;
+}
+body.theme-dark .input-group-text {
+  background-color: var(--card) !important;
+  color: var(--text) !important;
+  border-color: var(--border) !important;
+}
+
+/* Forms: make inputs light in dark mode */
+body.theme-dark .form-control,
+body.theme-dark .form-select,
+body.theme-dark textarea.form-control {
+  background-color: var(--card) !important;
+  color: var(--text) !important;
+  border-color: var(--border) !important;
+}
+body.theme-dark .form-control::placeholder,
+body.theme-dark textarea.form-control::placeholder {
+  color: var(--muted) !important;
+}
+body.theme-dark .form-control:focus,
+body.theme-dark .form-select:focus,
+body.theme-dark textarea.form-control:focus {
+  background-color: var(--card) !important;
+  color: var(--text) !important;
+  border-color: var(--bs-primary) !important;
+  box-shadow: 0 0 0 .25rem rgba(13,110,253,.25) !important;
+}
+body.theme-dark .is-invalid.form-control,
+body.theme-dark .is-invalid.form-select,
+body.theme-dark .is-invalid textarea.form-control {
+  border-color: #dc3545 !important;
+}
+body.theme-dark .invalid-feedback { color: #f16a73 !important; }
+
+/* Hero text */
+body.theme-dark .hero-section .lead { color: #c0c8d0; }
+
+/* Background utilities overrides */
+body.theme-dark .bg-body-tertiary { background-color: var(--bg) !important; }
+body.theme-dark .bg-white { background-color: var(--card) !important; }
+body.theme-dark .border,
+body.theme-dark .border-top { border-color: var(--border) !important; }
+
+/* Cards/sections that used bg-white */
+body.theme-dark .shadow-sm { box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,.3) !important; }
+body.theme-dark .text-muted { color: #9aa6b2 !important; }
+
+/* Footer */
+body.theme-dark footer { background-color: #0f1113 !important; }
+body.theme-dark footer a { color: #bfc9d4; }
+body.theme-dark footer a:hover { color: #28A745; }
+
+.logo {
+  height: 6em;
+  padding: 1.5em;
+  will-change: filter;
+  transition: filter 300ms;
+}
+.logo:hover {
+  filter: drop-shadow(0 0 2em #646cffaa);
+}
+.logo.react:hover {
+  filter: drop-shadow(0 0 2em #61dafbaa);
+}
+
+@keyframes logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  a:nth-of-type(2) .logo {
+    animation: logo-spin infinite 20s linear;
+  }
+}
+
+.card {
+  padding: 2em;
+}
+
+.read-the-docs {
+  color: #888;
+}

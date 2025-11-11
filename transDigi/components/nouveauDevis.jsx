@@ -1,0 +1,494 @@
+import React, { useEffect, useState } from 'react';
+import { useToast } from '../src/toast.jsx';
+import { 
+  Upload,
+  X,
+  FileText,
+  Calendar,
+  LayoutGrid,
+  Search,
+  Clock,
+  Truck,
+  User
+} from 'lucide-react';
+import { nouveauDevisCss } from '../styles/nouveauDeviStyle.jsx';
+import { createDevis, searchTranslatairesClient } from '../services/apiClient.js';
+
+const NouveauDevis = () => {
+  const { success, error: toastError } = useToast();
+  const [formData, setFormData] = useState({
+    translataireId: '',
+    translataireName: '',
+    transportType: 'maritime',
+    description: '',
+    weight: '',
+    packageType: '',
+    length: '',
+    width: '',
+    height: '',
+    pickupAddress: '',
+    pickupDate: '',
+    deliveryAddress: '',
+    deliveryDate: '',
+    specialRequirements: {
+      dangerous: false,
+      temperature: false,
+      fragile: false
+    },
+    notes: '',
+    uploadedFile: null
+  });
+
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    try {
+      const hash = typeof window !== 'undefined' ? window.location.hash : '';
+      const parts = hash.split('?');
+      if (parts.length > 1) {
+        const params = new URLSearchParams(parts[1]);
+        const tId = params.get('translataireId');
+        const tName = params.get('translataireName');
+        setFormData(prev => ({ ...prev, translataireId: tId || prev.translataireId, translataireName: tName || prev.translataireName }));
+      }
+      // Fallback: lire depuis localStorage si le hash n'a pas de paramètres
+      if (typeof window !== 'undefined') {
+        if (!formData.translataireId) {
+          try {
+            const lsId = localStorage.getItem('pendingTranslataireId');
+            if (lsId) setFormData(prev => ({ ...prev, translataireId: lsId }));
+          } catch {}
+        }
+        if (!formData.translataireName) {
+          try {
+            const lsName = localStorage.getItem('pendingTranslataireName');
+            if (lsName) setFormData(prev => ({ ...prev, translataireName: lsName }));
+          } catch {}
+        }
+        // Nettoyage après lecture
+        try { localStorage.removeItem('pendingTranslataireId'); } catch {}
+        try { localStorage.removeItem('pendingTranslataireName'); } catch {}
+      }
+    } catch {}
+  }, []);
+
+  // Progress computation based on filled fields
+  useEffect(() => {
+    const baseFields = [
+      !!(formData.translataireName && formData.translataireName.trim()),
+      !!(formData.transportType && String(formData.transportType).trim()),
+      !!(formData.description && formData.description.trim()),
+      !!(formData.pickupAddress && formData.pickupAddress.trim()),
+      !!(formData.deliveryAddress && formData.deliveryAddress.trim()),
+    ];
+    const optionalFields = [
+      !!formData.pickupDate,
+      !!formData.deliveryDate,
+      !!formData.uploadedFile,
+      !!formData.weight,
+      !!formData.length,
+      !!formData.width,
+      !!formData.height,
+      !!formData.packageType,
+    ];
+    const baseScore = baseFields.filter(Boolean).length;
+    const optScore = optionalFields.filter(Boolean).length;
+    const baseMax = baseFields.length; // 5 -> 70%
+    const optMax = optionalFields.length; // 8 -> 30%
+    const percent = Math.round((baseScore / baseMax) * 70 + (optScore / Math.max(optMax,1)) * 30);
+    setProgress(Math.max(0, Math.min(100, percent)));
+  }, [formData]);
+
+  const handleInputChange = (field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleCheckboxChange = (field) => {
+    setFormData(prev => ({
+      ...prev,
+      specialRequirements: {
+        ...prev.specialRequirements,
+        [field]: !prev.specialRequirements[field]
+      }
+    }));
+  };
+
+  const handleFileUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setFormData(prev => ({ ...prev, uploadedFile: file }));
+    }
+  };
+
+  const removeFile = () => {
+    setFormData(prev => ({ ...prev, uploadedFile: null }));
+  };
+
+  const handleSubmit = () => {
+    // Construire le payload pour l'API backend
+    (async () => {
+      try {
+        let tId = (formData.translataireId || '').trim();
+        if (!tId) {
+          const name = (formData.translataireName || '').trim();
+          if (!name) { toastError('Veuillez renseigner le transitaire (ID ou Nom)'); return; }
+          try {
+            const result = await searchTranslatairesClient({ recherche: name });
+            const list = Array.isArray(result?.translataires) ? result.translataires : (Array.isArray(result) ? result : []);
+            // Essayer une correspondance exacte sur le nom d'entreprise
+            const exact = list.find(t => (t.nomEntreprise || '').toLowerCase() === name.toLowerCase());
+            const pick = exact || list[0];
+            if (!pick?._id) { toastError('Transitaire introuvable pour ce nom'); return; }
+            tId = pick._id;
+          } catch (e) {
+            toastError(e?.message || 'Erreur lors de la recherche du transitaire');
+            return;
+          }
+        }
+        if (!formData.description) { toastError('Veuillez décrire votre marchandise'); return; }
+        if (!formData.translataireName) { toastError('Veuillez saisir le nom du transitaire'); return; }
+        const fd = new FormData();
+        // Champs attendus par le backend
+        const allowed = ['maritime','routier','aerien'];
+        const tService = allowed.includes((formData.transportType||'').toLowerCase()) ? (formData.transportType||'').toLowerCase() : 'maritime';
+        fd.append('typeService', tService);
+        fd.append('description', formData.description || '');
+        if (formData.pickupDate) fd.append('dateExpiration', formData.pickupDate);
+        if (formData.pickupAddress) fd.append('origin', formData.pickupAddress);
+        if (formData.deliveryAddress) fd.append('destination', formData.deliveryAddress);
+        if (formData.uploadedFile) fd.append('fichier', formData.uploadedFile);
+        if (formData.translataireName) fd.append('translataireName', formData.translataireName);
+        await createDevis(tId, fd);
+        success('Demande de devis envoyée');
+        window.location.hash = '#/historique';
+      } catch (e) {
+        toastError(e?.message || "Échec d'envoi de la demande de devis");
+      }
+    })();
+  };
+
+  return (
+    <>
+      <style>{nouveauDevisCss}</style>
+      <div className="bg-body" style={{ backgroundColor: 'var(--bg)', minHeight: '100vh', width: '100%', maxWidth: '100vw', overflowX: 'hidden', position: 'relative' }}>
+        <div className="container px-2 px-md-3 py-3 py-md-5" style={{ maxWidth: '100%', overflowX: 'hidden' }}>
+          <div className="row justify-content-center">
+            <div className="col-12 col-lg-10 col-xl-8">
+            {/* Header */}
+            <div className="mb-3 mb-md-4">
+              <h1 className="h2 h1-md fw-bold mb-2 mb-md-3">Nouvelle Demande de Devis</h1>
+              <p className="text-muted">
+                Remplissez les détails ci-dessous pour obtenir un devis pour votre expédition.
+              </p>
+            </div>
+
+            {/* Progress Bar */}
+            <div className="mb-4">
+              <div className="d-flex justify-content-between align-items-center mb-2">
+                <span className="small fw-semibold">{progress}% Complété</span>
+              </div>
+              <div className="progress" style={{ height: '8px' }}>
+                <div 
+                  className="progress-bar" 
+                  role="progressbar" 
+                  style={{ width: `${progress}%`, backgroundColor: '#28A745' }}
+                ></div>
+              </div>
+            </div>
+
+            {/* Main Form Card */}
+            <div className="card border-0 shadow-sm">
+              <div className="card-body p-3 p-md-4 p-lg-5">
+                {/* Informations du transitaire */}
+                <div className="mb-4 mb-md-5">
+                  <h5 className="fw-bold mb-3 mb-md-4 section-title">Informations du transitaire</h5>
+                  <div className="row g-3">
+                    <div className="col-12">
+                      <label className="form-label fw-semibold">Nom du transitaire</label>
+                      <input
+                        type="text"
+                        className="form-control form-control-lg"
+                        placeholder="Ex: Logistique Express"
+                        value={formData.translataireName}
+                        onChange={(e) => handleInputChange('translataireName', e.target.value)}
+                        required
+                      />
+                      <div className="form-text">Saisissez le nom du transitaire. L'identifiant n'est plus requis.</div>
+                    </div>
+                  </div>
+                </div>
+                {/* Détails de l'expédition */}
+                <div className="mb-4 mb-md-5">
+                  <h5 className="fw-bold mb-3 mb-md-4 section-title">Détails de l'expédition</h5>
+                  
+                  {/* Type de transport */}
+                  <div className="mb-4">
+                    <label className="form-label fw-semibold">Type de service</label>
+                    <select
+                      className="form-select form-select-lg"
+                      value={formData.transportType}
+                      onChange={(e) => handleInputChange('transportType', e.target.value)}
+                    >
+                      <option value="maritime">Maritime</option>
+                      <option value="routier">Routier</option>
+                      <option value="aerien">Aérien</option>
+                    </select>
+                  </div>
+
+                  {/* Description */}
+                  <div className="mb-4">
+                    <label className="form-label fw-semibold">Description de la marchandise</label>
+                    <input
+                      type="text"
+                      className="form-control form-control-lg"
+                      placeholder="ex. Électronique, Meubles"
+                      value={formData.description}
+                      onChange={(e) => handleInputChange('description', e.target.value)}
+                    />
+                  </div>
+
+                  {/* Dimensions Row */}
+                  <div className="row g-2 g-md-3 mb-3 mb-md-4 dimension-row">
+                    <div className="col-6 col-md-3">
+                      <label className="form-label fw-semibold small">Poids total (kg)</label>
+                      <input
+                        type="number"
+                        className="form-control form-control-lg dim-input"
+                        placeholder="1000"
+                        value={formData.weight}
+                        onChange={(e) => handleInputChange('weight', e.target.value)}
+                      />
+                    </div>
+                    <div className="col-6 col-md-3">
+                      <label className="form-label fw-semibold small">Type d'emballage</label>
+                      <select 
+                        className="form-select form-select-lg dim-input"
+                        value={formData.packageType}
+                        onChange={(e) => handleInputChange('packageType', e.target.value)}
+                      >
+                        <option value="">Palettes</option>
+                        <option value="cartons">Cartons</option>
+                        <option value="caisses">Caisses</option>
+                        <option value="containers">Containers</option>
+                      </select>
+                    </div>
+                    <div className="col-6 col-md-3">
+                      <label className="form-label fw-semibold small">Longueur (cm)</label>
+                      <input
+                        type="number"
+                        className="form-control form-control-lg dim-input"
+                        placeholder="120"
+                        value={formData.length}
+                        onChange={(e) => handleInputChange('length', e.target.value)}
+                      />
+                    </div>
+                    <div className="col-6 col-md-3">
+                      <label className="form-label fw-semibold small">Largeur (cm)</label>
+                      <input
+                        type="number"
+                        className="form-control form-control-lg dim-input"
+                        placeholder="100"
+                        value={formData.width}
+                        onChange={(e) => handleInputChange('width', e.target.value)}
+                      />
+                    </div>
+                    <div className="col-6 col-md-3">
+                      <label className="form-label fw-semibold small">Hauteur (cm)</label>
+                      <input
+                        type="number"
+                        className="form-control form-control-lg dim-input"
+                        placeholder="150"
+                        value={formData.height}
+                        onChange={(e) => handleInputChange('height', e.target.value)}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Origine & Destination */}
+                <div className="mb-5">
+                  <h5 className="fw-bold mb-4 section-title">Origine & Destination</h5>
+                  
+                  <div className="row g-4">
+                    <div className="col-12 col-md-6">
+                      <label className="form-label fw-semibold">Adresse d'enlèvement</label>
+                      <input
+                        type="text"
+                        className="form-control form-control-lg"
+                        placeholder="Entrez le lieu d'enlèvement"
+                        value={formData.pickupAddress}
+                        onChange={(e) => handleInputChange('pickupAddress', e.target.value)}
+                      />
+                    </div>
+                    <div className="col-12 col-md-6">
+                      <label className="form-label fw-semibold">Date d'enlèvement souhaitée</label>
+                      <div className="position-relative">
+                        <input
+                          type="date"
+                          className="form-control form-control-lg"
+                          value={formData.pickupDate}
+                          onChange={(e) => handleInputChange('pickupDate', e.target.value)}
+                        />
+                      </div>
+                    </div>
+                    <div className="col-12 col-md-6">
+                      <label className="form-label fw-semibold">Adresse de livraison</label>
+                      <input
+                        type="text"
+                        className="form-control form-control-lg"
+                        placeholder="Entrez le lieu de livraison"
+                        value={formData.deliveryAddress}
+                        onChange={(e) => handleInputChange('deliveryAddress', e.target.value)}
+                      />
+                    </div>
+                    <div className="col-12 col-md-6">
+                      <label className="form-label fw-semibold">Date de livraison souhaitée</label>
+                      <input
+                        type="date"
+                        className="form-control form-control-lg"
+                        value={formData.deliveryDate}
+                        onChange={(e) => handleInputChange('deliveryDate', e.target.value)}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Upload File Section */}
+                <div className="mb-5">
+                  <h5 className="fw-bold mb-4 section-title">Document joint</h5>
+                  <p className="text-muted small mb-3">
+                    Joignez un document avec les détails de votre expédition (facture, liste de colisage, etc.)
+                  </p>
+                  
+                  {!formData.uploadedFile ? (
+                    <div className="border-2 border-dashed rounded-3 p-4 text-center" style={{ borderColor: '#DEE2E6' }}>
+                      <input
+                        type="file"
+                        id="fileUpload"
+                        className="d-none"
+                        onChange={handleFileUpload}
+                        accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.png"
+                      />
+                      <label htmlFor="fileUpload" className="cursor-pointer">
+                        <div 
+                          className="rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center"
+                          style={{ width: '60px', height: '60px', backgroundColor: '#E8F5E9' }}
+                        >
+                          <Upload size={30} style={{ color: '#28A745' }} />
+                        </div>
+                        <p className="fw-semibold mb-1">Cliquez pour télécharger un fichier</p>
+                        <p className="text-muted small mb-0">PDF, DOC, XLS, JPG, PNG (Max. 10MB)</p>
+                      </label>
+                    </div>
+                  ) : (
+                    <div className="border rounded-3 p-3 d-flex align-items-center justify-content-between">
+                      <div className="d-flex align-items-center gap-3">
+                        <div 
+                          className="rounded d-flex align-items-center justify-content-center flex-shrink-0"
+                          style={{ width: '48px', height: '48px', backgroundColor: '#E8F5E9' }}
+                        >
+                          <FileText size={24} style={{ color: '#28A745' }} />
+                        </div>
+                        <div>
+                          <p className="mb-0 fw-semibold">{formData.uploadedFile.name}</p>
+                          <p className="mb-0 text-muted small">
+                            {(formData.uploadedFile.size / 1024).toFixed(2)} KB
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-link text-danger"
+                        onClick={removeFile}
+                      >
+                        <X size={20} />
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Exigences supplémentaires */}
+                <div className="mb-5">
+                  <h5 className="fw-bold mb-4 section-title">Exigences supplémentaires</h5>
+                  
+                  <div className="mb-4">
+                    <label className="form-label fw-semibold">Manutention spéciale</label>
+                    <div className="d-flex gap-3 flex-wrap">
+                      <div className="form-check">
+                        <input
+                          className="form-check-input"
+                          type="checkbox"
+                          id="dangerous"
+                          checked={formData.specialRequirements.dangerous}
+                          onChange={() => handleCheckboxChange('dangerous')}
+                        />
+                        <label className="form-check-label" htmlFor="dangerous">
+                          Matières dangereuses
+                        </label>
+                      </div>
+                      <div className="form-check">
+                        <input
+                          className="form-check-input"
+                          type="checkbox"
+                          id="temperature"
+                          checked={formData.specialRequirements.temperature}
+                          onChange={() => handleCheckboxChange('temperature')}
+                        />
+                        <label className="form-check-label" htmlFor="temperature">
+                          Contrôle de température
+                        </label>
+                      </div>
+                      <div className="form-check">
+                        <input
+                          className="form-check-input"
+                          type="checkbox"
+                          id="fragile"
+                          checked={formData.specialRequirements.fragile}
+                          onChange={() => handleCheckboxChange('fragile')}
+                        />
+                        <label className="form-check-label" htmlFor="fragile">
+                          Fragile
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="form-label fw-semibold">
+                      Notes additionnelles 
+                      <span className="text-muted fw-normal ms-2">
+                        <small>(Optionnel)</small>
+                      </span>
+                    </label>
+                    <textarea
+                      className="form-control form-control-lg"
+                      rows="4"
+                      placeholder="ex. Maçon requise à la livraison, contacter le destinataire avant l'arrivée..."
+                      value={formData.notes}
+                      onChange={(e) => handleInputChange('notes', e.target.value)}
+                    ></textarea>
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="d-flex flex-column flex-sm-row gap-3 justify-content-end">
+  
+                  <button 
+                    className="btn text-white"
+                    style={{ backgroundColor: '#28A745' }}
+                    onClick={handleSubmit}
+                  >
+                    Soumettre la demande
+                  </button>
+                </div>
+              </div>
+            </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+};
+
+export default NouveauDevis;
