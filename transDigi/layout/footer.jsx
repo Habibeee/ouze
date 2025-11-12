@@ -15,11 +15,24 @@ function Footer() {
     }
   };
   return (
-    <footer className="bg-white border-top w-100">
+    <footer className="bg-white border-top w-100 app-footer">
+      <style>{`
+        @media (max-width: 575.98px) {
+          .app-footer { font-size: .9rem; }
+          .app-footer h6 { font-size: .95rem; margin-bottom: .25rem; }
+          .app-footer .container-fluid { padding: 1rem 1rem !important; }
+          .app-footer .row { row-gap: .75rem !important; }
+          .app-footer .list-unstyled { gap: .25rem !important; }
+          .app-footer a { color: #5C757D; }
+          .app-footer .brand { gap: .5rem !important; }
+          .app-footer .brand img { height: 30px !important; width: auto !important; }
+          .app-footer .legal { font-size: .8rem; padding: .75rem 1rem; }
+        }
+      `}</style>
       <div className="container-fluid py-4 px-0">
         <div className="row g-0 align-items-stretch mx-0">
           <div className="col-12 col-lg-4 d-flex flex-column h-100 justify-content-end ps-lg-0">
-            <div className="d-flex align-items-center gap-2 mb-2">
+            <div className="d-flex align-items-center gap-2 mb-2 brand">
               <img src={'/logo1.png'} alt="Transdigi Sénégal" style={{ height: 36, width: 'auto' }} />
               <strong style={{ color: '#28A745' }}>TransdigiSN</strong>
             </div>
@@ -49,7 +62,7 @@ function Footer() {
           </div>
         </div>
       </div>
-      <div className="border-top text-center py-3 text-muted small">© 2025 TransdigiSN. Tous droits réservés.</div>
+      <div className="border-top text-center py-3 text-muted small legal">© 2025 TransdigiSN. Tous droits réservés.</div>
     </footer>
   );
 }

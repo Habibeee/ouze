@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { redirectByRole } from '../services/authStore.js';
+import { useI18n } from '../src/i18n.jsx';
 
 function OAuthCallback() {
-  const [msg, setMsg] = useState('Traitement de la connexion...');
+  const { t } = useI18n();
+  const [msg, setMsg] = useState(t('oauth.processing'));
   useEffect(() => {
     try {
       const href = window.location.href || '';
@@ -18,17 +20,17 @@ function OAuthCallback() {
       const role = (qs.get('role') || '').trim().toLowerCase();
       const userType = (qs.get('userType') || role || '').trim().toLowerCase();
       if (!token) {
-        setMsg('Token manquant. Veuillez réessayer.');
+        setMsg(t('oauth.token_missing'));
         setTimeout(() => { window.location.hash = '#/connexion'; }, 1200);
         return;
       }
       try { localStorage.setItem('token', token); } catch {}
       try { if (role) localStorage.setItem('role', role); } catch {}
       try { if (userType) localStorage.setItem('userType', userType); } catch {}
-      setMsg('Connexion réussie, redirection...');
+      setMsg(t('oauth.success'));
       setTimeout(() => { redirectByRole(); }, 200);
     } catch (e) {
-      setMsg('Erreur lors du traitement.');
+      setMsg(t('oauth.error'));
       setTimeout(() => { window.location.hash = '#/connexion'; }, 1200);
     }
   }, []);

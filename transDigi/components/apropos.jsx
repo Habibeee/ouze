@@ -1,8 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { aproposStyles } from '../styles/aproposStyle.jsx';
+import { useI18n } from '../src/i18n.jsx';
 
 
 function Apropos() {
+  const { t, lang } = useI18n();
   const [started, setStarted] = useState(false);
   const [expeditions, setExpeditions] = useState(5000);
   const [pays, setPays] = useState(15);
@@ -98,9 +100,9 @@ function Apropos() {
         <div className="p-4 p-md-5 apropos-hero" style={aproposStyles.hero}>
           <div className="row g-4 align-items-center justify-content-center">
             <div className="col-12 col-lg-8 text-center mx-auto">
-              <h2 className="fw-bold mb-2">Connecter le Sénégal au Monde :<br/> L'Histoire de TransDigiSN.</h2>
-              <p className="mb-3 mb-md-4">Découvrez notre parcours, notre mission et l'équipe qui rend tout cela possible.</p>
-              <a href="#/connexion" className="btn fw-semibold px-4" style={aproposStyles.heroBtn}>Obtenir un Devis</a>
+              <h2 className="fw-bold mb-2" style={{ whiteSpace: 'pre-line' }}>{t('about.hero.title')}</h2>
+              <p className="mb-3 mb-md-4">{t('about.hero.subtitle')}</p>
+              <a href="#/connexion" className="btn fw-semibold px-4" style={aproposStyles.heroBtn}>{t('about.hero.cta')}</a>
             </div>
           </div>
         </div>
@@ -111,10 +113,8 @@ function Apropos() {
             <div className="p-4 p-md-5 border rounded-4" style={aproposStyles.card}>
               <div className="row g-4 align-items-center">
                 <div className="col-12 col-lg-7">
-                  <h3 className="fw-bold mb-3">Notre Histoire</h3>
-                  <p className="mb-0 text-muted">
-                    Née de la volonté de connecter efficacement les entreprises sénégalaises au monde, TransDigiSN simplifie la logistique grâce au numérique. Notre histoire est celle d'une équipe engagée qui place la transparence, la fiabilité et la performance au cœur de chaque expédition.
-                  </p>
+                  <h3 className="fw-bold mb-3">{t('about.story.title')}</h3>
+                  <p className="mb-0 text-muted">{t('about.story.text')}</p>
                 </div>
                 <div className="col-12 col-lg-5">
                   <img src={'/histoir1.jpg'} alt="Notre Histoire" className="img-fluid" style={{ borderRadius: 12, objectFit: 'cover', width: '100%', height: '100%', maxHeight: 360, boxShadow: '0 12px 28px rgba(0,0,0,0.12)' }} />
@@ -129,61 +129,61 @@ function Apropos() {
           <div className="col-12 col-md-4">
             <div className="p-4 border rounded-4 h-100" style={aproposStyles.card}>
               <div className="mb-2">⭕</div>
-              <h6 className="fw-bold mb-2">Notre Mission</h6>
-              <p className="text-muted mb-0">Simplifier la logistique pour les entreprises au Sénégal grâce à une plateforme numérique transparente et efficace.</p>
+              <h6 className="fw-bold mb-2">{t('about.mission.title')}</h6>
+              <p className="text-muted mb-0">{t('about.mission.text')}</p>
             </div>
           </div>
           <div className="col-12 col-md-4">
             <div className="p-4 border rounded-4 h-100" style={aproposStyles.card}>
               <div className="mb-2">🔭</div>
-              <h6 className="fw-bold mb-2">Notre Vision</h6>
-              <p className="text-muted mb-0">Être le principal transitaire digital en Afrique de l’Ouest, reconnu pour notre fiabilité et notre innovation.</p>
+              <h6 className="fw-bold mb-2">{t('about.vision.title')}</h6>
+              <p className="text-muted mb-0">{t('about.vision.text')}</p>
             </div>
           </div>
           <div className="col-12 col-md-4">
             <div className="p-4 border rounded-4 h-100" style={aproposStyles.card}>
               <div className="mb-2">⚖️</div>
-              <h6 className="fw-bold mb-2">Nos Valeurs</h6>
-              <p className="text-muted mb-0">Nous nous engageons à la transparence, la satisfaction du client et à l’amélioration continue.</p>
+              <h6 className="fw-bold mb-2">{t('about.values.title')}</h6>
+              <p className="text-muted mb-0">{t('about.values.text')}</p>
             </div>
           </div>
         </div>
 
 
         <div className="text-center mt-2" ref={statsRef}>
-          <h4 className="fw-bold mb-3">Nos Réalisations Clés</h4>
+          <h4 className="fw-bold mb-3">{t('about.stats.title')}</h4>
         </div>
         <div className="row g-3 g-md-4">
           <div className="col-12 col-md-4">
             <div className="p-4 border rounded-4 text-center" style={aproposStyles.statCard}>
               <div className="display-6 fw-bold" style={rotateFor(expeditions, displayTargets.expeditions)}>{expeditions.toLocaleString('fr-FR')}+</div>
-              <div className="text-muted">Expéditions Gérées</div>
+              <div className="text-muted">{t('about.stats.shipments')}</div>
             </div>
           </div>
           <div className="col-12 col-md-4">
             <div className="p-4 border rounded-4 text-center" style={aproposStyles.statCard}>
               <div className="display-6 fw-bold" style={rotateFor(pays, displayTargets.pays)}>{pays}+</div>
-              <div className="text-muted">Pays Desservis</div>
+              <div className="text-muted">{t('about.stats.countries')}</div>
             </div>
           </div>
           <div className="col-12 col-md-4">
             <div className="p-4 border rounded-4 text-center" style={aproposStyles.statCard}>
               <div className="display-6 fw-bold" style={rotateFor(satisfaction, displayTargets.satisfaction)}>{satisfaction}%</div>
-              <div className="text-muted">Satisfaction Client</div>
+              <div className="text-muted">{t('about.stats.satisfaction')}</div>
             </div>
           </div>
         </div>
 
 
         <div className="text-center mt-2">
-          <h4 className="fw-bold mb-3">Notre Équipe</h4>
+          <h4 className="fw-bold mb-3">{t('about.team.title')}</h4>
         </div>
         <div className="row g-4 g-md-5 justify-content-center">
           {[
-            { name: 'Habib Diallo', role: 'PDG et fondateur', img: '/fondateurP.jpg' },
-            { name: 'Khadim Mbaye', role: 'Directeur de la Technologie', img: '/technologie.jpg' },
-            { name: "Fatou N'Diaye", role: 'Responsable des Opérations', img: '/pdg.jpg' },
-            { name: 'Ousmane Gueye', role: 'Coordinateur Logistique Principal', img: '/fondation.jpg' },
+            { name: 'Habib Diallo', roleKey: 'about.team.role.ceo', img: '/fondateurP.jpg' },
+            { name: 'Khadim Mbaye', roleKey: 'about.team.role.cto', img: '/technologie.jpg' },
+            { name: "Fatou N'Diaye", roleKey: 'about.team.role.ops', img: '/pdg.jpg' },
+            { name: 'Ousmane Faye', roleKey: 'about.team.role.leadlog', img: '/fondation.jpg' },
           ].map((m, i) => (
             <div
               className="col-6 col-md-3 text-center"
@@ -220,16 +220,16 @@ function Apropos() {
                 </div>
               )}
               <div className="mt-2 fw-semibold">{m.name}</div>
-              <div className="text-muted small">{m.role}</div>
+              <div className="text-muted small">{t(m.roleKey)}</div>
             </div>
           ))}
         </div>
 
 
         <div className="p-4 p-md-5 text-center" style={aproposStyles.cta}>
-          <h5 className="fw-bold mb-2">Prêt à simplifier votre logistique ?</h5>
-          <p className="mb-3">Laissez‑nous gérer les complexités de l’expédition pour que vous puissiez vous concentrer sur la croissance de votre entreprise. Obtenez un devis gratuit et sans engagement dès aujourd’hui.</p>
-          <a href="#/connexion" className="btn fw-semibold px-4" style={aproposStyles.ctaBtn}>Obtenir un Devis Aujourd'hui</a>
+          <h5 className="fw-bold mb-2">{t('about.cta.title')}</h5>
+          <p className="mb-3">{t('about.cta.subtitle')}</p>
+          <a href="#/connexion" className="btn fw-semibold px-4" style={aproposStyles.ctaBtn}>{t('about.cta.button')}</a>
         </div>
       </div>
     </section>

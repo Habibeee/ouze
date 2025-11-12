@@ -32,6 +32,7 @@ import AdminProfile from '../components/adminProfile.jsx';
 import OAuthCallback from '../components/oauthCallback.jsx';
 import { ToastProvider } from '../components/ui/ToastProvider.jsx';
 import { clientCss } from '../styles/tableauBordClientStyle.jsx';
+import BackToTop from '../components/BackToTop.jsx';
 
 function App() {
   const [route, setRoute] = useState(window.location.hash || '#/');
@@ -197,6 +198,7 @@ function App() {
       <div className="d-flex" style={{ minHeight: '100vh' }}>
         <style>{themeCss}</style>
         <style>{clientCss}</style>
+        {baseRoute !== '#/client' && baseRoute !== '#/transitaire' && (
         <SideBare
           topOffset={96}
           activeId={clientActiveId}
@@ -224,11 +226,13 @@ function App() {
             }
           }}
         />
-        <div className="flex-grow-1" style={{ marginLeft: isLgUp ? (sidebarOpen ? '240px' : '56px') : '0', transition: 'margin-left .25s ease' }}>
+        )}
+        <div className="flex-grow-1" style={{ marginLeft: (baseRoute !== '#/client' && baseRoute !== '#/transitaire') ? (isLgUp ? (sidebarOpen ? '240px' : '56px') : '0') : '0', transition: 'margin-left .25s ease' }}>
           <Header showSidebarToggle={false} hideNavbarToggler={false} onToggleSidebar={() => setSidebarOpen(o=>!o)} />
           <main className="flex-fill">
             {renderRoute()}
           </main>
+          <BackToTop />
           <Footer />
         </div>
       </div>
@@ -244,6 +248,7 @@ function App() {
       <main className="flex-fill">
         {renderRoute()}
       </main>
+      <BackToTop />
       <Footer />
     </div>
     </ToastProvider>

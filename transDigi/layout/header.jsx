@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { headerStyles, headerCss } from '../styles/headerStyle.jsx';
 import { Menu, ArrowLeft } from 'lucide-react';
+import { useI18n } from '../src/i18n.jsx';
 
 function Header({ showSidebarToggle = false, onToggleSidebar, hideNavbarToggler = false }) {
   const [theme, setTheme] = useState('light');
+  const { lang, setLang, t } = useI18n();
 
   useEffect(() => {
     const saved = localStorage.getItem('theme') || 'light';
@@ -40,7 +42,7 @@ function Header({ showSidebarToggle = false, onToggleSidebar, hideNavbarToggler 
           type="button"
           className="btn btn-link me-1 d-lg-none"
           onClick={handleBack}
-          aria-label="Retour"
+          aria-label={t('aria.back')}
         >
           <ArrowLeft size={20} />
         </button>
@@ -49,7 +51,7 @@ function Header({ showSidebarToggle = false, onToggleSidebar, hideNavbarToggler 
             type="button"
             className="btn btn-link me-2"
             onClick={() => typeof onToggleSidebar === 'function' && onToggleSidebar()}
-            aria-label="Basculer la barre latérale"
+            aria-label={t('aria.toggle.sidebar')}
           >
             <Menu size={20} />
           </button>
@@ -76,24 +78,40 @@ function Header({ showSidebarToggle = false, onToggleSidebar, hideNavbarToggler 
         <div className="collapse navbar-collapse" id="mainNavbar">
           <ul className="navbar-nav ms-auto me-4 me-lg-5 me-xl-5 mb-2 mb-lg-0 nav-main gap-3">
             <li className="nav-item">
-              <a className="nav-link fw-semibold" href="#/" style={{ color: '#0b5f8a' }}>Accueil</a>
+              <a className="nav-link fw-semibold" href="#/" style={{ color: '#0b5f8a' }}>{t('nav.home')}</a>
             </li>
             <li className="nav-item">
-              <a className="nav-link fw-semibold" href="#/apropos" style={{ color: '#0b5f8a' }}>A propos</a>
+              <a className="nav-link fw-semibold" href="#/apropos" style={{ color: '#0b5f8a' }}>{t('nav.about')}</a>
             </li>
             <li className="nav-item">
-              <a className="nav-link fw-semibold" href="#/contact" style={{ color: '#0b5f8a' }}>Contact</a>
+              <a className="nav-link fw-semibold" href="#/contact" style={{ color: '#0b5f8a' }}>{t('nav.contact')}</a>
             </li>
           </ul>
 
           <div className="d-flex align-items-center gap-2">
-            <a className="btn fw-semibold px-4" href="#/connexion" style={{ backgroundColor: '#28A745', color: 'white', border: 'none', borderRadius: '6px' }}>Se connecter</a>
+            <a className="btn fw-semibold px-4" href="#/connexion" style={{ backgroundColor: '#28A745', color: 'white', border: 'none', borderRadius: '6px' }}>{t('nav.login')}</a>
+            <div className="btn-group ms-2" role="group" aria-label="Language switcher">
+              <button
+                type="button"
+                className={`btn btn-outline-secondary px-3 ${lang === 'fr' ? 'active' : ''}`}
+                onClick={() => setLang('fr')}
+              >
+                FR
+              </button>
+              <button
+                type="button"
+                className={`btn btn-outline-secondary px-3 ${lang === 'en' ? 'active' : ''}`}
+                onClick={() => setLang('en')}
+              >
+                EN
+              </button>
+            </div>
             <div className="d-flex align-items-center ms-2">
               <button
                 type="button"
                 onClick={toggleTheme}
                 className={`btn fw-semibold px-3 ${theme === 'dark' ? 'btn-light' : 'btn-dark'}`}
-                aria-label="Basculer thème"
+                aria-label={t('aria.toggle.theme')}
               >
                 {theme === 'dark' ? <i className="bi bi-brightness-high"></i> : <i className="bi bi-moon-stars"></i>}
               </button>

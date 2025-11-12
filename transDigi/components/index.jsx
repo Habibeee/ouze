@@ -2,8 +2,10 @@
 import { indexStyles } from '../styles/indexStyle.jsx';
 import Publicite from './publicite.jsx';
 import { COLORS } from '../styles/indexStyle.jsx';
+import { useI18n } from '../src/i18n.jsx';
 
  function HomeHero() {
+  const { t } = useI18n();
   const Panel = ({ title, subtitle, color, dark, steps, imgSrc, imgAlt }) => {
     const [hover, setHover] = useState(false);
     const imgRef = useRef(null);
@@ -140,6 +142,9 @@ import { COLORS } from '../styles/indexStyle.jsx';
           .hero-section .carousel-item,
           .hero-section .carousel-item img { height: 44vh !important; }
         }
+        /* Client button hover: transparent background with colored text/border */
+        .btn-client { border: 2px solid transparent !important; transition: background-color .2s ease, color .2s ease, border-color .2s ease; }
+        .btn-client:hover { background-color: transparent !important; color: var(--btn-color, var(--bs-success)) !important; border-color: var(--btn-color, var(--bs-success)) !important; }
       `}</style>
       <section
         className="position-relative text-white hero-section"
@@ -178,20 +183,18 @@ import { COLORS } from '../styles/indexStyle.jsx';
         <div className="row mx-0 w-100 justify-content-center">
           <div className="col-12 col-lg-8 px-4 px-md-5 text-center">
             <h1 className="display-4 fw-bold lh-1 mb-3">
-              Suivez vos marchandises
+              {t('home.hero.title.line1')}
               <br />
-              en temps réel
+              {t('home.hero.title.line2')}
             </h1>
-            <p className="lead mb-4">
-              Connectez-vous avec des transitaires fiables en un clic
-            </p>
+            <p className="lead mb-4">{t('home.hero.lead')}</p>
 
             <div className="d-flex gap-3 flex-wrap justify-content-center hero-cta">
-              <a href="#how-client" className="btn btn-lg px-5 py-3 fw-semibold" style={{ backgroundColor: 'var(--bs-success)', color: 'white', border: 'none', borderRadius: '8px' }}>
-                Je suis un client
+              <a href="#how-client" className="btn btn-lg px-5 py-3 fw-semibold btn-client" style={{ '--btn-color': 'var(--bs-success)', backgroundColor: 'var(--bs-success)', color: 'white', border: 'none', borderRadius: '8px' }}>
+                {t('home.hero.btn.client')}
               </a>
               <a href="#how-transitaire" className="btn btn-outline-light btn-lg px-5 py-3 fw-semibold" style={{ borderRadius: '8px' }}>
-                Je suis un transitaire
+                {t('home.hero.btn.forwarder')}
               </a>
             </div>
           </div>
@@ -201,8 +204,8 @@ import { COLORS } from '../styles/indexStyle.jsx';
 
       <section className="py-5 bg-body">
         <div className="container">
-          <h2 className="text-center fw-bold mb-2" style={{ color: '#0b5f8a' }}>Types de services disponibles</h2>
-          <p className="text-center text-muted mb-5">Des solutions complètes pour tous vos besoins en transport et logistique</p>
+          <h2 className="text-center fw-bold mb-2" style={{ color: '#0b5f8a' }}>{t('home.services.title')}</h2>
+          <p className="text-center text-muted mb-5">{t('home.services.subtitle')}</p>
 
           <div className="row g-4">
             <div className="col-12 col-md-4">
@@ -223,8 +226,8 @@ import { COLORS } from '../styles/indexStyle.jsx';
                     <i className="bi bi-ship"></i>
                   </span>
                 </div>
-                <h5 className="fw-bold" style={{ color: '#0b5f8a' }}>Transport Maritime</h5>
-                <p className="text-muted mb-0">Expéditions internationales par voie maritime avec suivi en temps réel</p>
+                <h5 className="fw-bold" style={{ color: '#0b5f8a' }}>{t('home.services.maritime')}</h5>
+                <p className="text-muted mb-0">{t('home.services.maritime.desc')}</p>
               </div>
             </div>
 
@@ -246,8 +249,8 @@ import { COLORS } from '../styles/indexStyle.jsx';
                     <i className="bi bi-airplane"></i>
                   </span>
                 </div>
-                <h5 className="fw-bold" style={{ color: '#0b5f8a' }}>Transport Aérien</h5>
-                <p className="text-muted mb-0">Solutions rapides et sécurisées pour vos envois urgents</p>
+                <h5 className="fw-bold" style={{ color: '#0b5f8a' }}>{t('home.services.air')}</h5>
+                <p className="text-muted mb-0">{t('home.services.air.desc')}</p>
               </div>
             </div>
 
@@ -269,8 +272,8 @@ import { COLORS } from '../styles/indexStyle.jsx';
                     <i className="bi bi-truck"></i>
                   </span>
                 </div>
-                <h5 className="fw-bold" style={{ color: '#0b5f8a' }}>Transport Routier</h5>
-                <p className="text-muted mb-0">Livraisons terrestres fiables à travers le pays</p>
+                <h5 className="fw-bold" style={{ color: '#0b5f8a' }}>{t('home.services.road')}</h5>
+                <p className="text-muted mb-0">{t('home.services.road.desc')}</p>
               </div>
             </div>
           </div>
@@ -279,18 +282,18 @@ import { COLORS } from '../styles/indexStyle.jsx';
 
       <section className="py-5 bg-body">
         <div className="container">
-          <h2 className="text-center fw-bold mb-4">Comment ça marche</h2>
+          <h2 className="text-center fw-bold mb-4">{t('home.how.title')}</h2>
           <div className="row g-4 align-items-stretch">
             <div className="col-12 col-lg-6" id="how-client">
               <Panel
-                title="Pour les clients"
-                subtitle="Commencez et gérez vos expéditions en toute simplicité."
+                title={t('home.how.clients.title')}
+                subtitle={t('home.how.clients.subtitle')}
                 color={indexStyles.colors.green}
                 steps={[
-                  { title: 'Créez votre compte', text: "Inscrivez-vous en quelques minutes pour commencer." },
-                  { title: 'Publiez votre demande', text: "Décrivez vos besoins d'expédition pour recevoir des devis." },
-                  { title: 'Recevez des devis', text: 'Comparez des propositions de transitaires qualifiés.' },
-                  { title: 'Choisissez votre transitaire', text: "Sélectionnez l'offre qui vous convient et lancez l'expédition." },
+                  { title: t('home.how.clients.step1.title'), text: t('home.how.clients.step1.text') },
+                  { title: t('home.how.clients.step2.title'), text: t('home.how.clients.step2.text') },
+                  { title: t('home.how.clients.step3.title'), text: t('home.how.clients.step3.text') },
+                  { title: t('home.how.clients.step4.title'), text: t('home.how.clients.step4.text') },
                 ]}
                 imgSrc={'/client1.jpg'}
                 imgAlt={'Clients - Expéditions'}
@@ -298,15 +301,15 @@ import { COLORS } from '../styles/indexStyle.jsx';
             </div>
             <div className="col-12 col-lg-6" id="how-transitaire">
               <Panel
-                title="Pour les transitaires"
-                subtitle="Développez votre activité avec des opportunités qualifiées."
+                title={t('home.how.forwarders.title')}
+                subtitle={t('home.how.forwarders.subtitle')}
                 color={indexStyles.colors.blue}
                 dark
                 steps={[
-                  { title: 'Créez votre profil', text: 'Mettez en avant votre expertise et vos services.' },
-                  { title: 'Trouvez des opportunités', text: 'Accédez à de nouvelles demandes de transport chaque jour.' },
-                  { title: 'Envoyez vos devis', text: 'Répondez aux demandes avec des offres compétitives.' },
-                  { title: 'Gagnez de nouveaux clients', text: 'Développez votre activité sur de nouveaux marchés.' },
+                  { title: t('home.how.forwarders.step1.title'), text: t('home.how.forwarders.step1.text') },
+                  { title: t('home.how.forwarders.step2.title'), text: t('home.how.forwarders.step2.text') },
+                  { title: t('home.how.forwarders.step3.title'), text: t('home.how.forwarders.step3.text') },
+                  { title: t('home.how.forwarders.step4.title'), text: t('home.how.forwarders.step4.text') },
                 ]}
                 imgSrc={'/transitaire1.jpg'}
                 imgAlt={'Transitaires - Opportunités'}
@@ -318,16 +321,16 @@ import { COLORS } from '../styles/indexStyle.jsx';
 
       <section className="py-5 bg-body">
         <div className="container">
-          <h2 className="text-center fw-bold mb-5">Ce qu'ils en disent</h2>
+          <h2 className="text-center fw-bold mb-5">{t('home.testimonials.title')}</h2>
           <div className="row g-4">
             <div className="col-12 col-lg-6">
               <div className="p-4 border rounded-4 h-100" style={{ background: 'var(--bs-body-bg)', boxShadow: '0 16px 36px rgba(0,0,0,0.15)', borderColor: 'var(--bs-border-color-translucent)' }}>
-                <p className="mb-4">"TransDigiSN a transformé notre gestion logistique. Trouver un transitaire fiable n'a jamais été aussi simple et rapide. Une plateforme indispensable !"</p>
+                <p className="mb-4">{t('home.testimonials.quote1.text')}</p>
                 <div className="d-flex align-items-center gap-3">
                   <img src={'/client2.jpg'} alt="Client" className="rounded-circle" style={{ width: 56, height: 56, objectFit: 'cover', objectPosition: 'center top', boxShadow: '0 6px 16px rgba(0,0,0,0.18)' }} />
                   <div>
-                    <div className="fw-bold">Marie Dubois</div>
-                    <div className="text-muted small">Responsable Logistique, TechCorp</div>
+                    <div className="fw-bold">{t('home.testimonials.quote1.author')}</div>
+                    <div className="text-muted small">{t('home.testimonials.quote1.role')}</div>
                   </div>
                 </div>
               </div>
@@ -335,12 +338,12 @@ import { COLORS } from '../styles/indexStyle.jsx';
 
             <div className="col-12 col-lg-6">
               <div className="p-4 border rounded-4 h-100 bg-white" style={{ boxShadow: '0 16px 36px rgba(0,0,0,0.15)', borderColor: 'rgba(0,0,0,0.08)' }}>
-                <p className="mb-4">"En tant que transitaire, la plateforme m'a permis d'accéder à un flux constant de nouvelles opportunités. Mon chiffre d'affaires a augmenté de 20% en 6 mois."</p>
+                <p className="mb-4">{t('home.testimonials.quote2.text')}</p>
                 <div className="d-flex align-items-center gap-3">
                   <img src={'/transitaire2.jpg'} alt="Transitaire" className="rounded-circle" style={{ width: 48, height: 48, objectFit: 'cover', boxShadow: '0 6px 16px rgba(0,0,0,0.18)' }} />
                   <div>
-                    <div className="fw-bold">Jean Martin</div>
-                    <div className="text-muted small">Directeur, LogiPro Transit</div>
+                    <div className="fw-bold">{t('home.testimonials.quote2.author')}</div>
+                    <div className="text-muted small">{t('home.testimonials.quote2.role')}</div>
                   </div>
                 </div>
               </div>
@@ -351,11 +354,11 @@ import { COLORS } from '../styles/indexStyle.jsx';
 
       <section className="py-5 bg-body">
         <div className="container text-center">
-          <h2 className="fw-bold mb-2">Prêt à optimiser vos expéditions ?</h2>
-          <p className="text-muted mb-4">Rejoignez notre réseau de clients et de transitaires de confiance dès aujourd'hui. L'inscription est simple et rapide.</p>
+          <h2 className="fw-bold mb-2">{t('home.cta.title')}</h2>
+          <p className="text-muted mb-4">{t('home.cta.subtitle')}</p>
           <div className="d-flex flex-wrap gap-3 justify-content-center">
-            <a href="#start-client" className="btn btn-lg px-5 py-3 fw-semibold" style={{ backgroundColor: 'var(--bs-warning)', color: '#000', border: 'none', borderRadius: '8px' }}>Commencer en tant que client</a>
-            <a href="#start-transitaire" className="btn btn-lg px-5 py-3 fw-semibold" style={{ backgroundColor: 'var(--bs-success)', color: 'white', border: 'none', borderRadius: '8px' }}>Rejoindre comme transitaire</a>
+            <a href="#start-client" className="btn btn-lg px-5 py-3 fw-semibold" style={{ backgroundColor: 'var(--bs-warning)', color: '#000', border: 'none', borderRadius: '8px' }}>{t('home.cta.btn.client')}</a>
+            <a href="#start-transitaire" className="btn btn-lg px-5 py-3 fw-semibold" style={{ backgroundColor: 'var(--bs-success)', color: 'white', border: 'none', borderRadius: '8px' }}>{t('home.cta.btn.forwarder')}</a>
           </div>
         </div>
       </section>
@@ -364,6 +367,7 @@ import { COLORS } from '../styles/indexStyle.jsx';
 }
 
 function IndexPage() {
+  const { t } = useI18n();
   const [scrollAngle, setScrollAngle] = useState(0);
   const [hoverService, setHoverService] = useState(null);
 
@@ -480,6 +484,9 @@ function IndexPage() {
           .hero-section .carousel-item,
           .hero-section .carousel-item img { height: 44vh !important; }
         }
+        /* Client button hover: transparent background with colored text/border */
+        .btn-client { border: 2px solid transparent !important; transition: background-color .2s ease, color .2s ease, border-color .2s ease; }
+        .btn-client:hover { background-color: transparent !important; color: var(--btn-color, var(--bs-success)) !important; border-color: var(--btn-color, var(--bs-success)) !important; }
       `}</style>
       <section className="position-relative text-white hero-section" style={{ minHeight: '70vh' }}>
         <div id="heroCarousel" className="carousel slide position-absolute top-0 start-0 w-100 h-100" data-bs-ride="carousel" data-bs-interval="3000" data-bs-pause="false">
@@ -512,19 +519,19 @@ function IndexPage() {
         <div className="container position-relative d-flex align-items-center justify-content-center" style={{ minHeight: '70vh' }}>
           <div className="text-center">
             <h1 className="display-3 fw-bold mb-4">
-              Suivez vos marchandises<br />en temps réel
+              {t('home.hero.title.line1')}<br />{t('home.hero.title.line2')}
             </h1>
-            <p className="lead mb-4">Connectez-vous avec des transitaires fiables en un clic</p>
+            <p className="lead mb-4">{t('home.hero.lead')}</p>
             <div className="d-flex gap-3 flex-wrap justify-content-center">
               <button
-                className="btn btn-lg px-5 py-3 fw-semibold"
-                style={{ backgroundColor: COLORS.green, color: 'white', border: 'none' }}
+                className="btn btn-lg px-5 py-3 fw-semibold btn-client"
+                style={{ '--btn-color': COLORS.green, backgroundColor: COLORS.green, color: 'white', border: 'none' }}
                 onClick={() => {
                   const el = document.getElementById('how-client');
                   if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }}
               >
-                Je suis un client
+                {t('home.hero.btn.client')}
               </button>
               <button
                 className="btn btn-outline-light btn-lg px-5 py-3 fw-semibold"
@@ -533,7 +540,7 @@ function IndexPage() {
                   if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }}
               >
-                Je suis un transitaire
+                {t('home.hero.btn.forwarder')}
               </button>
             </div>
           </div>
@@ -542,13 +549,13 @@ function IndexPage() {
 
       <section className="py-5 bg-light">
         <div className="container">
-          <h2 className="text-center fw-bold mb-2">Types de services disponibles</h2>
-          <p className="text-center text-muted mb-5">Des solutions complètes pour tous vos besoins en transport et logistique</p>
+          <h2 className="text-center fw-bold mb-2">{t('home.services.title')}</h2>
+          <p className="text-center text-muted mb-5">{t('home.services.subtitle')}</p>
           <div className="row g-4">
             {[
-              { icon: '🚢', title: 'Transport Maritime', desc: 'Expéditions internationales par voie maritime', color: COLORS.blue },
-              { icon: '✈️', title: 'Transport Aérien', desc: 'Solutions rapides et sécurisées pour vos envois urgents', color: COLORS.yellow },
-              { icon: '🚚', title: 'Transport Routier', desc: 'Livraisons terrestres fiables à travers le pays', color: COLORS.green }
+              { icon: '🚢', title: t('home.services.maritime'), desc: t('home.services.maritime.desc'), color: COLORS.blue },
+              { icon: '✈️', title: t('home.services.air'), desc: t('home.services.air.desc'), color: COLORS.yellow },
+              { icon: '🚚', title: t('home.services.road'), desc: t('home.services.road.desc'), color: COLORS.green }
             ].map((service, idx) => (
               <div key={idx} className="col-12 col-md-4">
                 <div
@@ -581,33 +588,33 @@ function IndexPage() {
 
       <section className="py-5 bg-white">
         <div className="container">
-          <h2 className="text-center fw-bold mb-5">Comment ça marche</h2>
+          <h2 className="text-center fw-bold mb-5">{t('home.how.title')}</h2>
           <div className="row g-4">
             <div className="col-12 col-lg-6" id="how-client">
               <Panel
-                title="Pour les clients"
-                subtitle="Commencez et gérez vos expéditions en toute simplicité."
+                title={t('home.how.clients.title')}
+                subtitle={t('home.how.clients.subtitle')}
                 color={COLORS.green}
                 steps={[
-                  { title: 'Créez votre compte', text: 'Inscrivez-vous en quelques minutes' },
-                  { title: 'Publiez votre demande', text: "Décrivez vos besoins d'expédition" },
-                  { title: 'Recevez des devis', text: 'Comparez les propositions' },
-                  { title: 'Choisissez votre transitaire', text: "Lancez l'expédition" }
+                  { title: t('home.how.clients.step1.title'), text: t('home.how.clients.step1.text') },
+                  { title: t('home.how.clients.step2.title'), text: t('home.how.clients.step2.text') },
+                  { title: t('home.how.clients.step3.title'), text: t('home.how.clients.step3.text') },
+                  { title: t('home.how.clients.step4.title'), text: t('home.how.clients.step4.text') }
                 ]}
                 imgSrc={'/client1.jpg'}
               />
             </div>
             <div className="col-12 col-lg-6" id="how-transitaire">
               <Panel
-                title="Pour les transitaires"
-                subtitle="Développez votre activité avec des opportunités qualifiées."
+                title={t('home.how.forwarders.title')}
+                subtitle={t('home.how.forwarders.subtitle')}
                 color={COLORS.blue}
                 dark
                 steps={[
-                  { title: 'Créez votre profil', text: 'Mettez en avant votre expertise' },
-                  { title: 'Trouvez des opportunités', text: 'Nouvelles demandes chaque jour' },
-                  { title: 'Envoyez vos devis', text: 'Répondez avec des offres compétitives' },
-                  { title: 'Gagnez de nouveaux clients', text: 'Développez sur de nouveaux marchés' }
+                  { title: t('home.how.forwarders.step1.title'), text: t('home.how.forwarders.step1.text') },
+                  { title: t('home.how.forwarders.step2.title'), text: t('home.how.forwarders.step2.text') },
+                  { title: t('home.how.forwarders.step3.title'), text: t('home.how.forwarders.step3.text') },
+                  { title: t('home.how.forwarders.step4.title'), text: t('home.how.forwarders.step4.text') }
                 ]}
                 imgSrc={'/transitaire1.jpg'}
               />
@@ -622,24 +629,24 @@ function IndexPage() {
           <div className="row g-4">
             <div className="col-12 col-lg-6">
               <div className="p-4 bg-white rounded-4 shadow-sm h-100">
-                <p className="mb-4">"TransDigiSN a transformé notre gestion logistique. Trouver un transitaire fiable n'a jamais été aussi simple."</p>
+                <p className="mb-4">{t('home.testimonials.quote1.text')}</p>
                 <div className="d-flex align-items-center gap-3">
                   <img src={'/client2.jpg'} alt="Client" className="rounded-circle" style={{ width: 56, height: 56, objectFit: 'cover', objectPosition: 'center top' }} />
                   <div>
-                    <div className="fw-bold">Marie Dubois</div>
-                    <div className="text-muted small">Responsable Logistique, TechCorp</div>
+                    <div className="fw-bold">{t('home.testimonials.quote1.author')}</div>
+                    <div className="text-muted small">{t('home.testimonials.quote1.role')}</div>
                   </div>
                 </div>
               </div>
             </div>
             <div className="col-12 col-lg-6">
               <div className="p-4 bg-white rounded-4 shadow-sm h-100">
-                <p className="mb-4">"La plateforme m'a permis d'accéder à un flux constant de nouvelles opportunités. Mon CA a augmenté de 20% en 6 mois."</p>
+                <p className="mb-4">{t('home.testimonials.quote2.text')}</p>
                 <div className="d-flex align-items-center gap-3">
-                  <img src={'/transitaire2.jpg'} alt="Transitaire" className="rounded-circle" style={{ width: 56, height: 56, objectFit: 'cover', objectPosition: 'center top' }} />
+                  <img src={'/transitaire2.jpg'} alt="Transitaire" className="rounded-circle" style={{ width: 48, height: 48, objectFit: 'cover' }} />
                   <div>
-                    <div className="fw-bold">Jean Martin</div>
-                    <div className="text-muted small">Directeur, LogiPro Transit</div>
+                    <div className="fw-bold">{t('home.testimonials.quote2.author')}</div>
+                    <div className="text-muted small">{t('home.testimonials.quote2.role')}</div>
                   </div>
                 </div>
               </div>

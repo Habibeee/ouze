@@ -5,11 +5,13 @@ import { login as apiLogin } from '../services/apiClient.js';
 import { redirectByRole } from '../services/authStore.js';
 import { post } from '../services/apiClient.js';
 import { putForm } from '../services/apiClient.js';
+import { useI18n } from '../src/i18n.jsx';
 
 const GOOGLE_CLIENT_ID = (import.meta?.env?.VITE_GOOGLE_CLIENT_ID || '').trim();
 
 function Connexion() {
   const { success, error: toastError, info } = useToast();
+  const { t } = useI18n();
   const [showPwd, setShowPwd] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -123,12 +125,12 @@ function Connexion() {
   const isEmail = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
   const isPhone = (v) => /^\+?\d[\d\s.-]{7,}$/.test(v);
   const validateEmailOrPhone = (v) => {
-    if (!v.trim()) return 'Ce champ est obligatoire';
+    if (!v.trim()) return t('contact.validation.email.required');
     // Assouplir: accepter tout identifiant non vide; le backend validera réellement
     return '';
   };
   const validatePassword = (v) => {
-    if (!v) return 'Ce champ est obligatoire';
+    if (!v) return t('contact.validation.message.required');
     if (v.length < 6) return 'Le mot de passe doit contenir au moins 6 caractères';
     return '';
   };
@@ -150,7 +152,7 @@ function Connexion() {
         : { telephone: ident, motDePasse: password };
       const data = await apiLogin(payload);
       const token = (data?.token || data?.accessToken || '').trim();
-      if (!token) throw new Error(data?.message || 'Identifiants invalides');
+      if (!token) throw new Error(data?.message || t('login.errors.invalid_creds'));
       localStorage.setItem('token', token);
       const respUserType = (data?.userType || '').toLowerCase();
       const apiRole = (data?.user?.role || data?.role || '').toLowerCase();
@@ -192,9 +194,9 @@ function Connexion() {
       redirectByRole();
     } catch (err) {
       const raw = (err?.message || '').toLowerCase();
-      let friendly = "Échec de l'authentification";
+      let friendly = t('login.errors.auth_failed');
       if (err?.status === 429) {
-        friendly = 'Trop de tentatives. Veuillez réessayer dans quelques secondes.';
+        friendly = t('login.errors.too_many_attempts');
         // démarrer un cooldown de 10s
         try {
           const start = 10;
@@ -207,11 +209,11 @@ function Connexion() {
           }, 1000);
         } catch {}
       }
-      if (raw.includes('bloqué')) friendly = 'Votre compte est bloqué. Contactez le support.';
-      else if (raw.includes('archivé')) friendly = 'Votre compte est archivé. Contactez le support.';
-      else if (raw.includes("en attente d'approbation") || raw.includes('attente d’approbation')) friendly = "Votre compte est en attente d'approbation par un administrateur.";
-      else if (raw.includes('invalides') || raw.includes('invalide')) friendly = 'Identifiants invalides. Vérifiez vos informations.';
-      else if (raw.includes('non vérifié') || raw.includes('verifier')) friendly = "Email non vérifié. Veuillez vérifier votre boîte mail.";
+      if (raw.includes('bloqué')) friendly = t('login.errors.blocked');
+      else if (raw.includes('archivé')) friendly = t('login.errors.archived');
+      else if (raw.includes("en attente d'approbation") || raw.includes('attente d’approbation')) friendly = t('login.errors.pending_approval');
+      else if (raw.includes('invalides') || raw.includes('invalide')) friendly = t('login.errors.invalid_creds');
+      else if (raw.includes('non vérifié') || raw.includes('verifier')) friendly = t('login.errors.email_unverified');
       setAuthError(friendly);
     } finally {
       setLoading(false);
@@ -223,9 +225,9 @@ function Connexion() {
       if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return;
       setResending(true);
       await post('/auth/resend-verification', { email: email.trim().toLowerCase() });
-      success('Email de vérification renvoyé (si un compte existe).');
+      success(t('login.resend.success'));
     } catch (e) {
-      toastError(e?.message || 'Échec de renvoi.');
+      toastError(e?.message || t('login.resend.error'));
     } finally {
       setResending(false);
     }
@@ -240,19 +242,19 @@ function Connexion() {
             <div className="col-12 col-sm-10 col-md-8 col-lg-6">
               <div className="login-card">
                 <div className="header">
-                  <h1>Accédez à votre espace</h1>
-                  <p>Connectez-vous à votre compte TransDigiSN</p>
+                  <h1>{t('login.header.title')}</h1>
+                  <p>{t('login.header.subtitle')}</p>
                 </div>
 
                 <form onSubmit={handleSubmit}>
                   <div className="form-group">
-                    <label htmlFor="email">Email ou Numéro de téléphone</label>
+                    <label htmlFor="email">{t('login.fields.identifier.label')}</label>
                     <div className="input-wrapper">
                       <span className="icon">✉</span>
                       <input
                         type="text"
                         id="email"
-                        placeholder="Entrez votre email ou numéro de téléphone"
+                        placeholder={t('login.fields.identifier.placeholder')}
                         value={email}
                         autoComplete="username"
                         onChange={(e) => {
@@ -269,13 +271,13 @@ function Connexion() {
                   </div>
 
                   <div className="form-group">
-                    <label htmlFor="password">Mot de passe</label>
+                    <label htmlFor="password">{t('login.fields.password.label')}</label>
                     <div className="input-wrapper">
                       <span className="icon">🔒</span>
                       <input
                         type={showPwd ? 'text' : 'password'}
                         id="password"
-                        placeholder="Entrez votre mot de passe"
+                        placeholder={t('login.fields.password.placeholder')}
                         value={password}
                         autoComplete="current-password"
                         onChange={(e) => {
@@ -287,35 +289,35 @@ function Connexion() {
                         aria-invalid={!!errors.password}
                         aria-describedby="pwdHelp pwdCriteria"
                       />
-                      <span className="toggle-password" onClick={() => setShowPwd(s => !s)} role="button" aria-label={showPwd ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}>{showPwd ? '👁️' : '👁'}</span>
+                      <span className="toggle-password" onClick={() => setShowPwd(s => !s)} role="button" aria-label={showPwd ? t('login.password.aria.hide') : t('login.password.aria.show')}>{showPwd ? '👁️' : '👁'}</span>
                     </div>
                     {errors.password && <div id="pwdHelp" className="text-danger small mt-1">{errors.password}</div>}
-                    <div id="pwdCriteria" className="password-hint">Au moins 8 caractères, dont 1 lettre et 1 chiffre</div>
+                    <div id="pwdCriteria" className="password-hint">{t('login.password.hint')}</div>
                   </div>
 
                   <div className="form-options">
                     <label className="remember-me">
                       <input type="checkbox" />
-                      <span>Se souvenir de moi</span>
+                      <span>{t('login.remember')}</span>
                     </label>
-                    <a href="#/mot-de-passe-oublie" className="forgot-password">Mot de passe oublié ?</a>
+                    <a href="#/mot-de-passe-oublie" className="forgot-password">{t('login.forgot')}</a>
                   </div>
 
                   <button type="submit" className="submit-btn" disabled={loading || cooldown>0 || !email || !password}>
-                    {cooldown>0 ? `Réessayer dans ${cooldown}s` : 'Se connecter'}
+                    {cooldown>0 ? `${t('login.retry_in')} ${cooldown}s` : t('login.submit')}
                   </button>
 
                   {authError && <div className="text-danger small">{authError}</div>}
                   {authError && /non vérifié|verifier/i.test(authError) && (
                     <div className="mt-2">
                       <button type="button" className="btn btn-outline-secondary btn-sm" disabled={resending || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)} onClick={resendVerification}>
-                        {resending ? 'Renvoi...' : "Renvoyer l'email de vérification"}
+                        {resending ? t('login.resend.sending') : t('login.resend.btn')}
                       </button>
                     </div>
                   )}
 
                   <div className="signup-link">
-                    Pas encore de compte ? <a href="#/signup">S'inscrire</a>
+                    {t('login.signup.prompt')} <a href="#/signup">{t('login.signup.link')}</a>
                   </div>
                 </form>
               </div>

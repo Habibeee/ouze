@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { get } from '../services/apiClient.js';
+import { useI18n } from '../src/i18n.jsx';
 
 function VerifyEmail() {
+  const { t } = useI18n();
   const [status, setStatus] = useState('pending'); // pending | success | error
-  const [message, setMessage] = useState('Vérification en cours...');
+  const [message, setMessage] = useState(t('verify.pending'));
 
   useEffect(() => {
     const hash = window.location.hash || '';
@@ -11,25 +13,25 @@ function VerifyEmail() {
     const token = parts[2] || '';
     if (!token) {
       setStatus('error');
-      setMessage('Token manquant.');
+      setMessage(t('verify.token_missing'));
       return;
     }
     (async () => {
       try {
         setStatus('pending');
-        setMessage('Vérification en cours...');
+        setMessage(t('verify.pending'));
         const res = await get(`/auth/verify/${encodeURIComponent(token)}`);
         if (res?.success) {
           setStatus('success');
-          setMessage(res?.message || 'Email vérifié avec succès.');
+          setMessage(res?.message || t('verify.success'));
           setTimeout(() => { window.location.hash = '#/connexion'; }, 1200);
         } else {
           setStatus('error');
-          setMessage(res?.message || 'Échec de la vérification.');
+          setMessage(res?.message || t('verify.error'));
         }
       } catch (e) {
         setStatus('error');
-        setMessage(e?.message || 'Erreur pendant la vérification.');
+        setMessage(e?.message || t('verify.error_generic'));
       }
     })();
   }, []);
@@ -40,10 +42,10 @@ function VerifyEmail() {
         <div className="row justify-content-center">
           <div className="col-12 col-md-8 col-lg-6">
             <div className="p-4 border rounded-4 text-center">
-              <h1 className="fw-bold mb-3">Vérification d'email</h1>
+              <h1 className="fw-bold mb-3">{t('verify.title')}</h1>
               <div className={`alert ${status === 'success' ? 'alert-success' : status === 'error' ? 'alert-danger' : 'alert-info'}`}>{message}</div>
               {status !== 'success' && (
-                <a href="#/connexion" className="btn btn-outline-secondary">Aller à la connexion</a>
+                <a href="#/connexion" className="btn btn-outline-secondary">{t('verify.go_login')}</a>
               )}
             </div>
           </div>
