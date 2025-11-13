@@ -27,6 +27,12 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Logging middleware
+app.use((req, res, next) => {
+  console.log(` ${req.method} ${req.path}`);
+  next();
+});
+
 // Rate limiting (configurable)
 const windowMs = parseInt(process.env.RATE_LIMIT_WINDOW_MS || '', 10) || (15 * 60 * 1000);
 const max = parseInt(process.env.RATE_LIMIT_MAX || '', 10) || 100;

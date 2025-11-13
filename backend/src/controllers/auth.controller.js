@@ -161,8 +161,10 @@ exports.logout = async (req, res) => {
 // ===================== Inscription Client =====================
 exports.registerClient = async (req, res) => {
   try {
+    console.log('📝 registerClient called with:', req.body);
     const { nom, prenom, email, telephone, motDePasse } = req.body;
 
+    console.log('🔍 Checking if user exists:', email);
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({
@@ -228,6 +230,7 @@ exports.registerClient = async (req, res) => {
       }
     });
   } catch (error) {
+    console.error('❌ Erreur registerClient:', error);
     const isValidation = error?.name === 'ValidationError';
     res.status(isValidation ? 400 : 500).json({
       success: false,
