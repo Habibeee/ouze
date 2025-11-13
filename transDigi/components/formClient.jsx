@@ -109,7 +109,6 @@ const FreightForwardPage = () => {
         nom: formData.nom.trim(),
         email: formData.email.trim().toLowerCase(),
         telephone: formData.telephone.trim(),
-        adresse: formData.adresse.trim(),
         motDePasse: formData.password,
       };
       const res = await post('/auth/register/client', payload);
@@ -136,6 +135,7 @@ const FreightForwardPage = () => {
         </div>
 
         <div className="rounded-lg shadow-md p-8" style={{ backgroundColor: 'var(--card)' }}>
+          <form onSubmit={handleSubmit}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
               <label className="block font-semibold mb-2">Prénom</label>
@@ -295,9 +295,10 @@ const FreightForwardPage = () => {
           </div>
           {errors.acceptTerms && <div className="text-danger small mt-1 mb-2">{errors.acceptTerms}</div>}
 
-          <button type="button" onClick={handleSubmit} className="btn btn-primary w-full text-lg" disabled={submitting || Object.values(errors).some(Boolean)}>
+          <button type="submit" className="btn btn-primary w-full text-lg" disabled={submitting || Object.values(errors).some(Boolean)}>
             {submitting ? 'Création...' : 'Créer un compte'}
           </button>
+          </form>
         </div>
 
         
