@@ -15,13 +15,14 @@ const transporter = nodemailer.createTransport({
 });
 
 // Vérifier la configuration SMTP au démarrage (log uniquement)
-try {
-  transporter.verify().then(() => {
-    console.info(`[MAIL] SMTP ready on ${process.env.EMAIL_HOST || 'smtp.gmail.com'}:${port} secure=${secure}`);
-  }).catch((e) => {
-    console.error('[MAIL] SMTP verify failed:', e?.message || e);
-  });
-} catch {}
+// Désactivé temporairement car l'email n'est pas configuré
+// try {
+//   transporter.verify().then(() => {
+//     console.info(`[MAIL] SMTP ready on ${process.env.EMAIL_HOST || 'smtp.gmail.com'}:${port} secure=${secure}`);
+//   }).catch((e) => {
+//     console.error('[MAIL] SMTP verify failed:', e?.message || e);
+//   });
+// } catch {}
 
 // Envoyer email de vérification
 exports.sendVerificationEmail = async (email, token, userType) => {
