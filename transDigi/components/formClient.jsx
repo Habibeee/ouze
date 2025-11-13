@@ -222,6 +222,7 @@ const FreightForwardPage = () => {
                   name="password"
                   value={formData.password}
                   onChange={handleChange}
+                  autoComplete="new-password"
                 />
                 <button
                   type="button"
@@ -243,6 +244,7 @@ const FreightForwardPage = () => {
                 name="confirmPassword"
                 value={formData.confirmPassword}
                 onChange={handleChange}
+                autoComplete="new-password"
               />
               {errors.confirmPassword && <div className="text-danger small mt-1">{errors.confirmPassword}</div>}
             </div>

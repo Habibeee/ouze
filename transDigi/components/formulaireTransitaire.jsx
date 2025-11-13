@@ -193,7 +193,7 @@ function TransdigiRegister() {
                 <div className="mb-2">
                   <label className="form-label fw-semibold">Mot de passe</label>
                   <div className="position-relative">
-                    <input type={showPassword ? 'text' : 'password'} className="form-control form-control-lg pe-5" placeholder="Créez un mot de passe sécurisé" name="password" value={formData.password} onChange={handleInputChange} />
+                    <input type={showPassword ? 'text' : 'password'} className="form-control form-control-lg pe-5" placeholder="Créez un mot de passe sécurisé" name="password" value={formData.password} onChange={handleInputChange} autoComplete="new-password" />
                     <button type="button" onClick={() => setShowPassword(s => !s)} className="btn position-absolute top-50 end-0 translate-middle-y border-0 bg-transparent" style={{ paddingRight: 12 }} aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}>
                       <i className={`bi ${showPassword ? 'bi-eye-slash' : 'bi-eye'} text-muted`}></i>
                     </button>

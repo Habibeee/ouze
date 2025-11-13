@@ -1,12 +1,15 @@
 import express from 'express';
 import jwt from 'jsonwebtoken';
+import { findUserByEmail, createUser, userExists } from '../storage.js';
 
 const router = express.Router();
 
 const { JWT_SECRET } = process.env;
 
-// Simple in-memory user storage (replace with DB in production)
-const users = new Map();
+// Vérifier que JWT_SECRET est défini
+if (!JWT_SECRET) {
+  console.error('❌ ERREUR: JWT_SECRET n\'est pas défini dans les variables d\'environnement');
+}
 
 // POST /auth/register/client
 router.post('/auth/register/client', async (req, res) => {
@@ -22,7 +25,7 @@ router.post('/auth/register/client', async (req, res) => {
     }
 
     // Vérifier si l'email existe déjà
-    if (users.has(email.toLowerCase())) {
+    if (userExists(email)) {
       return res.status(409).json({
         success: false,
         message: 'Cet email est déjà utilisé'
@@ -31,21 +34,26 @@ router.post('/auth/register/client', async (req, res) => {
 
     // Créer l'utilisateur
     const userId = `client:${Date.now()}`;
-    const user = {
+    const user = createUser(email, {
       id: userId,
       prenom,
       nom,
-      email: email.toLowerCase(),
       telephone,
       motDePasse, // En production, hasher ceci!
       userType: 'client',
       role: 'user',
       createdAt: new Date()
-    };
-
-    users.set(email.toLowerCase(), user);
+    });
 
     // Créer le token JWT
+    if (!JWT_SECRET) {
+      console.error('❌ JWT_SECRET manquant lors de la création du token');
+      return res.status(500).json({
+        success: false,
+        message: 'Erreur serveur: configuration manquante'
+      });
+    }
+    
     const token = jwt.sign(
       { uid: userId, role: 'user', userType: 'client' },
       JWT_SECRET,
@@ -95,7 +103,7 @@ router.post('/auth/register/translataire', async (req, res) => {
     }
 
     // Vérifier si l'email existe déjà
-    if (users.has(email.toLowerCase())) {
+    if (userExists(email)) {
       return res.status(409).json({
         success: false,
         message: 'Cet email est déjà utilisé'
@@ -104,12 +112,11 @@ router.post('/auth/register/translataire', async (req, res) => {
 
     // Créer l'utilisateur
     const userId = `transitaire:${Date.now()}`;
-    const user = {
+    const user = createUser(email, {
       id: userId,
       nomEntreprise,
       ninea,
       telephoneEntreprise,
-      email: email.toLowerCase(),
       motDePasse, // En production, hasher ceci!
       secteurActivite,
       typeServices: typeServices || [],
@@ -117,11 +124,17 @@ router.post('/auth/register/translataire', async (req, res) => {
       role: 'transitaire',
       status: 'pending_approval', // L'admin doit approuver
       createdAt: new Date()
-    };
-
-    users.set(email.toLowerCase(), user);
+    });
 
     // Créer le token JWT
+    if (!JWT_SECRET) {
+      console.error('❌ JWT_SECRET manquant lors de la création du token');
+      return res.status(500).json({
+        success: false,
+        message: 'Erreur serveur: configuration manquante'
+      });
+    }
+    
     const token = jwt.sign(
       { uid: userId, role: 'transitaire', userType: 'transitaire' },
       JWT_SECRET,
