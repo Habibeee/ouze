@@ -186,6 +186,7 @@ exports.registerClient = async (req, res) => {
       await sendVerificationEmail(email, verificationToken, 'client');
     } catch (e) {
       console.error('Erreur envoi email vérification (client):', e.message);
+      // L'erreur email ne doit pas bloquer l'inscription
     }
 
     // Notifier les admins: nouveau compte client en attente de validation
@@ -288,6 +289,7 @@ exports.registerTranslataire = async (req, res) => {
       await sendVerificationEmail(email, verificationToken, 'translataire');
     } catch (e) {
       console.error('Erreur envoi email vérification (translataire):', e.message);
+      // L'erreur email ne doit pas bloquer l'inscription
     }
 
     // Notifier les admins: nouveau translataire en attente de validation

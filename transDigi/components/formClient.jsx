@@ -206,6 +206,7 @@ const FreightForwardPage = () => {
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
+                autoComplete="email"
               />
               {errors.email && <div className="text-danger small mt-1">{errors.email}</div>}
             </div>
