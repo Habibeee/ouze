@@ -182,37 +182,35 @@ exports.registerClient = async (req, res) => {
       verificationToken
     });
 
-    try {
-      await sendVerificationEmail(email, verificationToken, 'client');
-    } catch (e) {
-      console.error('Erreur envoi email vérification (client):', e.message);
-      // L'erreur email ne doit pas bloquer l'inscription
-    }
+    // Envoyer l'email de vérification EN ARRIÈRE-PLAN (ne pas attendre)
+    // Désactivé temporairement pour accélérer l'inscription
+    // sendVerificationEmail(email, verificationToken, 'client').catch(e => {
+    //   console.error('Erreur envoi email vérification (client):', e.message);
+    // });
 
-    // Notifier les admins: nouveau compte client en attente de validation
-    try {
-      const admins = await Admin.find({}, '_id email emailNotifications topics');
-      const notifs = await Notification.insertMany(admins.map(a => ({
+    // Notifier les admins EN ARRIÈRE-PLAN (ne pas attendre)
+    Admin.find({}, '_id email emailNotifications topics').then(admins => {
+      Notification.insertMany(admins.map(a => ({
         recipientId: a._id,
         recipientType: 'admin',
         type: 'account_pending',
         title: 'Nouveau client en attente de validation',
         message: `${prenom || ''} ${nom || ''} vient de s'inscrire (client).`,
         data: { userId: user._id, userType: 'user', email }
-      })));
-      try { notifs.forEach(n => getIO().to(`admin:${n.recipientId}`).emit('notification:new', n)); } catch {}
+      }))).then(notifs => {
+        try { notifs.forEach(n => getIO().to(`admin:${n.recipientId}`).emit('notification:new', n)); } catch {}
+      }).catch(e => console.error('Erreur insertion notifications:', e.message));
+      
       // Emails aux admins selon préférences
-      await Promise.all((admins || []).map(async (a) => {
+      Promise.all((admins || []).map(async (a) => {
         if (!a?.email) return;
         const wantsEmail = (a.emailNotifications !== false) && (a?.topics?.inscriptions !== false);
         if (!wantsEmail) return;
         try {
           await sendAdminNewRegistrationEmail(a.email, { type: 'client', displayName: `${prenom || ''} ${nom || ''}`.trim(), userEmail: email });
         } catch {}
-      }));
-    } catch (e) {
-      console.error('Erreur notification admin (nouveau client):', e.message);
-    }
+      })).catch(e => console.error('Erreur emails admins:', e.message));
+    }).catch(e => console.error('Erreur notification admin (nouveau client):', e.message));
 
     const token = generateToken(user._id, 'user');
 
@@ -285,37 +283,35 @@ exports.registerTranslataire = async (req, res) => {
       verificationToken
     });
 
-    try {
-      await sendVerificationEmail(email, verificationToken, 'translataire');
-    } catch (e) {
-      console.error('Erreur envoi email vérification (translataire):', e.message);
-      // L'erreur email ne doit pas bloquer l'inscription
-    }
+    // Envoyer l'email de vérification EN ARRIÈRE-PLAN (ne pas attendre)
+    // Désactivé temporairement pour accélérer l'inscription
+    // sendVerificationEmail(email, verificationToken, 'translataire').catch(e => {
+    //   console.error('Erreur envoi email vérification (translataire):', e.message);
+    // });
 
-    // Notifier les admins: nouveau translataire en attente de validation
-    try {
-      const admins = await Admin.find({}, '_id email emailNotifications topics');
-      const notifs = await Notification.insertMany(admins.map(a => ({
+    // Notifier les admins EN ARRIÈRE-PLAN (ne pas attendre)
+    Admin.find({}, '_id email emailNotifications topics').then(admins => {
+      Notification.insertMany(admins.map(a => ({
         recipientId: a._id,
         recipientType: 'admin',
         type: 'account_pending',
         title: 'Nouveau translataire en attente de validation',
         message: `${nomEntreprise} vient de s'inscrire (translataire).`,
         data: { userId: translataire._id, userType: 'translataire', email }
-      })));
-      try { notifs.forEach(n => getIO().to(`admin:${n.recipientId}`).emit('notification:new', n)); } catch {}
+      }))).then(notifs => {
+        try { notifs.forEach(n => getIO().to(`admin:${n.recipientId}`).emit('notification:new', n)); } catch {}
+      }).catch(e => console.error('Erreur insertion notifications:', e.message));
+      
       // Emails aux admins selon préférences
-      await Promise.all((admins || []).map(async (a) => {
+      Promise.all((admins || []).map(async (a) => {
         if (!a?.email) return;
         const wantsEmail = (a.emailNotifications !== false) && (a?.topics?.inscriptions !== false);
         if (!wantsEmail) return;
         try {
           await sendAdminNewRegistrationEmail(a.email, { type: 'translataire', companyName: nomEntreprise || '', userEmail: email });
         } catch {}
-      }));
-    } catch (e) {
-      console.error('Erreur notification admin (nouveau translataire):', e.message);
-    }
+      })).catch(e => console.error('Erreur emails admins:', e.message));
+    }).catch(e => console.error('Erreur notification admin (nouveau translataire):', e.message));
 
     const token = generateToken(translataire._id, 'translataire');
 
