@@ -20,12 +20,14 @@ import {
 import { transitareStyles, transitareCss } from '../styles/tableauBoardTransitareStyle.jsx';
 import SideBare from './sideBare';
 import { logout, listNotifications, markNotificationRead, markAllNotificationsRead, getUnreadNotificationsCount, listTransitaireDevis, respondDevisTransitaire, getTransitaireStats, get } from '../services/apiClient.js';
+import { useI18n } from '../src/i18n.jsx';
 
 const TransitaireDashboard = () => {
   const [activeTab, setActiveTab] = useState('en-attente');
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isLgUp, setIsLgUp] = useState(() => (typeof window !== 'undefined' ? window.innerWidth >= 992 : true));
   const { info, success } = useToast();
+  const { t } = useI18n();
   const [searchFilter, setSearchFilter] = useState('');
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [activeSideItem, setActiveSideItem] = useState(() => (typeof window !== 'undefined' && window.location.hash === '#/profile') ? 'profil' : 'dashboard');
@@ -351,8 +353,8 @@ const TransitaireDashboard = () => {
         onOpenChange={(o)=>setSidebarOpen(!!o)}
         activeId={activeSideItem}
         items={[
-          { id: 'dashboard', label: 'Tableau de bord', icon: LayoutGrid },
-          { id: 'profil', label: 'Mon profil', icon: User },
+          { id: 'dashboard', label: t('forwarder.sidebar.dashboard'), icon: LayoutGrid },
+          { id: 'profil', label: t('forwarder.sidebar.profile'), icon: User },
         ]}
         onNavigate={(id) => {
           setActiveSideItem(id);
@@ -383,68 +385,68 @@ const TransitaireDashboard = () => {
             </button>
           )}
           <div className="d-flex align-items-center gap-2 ms-auto">
-          <button className="btn btn-link position-relative" onClick={onBellClick} aria-label="Notifications">
-            <Bell size={20} />
-            {unreadCount > 0 && <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">{unreadCount}</span>}
-          </button>
-          {notifOpen && (
-            <div className="card shadow-sm" style={{ position: 'absolute', top: '100%', right: 48, zIndex: 1050, minWidth: 320 }}>
-              <div className="card-body p-0">
-                <div className="d-flex justify-content-between align-items-center px-3 py-2 border-bottom">
-                  <div className="fw-semibold">Notifications</div>
-                  <button className="btn btn-sm btn-link" onClick={onMarkAll}>Tout marquer lu</button>
-                </div>
-                {notifLoading ? (
-                  <div className="p-3 small text-muted">Chargement...</div>
-                ) : (
-                  <div className="list-group list-group-flush">
-                    {(notifs.length ? notifs : []).map(n => (
-                      <button key={n.id} className={`list-group-item list-group-item-action d-flex justify-content-between ${n.read ? '' : 'fw-semibold'}`} onClick={() => onNotifClick(n.id)}>
-                        <div className="me-2" style={{ whiteSpace: 'normal', textAlign: 'left' }}>
-                          <div>{n.title || 'Notification'}</div>
-                          {n.body && <div className="small text-muted">{n.body}</div>}
-                        </div>
-                        {!n.read && <span className="badge bg-primary">Nouveau</span>}
-                      </button>
-                    ))}
-                    {!notifs.length && <div className="p-3 small text-muted">Aucune notification</div>}
+            <button className="btn btn-link position-relative" onClick={onBellClick} aria-label={t('forwarder.header.notifications')}>
+              <Bell size={20} />
+              {unreadCount > 0 && <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">{unreadCount}</span>}
+            </button>
+            {notifOpen && (
+              <div className="card shadow-sm" style={{ position: 'absolute', top: '100%', right: 48, zIndex: 1050, minWidth: 320 }}>
+                <div className="card-body p-0">
+                  <div className="d-flex justify-content-between align-items-center px-3 py-2 border-bottom">
+                    <div className="fw-semibold">{t('forwarder.header.notifications')}</div>
+                    <button className="btn btn-sm btn-link" onClick={onMarkAll}>{t('forwarder.header.mark_all_read')}</button>
                   </div>
-                )}
+                  {notifLoading ? (
+                    <div className="p-3 small text-muted">{t('forwarder.header.loading')}</div>
+                  ) : (
+                    <div className="list-group list-group-flush">
+                      {(notifs.length ? notifs : []).map(n => (
+                        <button key={n.id} className={`list-group-item list-group-item-action d-flex justify-content-between ${n.read ? '' : 'fw-semibold'}`} onClick={() => onNotifClick(n.id)}>
+                          <div className="me-2" style={{ whiteSpace: 'normal', textAlign: 'left' }}>
+                            <div>{n.title || t('forwarder.header.notifications')}</div>
+                            {n.body && <div className="small text-muted">{n.body}</div>}
+                          </div>
+                          {!n.read && <span className="badge bg-primary">Nouveau</span>}
+                        </button>
+                      ))}
+                      {!notifs.length && <div className="p-3 small text-muted">{t('forwarder.header.no_notifications')}</div>}
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          )}
-          <button className="btn p-0 border-0 bg-transparent" onClick={() => setProfileMenuOpen(!profileMenuOpen)} aria-label="Ouvrir menu profil">
-            <img src={avatarUrl} alt="Profil" className="rounded-circle" style={{ width: 36, height: 36, objectFit: 'cover', border: '2px solid #e9ecef' }} />
-          </button>
-          {profileMenuOpen && (
-            <div className="card shadow-sm" style={{ position: 'absolute', top: '100%', right: 0, zIndex: 1050, minWidth: '200px' }}>
-              <div className="list-group list-group-flush">
-                <button className="list-group-item list-group-item-action" onClick={() => { setProfileMenuOpen(false); window.location.hash = '#/profile'; }}>
-                  Modifier profil
-                </button>
-                <button className="list-group-item list-group-item-action" onClick={() => { setProfileMenuOpen(false); window.location.hash = '#/changer-mot-de-passe'; }}>
-                  Modifier mot de passe
-                </button>
-                <button className="list-group-item list-group-item-action text-danger" onClick={async () => { setProfileMenuOpen(false); try { await logout(); } finally { window.location.hash = '#/connexion'; } }}>
-                  Se déconnecter
-                </button>
+            )}
+            <button className="btn p-0 border-0 bg-transparent" onClick={() => setProfileMenuOpen(!profileMenuOpen)} aria-label={t('forwarder.header.open_profile_menu')}>
+              <img src={avatarUrl} alt="Profil" className="rounded-circle" style={{ width: 36, height: 36, objectFit: 'cover', border: '2px solid #e9ecef' }} />
+            </button>
+            {profileMenuOpen && (
+              <div className="card shadow-sm" style={{ position: 'absolute', top: '100%', right: 0, zIndex: 1050, minWidth: '200px' }}>
+                <div className="list-group list-group-flush">
+                  <button className="list-group-item list-group-item-action" onClick={() => { setProfileMenuOpen(false); window.location.hash = '#/profile'; }}>
+                    {t('forwarder.header.menu.edit_profile')}
+                  </button>
+                  <button className="list-group-item list-group-item-action" onClick={() => { setProfileMenuOpen(false); window.location.hash = '#/changer-mot-de-passe'; }}>
+                    {t('forwarder.header.menu.edit_password')}
+                  </button>
+                  <button className="list-group-item list-group-item-action text-danger" onClick={async () => { setProfileMenuOpen(false); try { await logout(); } finally { window.location.hash = '#/connexion'; } }}>
+                    {t('forwarder.header.menu.logout')}
+                  </button>
+                </div>
               </div>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
         </div>
 
         {/* Main content area */}
         <div className="container-fluid px-2 px-md-4 py-3 py-md-4">
           {/* Page Title */}
           <div className="d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between gap-2 mb-3 mb-md-4">
-            <h1 className="h3 h2-md fw-bold mb-0">Tableau de Bord des Devis</h1>
-            <button className="btn btn-outline-secondary btn-sm" onClick={async ()=>{ try { await fetchDevis({ page:1, limit, status: activeTab }); lastStatsAtRef.current = 0; await updateStats(); } catch {} }}>Rafraîchir</button>
+            <h1 className="h3 h2-md fw-bold mb-0">{t('forwarder.page.title')}</h1>
+            <button className="btn btn-outline-secondary btn-sm" onClick={async ()=>{ try { await fetchDevis({ page:1, limit, status: activeTab }); lastStatsAtRef.current = 0; await updateStats(); } catch {} }}>{t('forwarder.page.refresh')}</button>
           </div>
 
           {/* Stats Section */}
           <div className="mb-3 mb-md-4">
-            <h5 className="fw-semibold mb-3">Vue d'ensemble de l'activité</h5>
+            <h5 className="fw-semibold mb-3">{t('forwarder.stats.title')}</h5>
             <div className="row g-2 g-md-3">
               {stats.map((stat, index) => (
                 <div key={index} className="col-12 col-sm-6 col-lg-3">
@@ -472,7 +474,7 @@ const TransitaireDashboard = () => {
                       className={`btn ${activeTab === tab.id ? 'text-white' : 'btn-light'}`}
                       style={{ backgroundColor: activeTab === tab.id ? transitareStyles.primary : undefined, border: 'none' }}
                     >
-                      {tab.label} ({tab.count})
+                      {tab.id === 'en-attente' ? t('forwarder.tabs.pending') : tab.id === 'en-cours' ? t('forwarder.tabs.in_progress') : t('forwarder.tabs.processed')} ({tab.count})
                     </button>
                   ))}
                 </div>
@@ -480,7 +482,7 @@ const TransitaireDashboard = () => {
                   <span className="input-group-text bg-white">
                     <Search size={18} />
                   </span>
-                  <input type="text" className="form-control" placeholder="Filtrer par ID, client..." value={searchFilter} onChange={(e) => setSearchFilter(e.target.value)} />
+                  <input type="text" className="form-control" placeholder={t('forwarder.search.placeholder')} value={searchFilter} onChange={(e) => setSearchFilter(e.target.value)} />
                 </div>
               </div>
 
@@ -489,28 +491,28 @@ const TransitaireDashboard = () => {
                 <table className="table table-hover mb-0">
                   <thead className="bg-light">
                     <tr>
-                      <th className="px-4 py-3">ID DEVIS</th>
-                      <th className="py-3">CLIENT</th>
-                      <th className="py-3">DATE</th>
-                      <th className="py-3">ORIGINE/DESTINATION</th>
-                      <th className="py-3">STATUT</th>
-                      <th className="py-3">ACTIONS</th>
+                      <th className="px-4 py-3">{t('forwarder.table.header.id')}</th>
+                      <th className="py-3">{t('forwarder.table.header.client')}</th>
+                      <th className="py-3">{t('forwarder.table.header.date')}</th>
+                      <th className="py-3">{t('forwarder.table.header.route')}</th>
+                      <th className="py-3">{t('forwarder.table.header.status')}</th>
+                      <th className="py-3">{t('forwarder.table.header.actions')}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {loading && (
                       <tr>
-                        <td colSpan="6" className="py-4 text-center text-muted">Chargement…</td>
+                        <td colSpan="6" className="py-4 text-center text-muted">{t('forwarder.table.loading')}</td>
                       </tr>
                     )}
                     {!loading && error && (
                       <tr>
-                        <td colSpan="6" className="py-4 text-center text-danger">{error}</td>
+                        <td colSpan="6" className="py-4 text-center text-danger">{t('forwarder.table.error')}</td>
                       </tr>
                     )}
                     {!loading && !error && rows.length === 0 && (
                       <tr>
-                        <td colSpan="6" className="py-4 text-center text-muted">Aucun devis trouvé</td>
+                        <td colSpan="6" className="py-4 text-center text-muted">{t('forwarder.table.empty')}</td>
                       </tr>
                     )}
                     {!loading && !error && rows.map((item) => (
@@ -535,7 +537,7 @@ const TransitaireDashboard = () => {
 
               {/* Pagination */}
               <div className="d-flex justify-content-between align-items-center p-3 border-top">
-                <p className="text-muted small mb-0">Page {page} {total ? `sur ${Math.max(1, Math.ceil(total / limit))}` : ''}</p>
+                <p className="text-muted small mb-0">{t('forwarder.table.pagination.label')} {page} {total ? ` / ${Math.max(1, Math.ceil(total / limit))}` : ''}</p>
                 <div className="d-flex align-items-center gap-2">
                   <select className="form-select form-select-sm" style={{ width: 80 }} value={limit} onChange={(e)=>{ const l=Number(e.target.value)||10; setLimit(l); setPage(1); fetchDevis({ page:1, limit:l }); }}>
                     {[5,10,20,50].map(n => <option key={n} value={n}>{n}/p</option>)}
@@ -543,10 +545,10 @@ const TransitaireDashboard = () => {
                   <nav>
                     <ul className="pagination pagination-sm mb-0">
                       <li className={`page-item ${page<=1?'disabled':''}`}>
-                        <button className="page-link" onClick={()=>{ if(page>1){ const p=page-1; setPage(p); fetchDevis({ page:p, limit }); window.scrollTo({ top:0, behavior:'smooth' }); } }}>Précédent</button>
+                        <button className="page-link" onClick={()=>{ if(page>1){ const p=page-1; setPage(p); fetchDevis({ page:p, limit }); window.scrollTo({ top:0, behavior:'smooth' }); } }}>{t('forwarder.table.pagination.prev')}</button>
                       </li>
                       <li className={`page-item ${total && page>=Math.ceil(total/limit)?'disabled':''}`}>
-                        <button className="page-link" onClick={()=>{ const max = total?Math.ceil(total/limit):page+1; if(!total || page<max){ const p=page+1; setPage(p); fetchDevis({ page:p, limit }); window.scrollTo({ top:0, behavior:'smooth' }); } }}>Suivant</button>
+                        <button className="page-link" onClick={()=>{ const max = total?Math.ceil(total/limit):page+1; if(!total || page<max){ const p=page+1; setPage(p); fetchDevis({ page:p, limit }); window.scrollTo({ top:0, behavior:'smooth' }); } }}>{t('forwarder.table.pagination.next')}</button>
                       </li>
                     </ul>
                   </nav>

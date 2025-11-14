@@ -13,9 +13,11 @@ import HistoriqueDevis from './historiqueDevis.jsx';
 import { get, post, logout, listNotifications, markNotificationRead, markAllNotificationsRead, getUnreadNotificationsCount, cancelDevis as cancelDevisApi, listMesDevis as listMesDevisApi, updateMonDevis, getMonDevisById } from '../services/apiClient.js';
 import { useToast } from './ui/ToastProvider.jsx';
 import { getAuth, isAdmin as isAdminRole, isTrans as isTransRole } from '../services/authStore.js';
+import { useI18n } from '../src/i18n.jsx';
 
 const ClientDashboard = () => {
   const toast = useToast();
+  const { t } = useI18n();
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isLgUp, setIsLgUp] = useState(() => (typeof window !== 'undefined' ? window.innerWidth >= 992 : true));
@@ -474,6 +476,15 @@ const getUserDisplayName = () => {
 };
 const userDisplayName = getUserDisplayName();
 
+const [showIntroWelcome, setShowIntroWelcome] = useState(true);
+
+useEffect(() => {
+  const timer = setTimeout(() => {
+    setShowIntroWelcome(false);
+  }, 10000);
+  return () => clearTimeout(timer);
+}, []);
+
 return (
   <div className="d-flex" style={{ ...clientStyles.layout, backgroundColor: 'var(--bg)' }}>
     <style>{clientCss}</style>
@@ -487,12 +498,12 @@ return (
       onOpenChange={(o)=>setSidebarOpen(!!o)}
       activeId={section}
       items={[
-        { id: 'dashboard', label: 'Tableau de bord', icon: LayoutGrid },
-        { id: 'recherche', label: 'Trouver un transitaire', icon: Search },
-        { id: 'devis', label: 'Nouveau devis', icon: FileText },
-        { id: 'historique', label: 'Historique', icon: Clock },
-        { id: 'envois', label: 'Suivi des envois', icon: Truck },
-        { id: 'profil', label: 'Mon profil', icon: User },
+        { id: 'dashboard', label: t('client.sidebar.dashboard'), icon: LayoutGrid },
+        { id: 'recherche', label: t('client.sidebar.search_forwarder'), icon: Search },
+        { id: 'devis', label: t('client.sidebar.new_quote'), icon: FileText },
+        { id: 'historique', label: t('client.sidebar.history'), icon: Clock },
+        { id: 'envois', label: t('client.sidebar.shipments'), icon: Truck },
+        { id: 'profil', label: t('client.sidebar.profile'), icon: User },
       ]}
       onNavigate={(id) => {
         setSection(id);
@@ -531,7 +542,7 @@ return (
           </button>
         )}
         <div className="ms-auto d-flex align-items-center gap-2 position-relative">
-          <button className="btn btn-link position-relative" onClick={onBellClick} aria-label="Notifications">
+          <button className="btn btn-link position-relative" onClick={onBellClick} aria-label={t('client.header.notifications')}>
             <Bell size={20} />
             {unreadCount > 0 && (
               <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">{unreadCount}</span>
@@ -541,42 +552,42 @@ return (
             <div className="card shadow-sm" style={{ position: 'absolute', top: '100%', right: 0, zIndex: 1050, minWidth: 320 }}>
               <div className="card-body p-0">
                 <div className="d-flex justify-content-between align-items-center px-3 py-2 border-bottom">
-                  <div className="fw-semibold">Notifications</div>
-                  <button className="btn btn-sm btn-link" onClick={onMarkAll}>Tout marquer lu</button>
+                  <div className="fw-semibold">{t('client.header.notifications')}</div>
+                  <button className="btn btn-sm btn-link" onClick={onMarkAll}>{t('client.header.mark_all_read')}</button>
                 </div>
                 {notifLoading ? (
-                  <div className="p-3 small text-muted">Chargement...</div>
+                  <div className="p-3 small text-muted">{t('client.header.loading')}</div>
                 ) : (
                   <div className="list-group list-group-flush">
                     {(notifs.length ? notifs : []).map(n => (
                       <button key={n.id || n._id} className={`list-group-item list-group-item-action d-flex justify-content-between ${n.read ? '' : 'fw-semibold'}`} onClick={() => onNotifClick(n.id || n._id, n)}>
                         <div className="me-2" style={{ whiteSpace: 'normal', textAlign: 'left' }}>
-                          <div>{n.title || 'Notification'}</div>
+                          <div>{n.title || t('client.header.notifications')}</div>
                           {n.body && <div className="small text-muted">{n.body}</div>}
                         </div>
                         {!n.read && <span className="badge bg-primary">Nouveau</span>}
                       </button>
                     ))}
-                    {!notifs.length && <div className="p-3 small text-muted">Aucune notification</div>}
+                    {!notifs.length && <div className="p-3 small text-muted">{t('client.header.no_notifications')}</div>}
                   </div>
                 )}
               </div>
             </div>
           )}
-          <button className="btn p-0 border-0 bg-transparent" onClick={() => setProfileMenuOpen(!profileMenuOpen)} aria-label="Ouvrir menu profil">
+          <button className="btn p-0 border-0 bg-transparent" onClick={() => setProfileMenuOpen(!profileMenuOpen)} aria-label={t('client.header.open_profile_menu')}>
             <img src={avatarUrl} alt="Profil" className="rounded-circle" style={{ width: 36, height: 36, objectFit: 'cover', border: '2px solid #e9ecef' }} />
           </button>
           {profileMenuOpen && (
             <div className="card shadow-sm" style={{ position: 'absolute', top: '100%', right: 0, zIndex: 1050, minWidth: '200px' }}>
               <div className="list-group list-group-flush">
                 <button className="list-group-item list-group-item-action" onClick={() => { setProfileMenuOpen(false); setSection('profil'); }}>
-                  Modifier profil
+                  {t('client.header.menu.edit_profile')}
                 </button>
                 <button className="list-group-item list-group-item-action" onClick={() => { setProfileMenuOpen(false); window.location.hash = '#/modifierModpss'; }}>
-                  Modifier mot de passe
+                  {t('client.header.menu.edit_password')}
                 </button>
                 <button className="list-group-item list-group-item-action text-danger" onClick={async () => { setProfileMenuOpen(false); try { await logout(); } finally { window.location.hash = '#/connexion'; } }}>
-                  Se déconnecter
+                  {t('client.header.menu.logout')}
                 </button>
               </div>
             </div>
@@ -603,8 +614,10 @@ return (
           <div className="default-wrap">
             {/* Welcome Section */}
             <div className="mb-4">
-              <h1 className="h2 fw-bold mb-2">Bonjour, {userDisplayName} !</h1>
-              <p className="text-muted">Voici un aperçu de votre activité récente.</p>
+              <h1 className="h2 fw-bold mb-2">
+                {t('client.welcome.title_prefix')}, {showIntroWelcome ? 'Bienvenue' : userDisplayName} !
+              </h1>
+              <p className="text-muted">{t('client.welcome.subtitle')}</p>
             </div>
 
             <div className="row g-2 g-md-3 g-lg-4">
@@ -614,11 +627,11 @@ return (
                 <div className="card border-0 shadow-sm mb-4" style={{ backgroundColor: 'var(--card)' }}>
                   <div className="card-body" style={{ backgroundColor: 'var(--card)' }}>
                     <div className="d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between gap-2 mb-3">
-                      <h5 className="fw-bold mb-0">Mes devis</h5>
+                      <h5 className="fw-bold mb-0">{t('client.quotes.title')}</h5>
                       <div className="btn-group btn-group-sm">
-                        <button className={`btn ${devisFilter==='tous'?'btn-primary text-white':'btn-light'}`} onClick={()=>setDevisFilter('tous')}>Tous</button>
-                        <button className={`btn ${devisFilter==='accepte'?'btn-primary text-white':'btn-light'}`} onClick={()=>setDevisFilter('accepte')}>Acceptés</button>
-                        <button className={`btn ${devisFilter==='attente'?'btn-primary text-white':'btn-light'}`} onClick={()=>setDevisFilter('attente')}>En attente</button>
+                        <button className={`btn ${devisFilter==='tous'?'btn-primary text-white':'btn-light'}`} onClick={()=>setDevisFilter('tous')}>{t('client.quotes.filter.all')}</button>
+                        <button className={`btn ${devisFilter==='accepte'?'btn-primary text-white':'btn-light'}`} onClick={()=>setDevisFilter('accepte')}>{t('client.quotes.filter.accepted')}</button>
+                        <button className={`btn ${devisFilter==='attente'?'btn-primary text-white':'btn-light'}`} onClick={()=>setDevisFilter('attente')}>{t('client.quotes.filter.pending')}</button>
                       </div>
                     </div>
                     <div className="d-flex flex-column gap-3">
@@ -627,21 +640,31 @@ return (
                           <div className="d-flex flex-column flex-sm-row justify-content-between align-items-start gap-2">
                             <div className="d-flex flex-column flex-grow-1" style={{ minWidth: 0 }}>
                               <div className="d-flex align-items-center gap-2 flex-wrap">
-                                <span className={`badge rounded-pill px-2 px-md-3 py-1 py-md-2 ${item.status === 'accepte' ? 'bg-success' : item.status === 'refuse' ? 'bg-danger' : item.status === 'annule' ? 'bg-secondary' : 'bg-warning text-dark' }`}>{item.statusLabel}</span>
+                                <span className={`badge rounded-pill px-2 px-md-3 py-1 py-md-2 ${item.status === 'accepte' ? 'bg-success' : item.status === 'refuse' ? 'bg-danger' : item.status === 'annule' ? 'bg-secondary' : 'bg-warning text-dark' }`}>
+                                  {item.status === 'accepte'
+                                    ? t('client.quotes.status.accepted')
+                                    : item.status === 'refuse'
+                                      ? t('client.quotes.status.refused')
+                                      : item.status === 'annule'
+                                        ? t('client.quotes.status.canceled')
+                                        : item.status === 'attente'
+                                          ? t('client.quotes.status.waiting')
+                                          : item.statusLabel}
+                                </span>
                                 <span className="text-muted small text-truncate" title={item.id} style={{ fontFamily:'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace', maxWidth: '150px' }}>#{String(item.id).slice(0,10)}…</span>
                               </div>
-                              <div className="mt-2 fw-semibold" style={{ fontSize: '15px' }}>{item.routeLabel && item.routeLabel !== '-' ? item.routeLabel : 'Itinéraire non renseigné'}</div>
+                              <div className="mt-2 fw-semibold" style={{ fontSize: '15px' }}>{item.routeLabel && item.routeLabel !== '-' ? item.routeLabel : t('client.quotes.route_missing')}</div>
                               <div className="text-muted small">{item.date}</div>
                             </div>
                             <div className="d-flex flex-row flex-sm-row align-items-start gap-1 gap-sm-2 flex-shrink-0">
-                              <a className="btn btn-sm btn-outline-secondary" href={`#/detail-devis-client?id=${encodeURIComponent(item.id)}`}>Détail</a>
+                              <a className="btn btn-sm btn-outline-secondary" href={`#/detail-devis-client?id=${encodeURIComponent(item.id)}`}>{t('client.quotes.detail')}</a>
                               {item.status === 'attente' && (
                                 confirmCancelId === item.id ? (
-                                  <button className="btn btn-sm btn-danger" onClick={() => cancelDevis(item.id)}>Confirmer</button>
+                                  <button className="btn btn-sm btn-danger" onClick={() => cancelDevis(item.id)}>{t('client.quotes.cancel.confirm')}</button>
                                 ) : (
                                   <>
-                                    <button className="btn btn-sm btn-outline-secondary" onClick={() => onOpenEdit(item)}>Modifier</button>
-                                    <button className="btn btn-sm btn-outline-danger" onClick={() => cancelDevis(item.id)}>Annuler</button>
+                                    <button className="btn btn-sm btn-outline-secondary" onClick={() => onOpenEdit(item)}>{t('client.quotes.edit')}</button>
+                                    <button className="btn btn-sm btn-outline-danger" onClick={() => cancelDevis(item.id)}>{t('client.quotes.cancel')}</button>
                                   </>
                                 )
                               )}
@@ -651,7 +674,7 @@ return (
                       ))}
                     </div>
                     <div className="d-flex flex-column flex-sm-row justify-content-between align-items-center gap-2 p-2 p-md-3 border-top">
-                      <p className="text-muted small mb-0 text-center text-sm-start">Page {page} {total ? `sur ${Math.max(1, Math.ceil(total / limit))}` : ''}</p>
+                      <p className="text-muted small mb-0 text-center text-sm-start">{t('client.quotes.pagination.label')} {page} {total ? ` / ${Math.max(1, Math.ceil(total / limit))}` : ''}</p>
                       <div className="d-flex align-items-center gap-2 flex-wrap">
                         <select className="form-select form-select-sm" style={{ width: 80 }} value={limit} onChange={(e) => { const l = Number(e.target.value)||10; setLimit(l); setPage(1); fetchDevis({ page: 1, limit: l }); }}>
                           {[5,10,20,50].map(n => <option key={n} value={n}>{n}/p</option>)}
@@ -659,10 +682,10 @@ return (
                         <nav>
                           <ul className="pagination pagination-sm mb-0">
                             <li className={`page-item ${page <= 1 ? 'disabled' : ''}`}>
-                              <button className="page-link" onClick={() => { if (page>1) { const p=page-1; setPage(p); fetchDevis({ page: p, limit }); window.scrollTo({ top: 0, behavior: 'smooth' }); } }}>Précédent</button>
+                              <button className="page-link" onClick={() => { if (page>1) { const p=page-1; setPage(p); fetchDevis({ page: p, limit }); window.scrollTo({ top: 0, behavior: 'smooth' }); } }}>{t('client.quotes.pagination.prev')}</button>
                             </li>
                             <li className={`page-item ${total && page >= Math.ceil(total/limit) ? 'disabled' : ''}`}>
-                              <button className="page-link" onClick={() => { const max = total ? Math.ceil(total/limit) : page+1; if (!total || page < max) { const p=page+1; setPage(p); fetchDevis({ page: p, limit }); window.scrollTo({ top: 0, behavior: 'smooth' }); } }}>Suivant</button>
+                              <button className="page-link" onClick={() => { const max = total ? Math.ceil(total/limit) : page+1; if (!total || page < max) { const p=page+1; setPage(p); fetchDevis({ page: p, limit }); window.scrollTo({ top: 0, behavior: 'smooth' }); } }}>{t('client.quotes.pagination.next')}</button>
                             </li>
                           </ul>
                         </nav>
@@ -680,12 +703,12 @@ return (
                 <div className="card border-0 shadow-sm" style={{ backgroundColor: 'var(--card)' }}>
                   <div className="card-body" style={{ backgroundColor: 'var(--card)' }}>
                     <div className="d-flex justify-content-between align-items-center mb-3">
-                      <h5 className="fw-bold mb-0">Activité récente</h5>
-                      <button className="btn btn-sm btn-link" onClick={onBellClick}>Voir tout</button>
+                      <h5 className="fw-bold mb-0">{t('client.activity.title')}</h5>
+                      <button className="btn btn-sm btn-link" onClick={onBellClick}>{t('client.activity.view_all')}</button>
                     </div>
                     <div className="d-flex flex-column gap-3">
                       {recentActivities.length === 0 && (
-                        <div className="text-muted small">Aucune activité récente.</div>
+                        <div className="text-muted small">{t('client.activity.none')}</div>
                       )}
                       {recentActivities.map((a) => {
                         const isSuccess = a.type.includes('approve') || a.type.includes('appr') || a.type.includes('success');

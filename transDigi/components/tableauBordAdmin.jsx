@@ -24,8 +24,10 @@ import GestionUtilisateurs from './gestionUtilisateur.jsx';
 import GestionTransitaire from './gestionTransitaire.jsx';
 import ValidationCompte from './validationCompte.jsx';
 import HistoriqueDevis from './historiqueDevis.jsx';
+import { useI18n } from '../src/i18n.jsx';
 
 const AdminDashboard = () => {
+  const { t } = useI18n();
   const [activeMenu, setActiveMenu] = useState('apercu');
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [section, setSection] = useState('validation');
@@ -156,11 +158,11 @@ const AdminDashboard = () => {
   const colorBorder = (cssVars?.getPropertyValue('--border') || '#1f2937').trim();
 
   const stats = useMemo(() => ([
-    { label: 'Comptes en attente', value: String(statsData.pending || 0), icon: Shield, bgColor: '#E3F2FD', iconColor: '#2196F3' },
-    { label: 'Utilisateurs actifs', value: String(statsData.usersActive || 0), icon: Users, bgColor: '#E8F5E9', iconColor: '#28A745' },
-    { label: 'Transitaires vérifiés', value: String(statsData.transVerified || 0), icon: Truck, bgColor: '#FFF3E0', iconColor: '#FF9800' },
-    { label: 'Comptes bloqués', value: String(statsData.blocked || 0), icon: XCircle, bgColor: '#FFEBEE', iconColor: '#F44336' }
-  ]), [statsData]);
+    { label: t('admin.stats.pending_accounts'), value: String(statsData.pending || 0), icon: Shield, bgColor: '#E3F2FD', iconColor: '#2196F3' },
+    { label: t('admin.stats.active_users'), value: String(statsData.usersActive || 0), icon: Users, bgColor: '#E8F5E9', iconColor: '#28A745' },
+    { label: t('admin.stats.verified_forwarders'), value: String(statsData.transVerified || 0), icon: Truck, bgColor: '#FFF3E0', iconColor: '#FF9800' },
+    { label: t('admin.stats.blocked_accounts'), value: String(statsData.blocked || 0), icon: XCircle, bgColor: '#FFEBEE', iconColor: '#F44336' }
+  ]), [statsData, t]);
 
   const chartRef = useRef(null);
   useEffect(() => {
@@ -264,10 +266,10 @@ const AdminDashboard = () => {
 
   const menuItems = [
     { id: 'apercu', label: 'Aperçu', icon: LayoutGrid },
-    { id: 'validation', label: 'Validation des comptes', icon: Shield },
-    { id: 'utilisateurs', label: 'Utilisateurs', icon: Users },
-    { id: 'transitaires', label: 'Transitaires', icon: Truck },
-    { id: 'statistiques', label: 'Statistiques des devis', icon: TrendingUp }
+    { id: 'validation', label: t('admin.sidebar.validation'), icon: Shield },
+    { id: 'utilisateurs', label: t('admin.sidebar.clients'), icon: Users },
+    { id: 'transitaires', label: t('admin.sidebar.forwarders'), icon: Truck },
+    { id: 'statistiques', label: t('admin.devis.stats.title'), icon: TrendingUp }
   ];
 
   const [isLgUp, setIsLgUp] = useState(() => (typeof window !== 'undefined' ? window.innerWidth >= 992 : true));
@@ -289,10 +291,10 @@ const AdminDashboard = () => {
         open={sidebarOpen}
         onOpenChange={(o)=>setSidebarOpen(!!o)}
         items={[
-          { id: 'dashboard', label: 'Tableau de bord', icon: LayoutGrid },
-          { id: 'validation', label: 'Validation des comptes', icon: Shield },
-          { id: 'clients', label: 'Clients', icon: Users },
-          { id: 'transitaires', label: 'Transitaires', icon: Truck },
+          { id: 'dashboard', label: t('admin.sidebar.dashboard'), icon: LayoutGrid },
+          { id: 'validation', label: t('admin.sidebar.validation'), icon: Shield },
+          { id: 'clients', label: t('admin.sidebar.clients'), icon: Users },
+          { id: 'transitaires', label: t('admin.sidebar.forwarders'), icon: Truck },
         ]}
         closeOnNavigate={false}
         defaultOpen={true}
@@ -304,7 +306,7 @@ const AdminDashboard = () => {
       {/* Main Content */}
       <div className="flex-grow-1" style={{ marginLeft: isLgUp ? (sidebarOpen ? '240px' : '56px') : '0', transition: 'margin-left .25s ease', backgroundColor: 'var(--bg)' }}>
         <div className="d-flex justify-content-end align-items-center gap-2 position-relative">
-          <button className="btn btn-link position-relative" onClick={onBellClick} aria-label="Notifications">
+          <button className="btn btn-link position-relative" onClick={onBellClick} aria-label={t('admin.header.notifications')}>
             <Bell size={20} />
             {unreadCount > 0 && (
               <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">{unreadCount}</span>
@@ -314,17 +316,17 @@ const AdminDashboard = () => {
             <div className="card shadow-sm" style={{ position: 'absolute', top: '100%', right: 48, zIndex: 1050, minWidth: 320 }}>
               <div className="card-body p-0">
                 <div className="d-flex justify-content-between align-items-center px-3 py-2 border-bottom">
-                  <div className="fw-semibold">Notifications</div>
-                  <button className="btn btn-sm btn-link" onClick={onMarkAll}>Tout marquer lu</button>
+                  <div className="fw-semibold">{t('admin.header.notifications')}</div>
+                  <button className="btn btn-sm btn-link" onClick={onMarkAll}>{t('admin.header.mark_all_read')}</button>
                 </div>
                 {notifLoading ? (
-                  <div className="p-3 small text-muted">Chargement...</div>
+                  <div className="p-3 small text-muted">{t('admin.header.loading')}</div>
                 ) : (
                   <div className="list-group list-group-flush">
                     {(notifs.length ? notifs : []).map(n => (
                       <button key={n.id || n._id} className={`list-group-item list-group-item-action d-flex justify-content-between ${n.read ? '' : 'fw-semibold'}`} onClick={() => onNotifClick(n.id || n._id, n)}>
                         <div className="me-2" style={{ whiteSpace: 'normal', textAlign: 'left' }}>
-                          <div>{n.title || 'Notification'}</div>
+                          <div>{n.title || t('admin.header.notifications')}</div>
                           {n.body && <div className="small text-muted">{n.body}</div>}
                           <div className="small text-muted">{n.createdAt ? relTime(new Date(n.createdAt)) : ''}</div>
                           {(() => { const d = n.data || {}; const actor = d.actorName || d.userName || d.clientName || ''; const mail = d.actorEmail || d.userEmail || d.clientEmail || ''; const type = d.actorType || d.userType || ''; return (actor || mail || type) ? (
@@ -334,13 +336,13 @@ const AdminDashboard = () => {
                         {!n.read && <span className="badge bg-primary">Nouveau</span>}
                       </button>
                     ))}
-                    {!notifs.length && <div className="p-3 small text-muted">Aucune notification</div>}
+                    {!notifs.length && <div className="p-3 small text-muted">{t('admin.header.no_notifications')}</div>}
                   </div>
                 )}
               </div>
             </div>
           )}
-          <button className="btn p-0 border-0 bg-transparent" onClick={() => setProfileMenuOpen(!profileMenuOpen)} aria-label="Ouvrir menu profil">
+          <button className="btn p-0 border-0 bg-transparent" onClick={() => setProfileMenuOpen(!profileMenuOpen)} aria-label={t('admin.header.open_profile_menu')}>
             <img 
               src={avatarUrl}
               alt="Profil"
@@ -352,13 +354,13 @@ const AdminDashboard = () => {
             <div className="card shadow-sm" style={{ position: 'absolute', top: '100%', right: 0, zIndex: 1050, minWidth: '200px' }}>
               <div className="list-group list-group-flush">
                 <button className="list-group-item list-group-item-action" onClick={() => { setProfileMenuOpen(false); window.location.hash = '#/modifier-profil'; }}>
-                  Modifier profil
+                  {t('admin.header.menu.edit_profile')}
                 </button>
                 <button className="list-group-item list-group-item-action" onClick={() => { setProfileMenuOpen(false); window.location.hash = '#/modifierModpss'; }}>
-                  Modifier mot de passe
+                  {t('admin.header.menu.edit_password')}
                 </button>
                 <button className="list-group-item list-group-item-action text-danger" onClick={async () => { setProfileMenuOpen(false); try { await logout(); } finally { window.location.hash = '#/connexion'; } }}>
-                  Se déconnecter
+                  {t('admin.header.menu.logout')}
                 </button>
               </div>
             </div>
@@ -377,10 +379,10 @@ const AdminDashboard = () => {
             <>
             <div className="row g-2 g-md-3 g-lg-4 mb-3 mb-md-4">
               {loading && (
-                <div className="col-12"><div className="alert alert-light text-muted m-0">Chargement des statistiques...</div></div>
+                <div className="col-12"><div className="alert alert-light text-muted m-0">{t('admin.devis.stats.loading')}</div></div>
               )}
               {error && !loading && (
-                <div className="col-12"><div className="alert alert-danger m-0">{error}</div></div>
+                <div className="col-12"><div className="alert alert-danger m-0">{t('admin.devis.stats.error')}</div></div>
               )}
               {!loading && stats.map((stat, index) => {
                 const Icon = stat.icon;
@@ -406,19 +408,68 @@ const AdminDashboard = () => {
                 );
               })}
             </div>
+          )}
+        </div>
+      </div>
+    )}
+    <button className="btn p-0 border-0 bg-transparent" onClick={() => setProfileMenuOpen(!profileMenuOpen)} aria-label={t('admin.header.open_profile_menu')}>
+      <img 
+        src={avatarUrl}
+        alt="Profil"
+        className="rounded-circle"
+        style={{ width: 36, height: 36, objectFit: 'cover', border: '2px solid #e9ecef' }}
+      />
+    </button>
+    {profileMenuOpen && (
+      <div className="card shadow-sm" style={{ position: 'absolute', top: '100%', right: 0, zIndex: 1050, minWidth: '200px' }}>
+        <div className="list-group list-group-flush">
+          <button className="list-group-item list-group-item-action" onClick={() => { setProfileMenuOpen(false); window.location.hash = '#/modifier-profil'; }}>
+            {t('admin.header.menu.edit_profile')}
+          </button>
+          <button className="list-group-item list-group-item-action" onClick={() => { setProfileMenuOpen(false); window.location.hash = '#/modifierModpss'; }}>
+            {t('admin.header.menu.edit_password')}
+          </button>
+          <button className="list-group-item list-group-item-action text-danger" onClick={async () => { setProfileMenuOpen(false); try { await logout(); } finally { window.location.hash = '#/connexion'; } }}>
+            {t('admin.header.menu.logout')}
+          </button>
+        </div>
+      </div>
+    )}
+  </div>
 
-            <div className="row g-2 g-md-3 g-lg-4">
-              {/* Chart Section */}
-              <div className="col-12 col-lg-8">
-                <div className="card border-0 shadow-sm">
-                  <div className="card-body">
-                    <div className="d-flex justify-content-between align-items-center mb-2">
-                      <h5 className="card-title fw-bold m-0">Statistiques des devis</h5>
+  {/* Stats Cards */}
+  <div className="container-fluid py-4 px-2 px-md-4">
+    {section === 'clients' ? (
+      <GestionUtilisateurs />
+    ) : section === 'transitaires' ? (
+      <GestionTransitaire />
+    ) : section === 'validation' ? (
+      <ValidationCompte />
+    ) : (
+      <>
+      <div className="row g-2 g-md-3 g-lg-4 mb-3 mb-md-4">
+        {loading && (
+          <div className="col-12"><div className="alert alert-light text-muted m-0">{t('admin.devis.stats.loading')}</div></div>
+        )}
+        {error && !loading && (
+          <div className="col-12"><div className="alert alert-danger m-0">{t('admin.devis.stats.error')}</div></div>
+        )}
+        {!loading && stats.map((stat, index) => {
+          const Icon = stat.icon;
+          return (
+            <div key={index} className="col-12 col-sm-6 col-xl-3">
+              <div className="card border-0 shadow-sm h-100">
+                <div className="card-body">
+                  <div className="d-flex justify-content-between align-items-start">
+                    <div>
+                      <div className="text-muted small mb-1">{t(stat.label)}</div>
+                      <div className="h2 fw-bold mb-0" style={{ color: 'var(--text)' }}>{stat.value}</div>
                     </div>
-                    <div style={{ height: '280px', position: 'relative' }}>
-                      <svg ref={chartRef} width="100%" height="280" viewBox="0 0 800 280" preserveAspectRatio="none">
-                        {(() => {
-                          const data = (statsData.series && statsData.series.length ? statsData.series : [5,8,12,15,13,19,24,22,27,30,28,34]);
+                    <div 
+                      className="rounded-circle p-3"
+                      style={{ backgroundColor: stat.bgColor }}
+                    >
+                      <Icon size={24} style={{ color: stat.iconColor }} />
                           const padding = 36;
                           const width = 800, height = 280;
                           const innerW = width - padding * 2; const innerH = height - padding * 2;
@@ -466,7 +517,7 @@ const AdminDashboard = () => {
                     <div className="card border-0 shadow-sm h-100">
                       <div className="card-body py-3">
                         <div className="d-flex justify-content-between align-items-center mb-2">
-                          <h6 className="m-0">Répartition par statut</h6>
+                          <h6 className="m-0">{t('admin.devis.distribution.title')}</h6>
                         </div>
                         {(() => {
                           const items = (recentActivities || []).filter(x => (x.type||'').includes('devis'));
@@ -476,7 +527,7 @@ const AdminDashboard = () => {
                           const annule = items.filter(x => x.type.includes('cancel')).length;
                           const values = [accepte, enAttente, annule];
                           const colors = ['#28A745','#FFC107','#F44336'];
-                          const labels = ['Accepté','En attente','Annulé'];
+                          const labels = [t('admin.devis.status.accepted'), t('admin.devis.status.pending'), t('admin.devis.status.canceled')];
                           const R = 50, C = 2*Math.PI*R;
                           let acc = 0;
                           const arcs = values.map((v, i) => {
@@ -512,32 +563,32 @@ const AdminDashboard = () => {
                     <div className="card border-0 shadow-sm h-100">
                       <div className="card-body py-3">
                         <div className="d-flex justify-content-between align-items-center mb-2">
-                          <h6 className="m-0">Derniers devis</h6>
+                          <h6 className="m-0">{t('admin.devis.last.title')}</h6>
                         </div>
                         <table className="table table-sm align-middle mb-0" style={{ tableLayout: 'fixed', width: '100%' }}>
                           <thead>
                             <tr>
-                              <th style={{ width: '36%' }}>Transitaire</th>
-                              <th style={{ width: '28%' }}>Client</th>
-                              <th style={{ width: '18%' }}>Statut</th>
-                              <th style={{ width: '18%' }}>Date</th>
+                              <th style={{ width: '36%' }}>{t('admin.devis.last.table.forwarder')}</th>
+                              <th style={{ width: '28%' }}>{t('admin.devis.last.table.client')}</th>
+                              <th style={{ width: '18%' }}>{t('admin.devis.last.table.status')}</th>
+                              <th style={{ width: '18%' }}>{t('admin.devis.last.table.date')}</th>
                             </tr>
                           </thead>
                           <tbody>
                             {(() => {
                               const rows = (recentActivities || []).filter(x => (x.type||'').includes('devis')).slice(0,5);
-                              if (!rows.length) return (<tr><td colSpan={4} className="text-muted small">Aucun devis récent</td></tr>);
+                              if (!rows.length) return (<tr><td colSpan={4} className="text-muted small">{t('admin.devis.last.table.none')}</td></tr>);
                               return rows.map((r,i) => {
                                 const d = r.data || {};
                                 const trans = d.translataireName || d.translataire || '';
                                 const client = d.actorName || d.clientName || '';
-                                const statut = r.type.includes('response') ? 'accepté' : r.type.includes('cancel') ? 'annulé' : 'en attente';
+                                const statut = r.type.includes('response') ? t('admin.devis.status.accepted') : r.type.includes('cancel') ? t('admin.devis.status.canceled') : t('admin.devis.status.pending');
                                 return (
                                   <tr key={r.id || i}>
                                     <td style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{trans || '-'}</td>
                                     <td style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{client || '-'}</td>
                                     <td className="pe-5" style={{ minWidth: 180 }}>
-                                      <span className={`badge ${statut==='accepté'?'bg-success':statut==='annulé'?'bg-danger':'bg-warning text-dark'}`} style={{ marginRight: 32, padding: '6px 10px' }}>{statut}</span>
+                                      <span className={`badge ${statut===t('admin.devis.status.accepted')?'bg-success':statut===t('admin.devis.status.canceled')?'bg-danger':'bg-warning text-dark'}`} style={{ marginRight: 32, padding: '6px 10px' }}>{statut}</span>
                                     </td>
                                     <td className="text-muted ps-4" style={{ whiteSpace: 'nowrap', paddingLeft: 24 }}>{r.time || ''}</td>
                                   </tr>
@@ -556,11 +607,11 @@ const AdminDashboard = () => {
                 <div className="card border-0 shadow-sm h-100">
                   <div className="card-body">
                     <div className="d-flex justify-content-between align-items-center mb-3">
-                      <h5 className="card-title fw-bold m-0">Activité récente</h5>
+                      <h5 className="card-title fw-bold m-0">{t('admin.activity.title')}</h5>
                     </div>
                     <div className="d-flex flex-column gap-3">
                       {recentActivities.length === 0 && (
-                        <div className="text-muted small">Aucune activité récente.</div>
+                        <div className="text-muted small">{t('admin.activity.none')}</div>
                       )}
                       {recentActivities.map((n) => {
                         const t = (n.type || 'info');
