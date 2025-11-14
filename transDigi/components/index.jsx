@@ -117,22 +117,28 @@ import { useI18n } from '../src/i18n.jsx';
     <>
       <style>{`
         @media (max-width: 575.98px) {
-          .hero-section, .hero-inner { min-height: 48vh !important; }
+          /* Sur mobile, on fait en sorte que toute la zone hero soit l'image */
+          .hero-section, .hero-inner { min-height: 70vh !important; }
           .hero-section .carousel-inner,
           .hero-section .carousel-item,
-          .hero-section .carousel-item img { height: 48vh !important; object-fit: cover; }
+          .hero-section .carousel-item img { height: 70vh !important; object-fit: cover; }
           .hero-section .display-4 { font-size: 1.75rem !important; }
           .hero-section .lead { font-size: 1rem !important; }
           .hero-cta { gap: .5rem !important; }
           .hero-cta .btn,
           .hero-section .btn-lg { padding: .5rem 1rem !important; font-size: .95rem !important; border-radius: 10px !important; }
-          /* Move content higher in the image */
-          .hero-inner { align-items: flex-start !important; justify-content: flex-start !important; padding-top: 9vh !important; }
+          /* Centrer le contenu dans l'image sur mobile */
+          .hero-inner { align-items: center !important; justify-content: center !important; padding-top: 0 !important; }
           .hero-section h1.display-4 { margin-bottom: .5rem !important; }
           .hero-section .lead { margin-bottom: .75rem !important; }
-          /* Ensure indicators are inside image */
+          /* Indicateurs bien à l'intérieur de l'image, collés en bas de la photo */
           .hero-section { position: relative; overflow: hidden; }
-          .hero-section .carousel-indicators { position: absolute; bottom: 40px !important; z-index: 5; margin-bottom: 0 !important; }
+          .hero-section .carousel-indicators {
+            position: absolute;
+            bottom: 16px !important;
+            z-index: 5;
+            margin-bottom: 0 !important;
+          }
           .hero-section .carousel-indicators [data-bs-target] { width: 26px; height: 4px; border-radius: 3px; background-color: rgba(255,255,255,0.7); }
           .hero-section .carousel-indicators .active { background-color: #ffffff; width: 28px; }
         }

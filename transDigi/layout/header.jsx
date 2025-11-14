@@ -90,21 +90,30 @@ function Header({ showSidebarToggle = false, onToggleSidebar, hideNavbarToggler 
 
           <div className="d-flex align-items-center gap-2">
             <a className="btn fw-semibold px-4" href="#/connexion" style={{ backgroundColor: '#28A745', color: 'white', border: 'none', borderRadius: '6px' }}>{t('nav.login')}</a>
-            <div className="btn-group ms-2" role="group" aria-label="Language switcher">
-              <button
-                type="button"
-                className={`btn btn-outline-secondary px-3 ${lang === 'fr' ? 'active' : ''}`}
+            <div className="ms-2 d-flex align-items-center" aria-label="Language switcher">
+              <span
                 onClick={() => setLang('fr')}
+                style={{
+                  cursor: 'pointer',
+                  fontWeight: '600',
+                  color: lang === 'fr' ? '#0b5f8a' : '#6c757d',
+                  marginRight: '4px'
+                }}
               >
                 FR
-              </button>
-              <button
-                type="button"
-                className={`btn btn-outline-secondary px-3 ${lang === 'en' ? 'active' : ''}`}
+              </span>
+              <span style={{ margin: '0 2px', color: '#6c757d' }}>/</span>
+              <span
                 onClick={() => setLang('en')}
+                style={{
+                  cursor: 'pointer',
+                  fontWeight: '600',
+                  color: lang === 'en' ? '#0b5f8a' : '#6c757d',
+                  marginLeft: '4px'
+                }}
               >
                 EN
-              </button>
+              </span>
             </div>
             <div className="d-flex align-items-center ms-2">
               <button
