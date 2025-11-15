@@ -49,11 +49,13 @@ const ClientDashboard = () => {
     return h.includes('goto=nouveau-devis') || h.startsWith('#/nouveau-devis') || h.includes('translataireName=');
   })();
   const [avatarUrl, setAvatarUrl] = useState(() => {
-    try { return localStorage.getItem('avatarUrl') || 'https://i.pravatar.cc/64?img=5'; } catch { return 'https://i.pravatar.cc/64?img=5'; }
+    try { return localStorage.getItem('avatarUrl') || ''; } catch { return ''; }
   });
+  const [userName, setUserName] = useState('');
+  const [userInitials, setUserInitials] = useState('');
   useEffect(() => {
     const onStorage = () => {
-      try { setAvatarUrl(localStorage.getItem('avatarUrl') || 'https://i.pravatar.cc/64?img=5'); } catch {}
+      try { setAvatarUrl(localStorage.getItem('avatarUrl') || ''); } catch {}
     };
     window.addEventListener('storage', onStorage);
     return () => window.removeEventListener('storage', onStorage);
@@ -64,7 +66,21 @@ const ClientDashboard = () => {
     (async () => {
       try {
         const prof = await get('/users/profile');
-        const url = prof?.user?.photoProfil;
+        const user = prof?.user || {};
+        const url = user.photoProfil;
+        const nom = (user.nom || '').toString().trim();
+        const prenom = (user.prenom || '').toString().trim();
+        const full = (prenom + ' ' + nom).trim() || (user.email || '');
+        if (full) {
+          setUserName(full);
+          try {
+            const parts = full.split(' ').filter(Boolean);
+            const first = (parts[0] || '').charAt(0) || '';
+            const last = (parts[1] || '').charAt(0) || '';
+            const initials = (first + last || first || '').toUpperCase();
+            setUserInitials(initials);
+          } catch {}
+        }
         if (url && typeof url === 'string') {
           setAvatarUrl((prev) => {
             try { localStorage.setItem('avatarUrl', url); } catch {}
@@ -463,6 +479,7 @@ useEffect(() => {
 }, []);
 
 const getUserDisplayName = () => {
+  if (userName && userName.trim()) return userName.trim();
   try {
     const candidates = [
       'userName','username','name','prenom','firstName','fullName','displayName','email'
@@ -472,7 +489,7 @@ const getUserDisplayName = () => {
       if (v && v.trim()) return v.trim();
     }
   } catch {}
-  return 'Bienvenue';
+  return 'Utilisateur';
 };
 const userDisplayName = getUserDisplayName();
 
@@ -576,7 +593,23 @@ return (
             </div>
           )}
           <button className="btn p-0 border-0 bg-transparent" onClick={() => setProfileMenuOpen(!profileMenuOpen)} aria-label={t('client.header.open_profile_menu')}>
-            <img src={avatarUrl} alt="Profil" className="rounded-circle" style={{ width: 36, height: 36, objectFit: 'cover', border: '2px solid #e9ecef' }} />
+            {avatarUrl ? (
+              <img
+                src={avatarUrl}
+                alt="Profil"
+                className="rounded-circle"
+                style={{ width: 36, height: 36, objectFit: 'cover', border: '2px solid #e9ecef' }}
+              />
+            ) : (
+              <div
+                className="rounded-circle d-flex align-items-center justify-content-center"
+                style={{ width: 36, height: 36, border: '2px solid #e9ecef', backgroundColor: '#E9ECEF' }}
+              >
+                <span style={{ fontWeight: 600, color: '#495057', fontSize: 14 }}>
+                  {(userInitials || '').trim() || (userDisplayName ? userDisplayName.charAt(0).toUpperCase() : 'U')}
+                </span>
+              </div>
+            )}
           </button>
           {profileMenuOpen && (
             <div className="card shadow-sm" style={{ position: 'absolute', top: '100%', right: 0, zIndex: 1050, minWidth: '200px' }}>
@@ -615,9 +648,11 @@ return (
           <div className="default-wrap">
             {/* Welcome Section */}
             <div className="mb-4">
-              <h1 className="h2 fw-bold mb-2">
-                {t('client.welcome.title_prefix')}, {showIntroWelcome ? 'Bienvenue' : userDisplayName} !
-              </h1>
+              {showIntroWelcome && (
+                <h1 className="h2 fw-bold mb-2">
+                  Bonjour, {userDisplayName} !
+                </h1>
+              )}
               <p className="text-muted">{t('client.welcome.subtitle')}</p>
             </div>
 
