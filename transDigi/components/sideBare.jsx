@@ -11,7 +11,7 @@ const menuItems = [
   { id: 'parametres', label: 'Paramètres', icon: Settings },
 ];
 
-export default function SideBare({ activeId = 'dashboard', onNavigate, onOpenChange, className = '', topOffset = 96, items, closeOnNavigate = false, defaultOpen = true, collapsible = true, open: controlledOpen, showFloatingToggle = true, showHeaderToggle = true }) {
+export default function SideBare({ activeId = 'dashboard', onNavigate, onOpenChange, className = '', topOffset = 96, items, closeOnNavigate = false, defaultOpen = true, collapsible = true, open: controlledOpen, showFloatingToggle = true, showHeaderToggle = true, hideItemsWhenCollapsed = false }) {
   const isControlled = typeof controlledOpen === 'boolean';
   const [internalOpen, setInternalOpen] = useState(defaultOpen);
   const open = isControlled ? controlledOpen : internalOpen;
@@ -95,6 +95,11 @@ export default function SideBare({ activeId = 'dashboard', onNavigate, onOpenCha
                     )}
                   </div>
                 );
+              }
+              // Si on est en mode "masquer les items" et que la sidebar est repliée sur grand écran,
+              // ne pas afficher les autres entrées de menu (seule la colonne étroite avec le toggle reste visible)
+              if (collapsible && !open && hideItemsWhenCollapsed && isLgUp) {
+                return null;
               }
               return (
                 <button

@@ -30,16 +30,17 @@ export const clientCss = `
 
   .card { 
     transition: transform 0.2s ease, box-shadow 0.2s ease;
-    background-color: #ffffff !important;
+    background-color: var(--card);
+    color: var(--text);
   }
 
   .card-body {
-    background-color: #ffffff !important;
+    background-color: var(--card);
   }
 
   .card h1, .card h2, .card h3, .card h4, .card h5, .card h6,
   .card .h1, .card .h2, .card .h3, .card .h4, .card .h5, .card .h6 {
-    color: #212529 !important;
+    color: var(--text);
   }
 
   .card:hover {
@@ -403,8 +404,8 @@ export const clientCss = `
 
   @media (prefers-color-scheme: dark) {
     .card {
-      background-color: #1e1e1e;
-      color: #ffffff;
+      background-color: var(--card);
+      color: var(--text);
     }
 
     .text-muted {

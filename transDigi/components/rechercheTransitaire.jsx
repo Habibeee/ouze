@@ -5,29 +5,17 @@ import {
   LayoutGrid, FileText, Clock
 } from 'lucide-react';
 import { transitaireStyles, transitaireCss } from '../styles/rechercheTransitaireStyle.jsx';
-import { useToast } from '../src/toast.jsx';
-import { searchTranslatairesClient, getTranslataireReviews, getMyReview, createReview, updateReview, deleteReview } from '../services/apiClient.js';
+import { searchTranslatairesClient } from '../services/apiClient.js';
 
 const RechercheTransitaire = () => {
-  const { success, error: toastError } = useToast();
   const [searchFilters, setSearchFilters] = useState({ location: '', service: '', company: '' });
   const [page, setPage] = useState(1);
   const pageSize = 6;
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState('');
-  const [reviewsOpen, setReviewsOpen] = useState(false);
-  const [selectedTrans, setSelectedTrans] = useState(null);
-  const [reviews, setReviews] = useState([]);
-  const [reviewsLoading, setReviewsLoading] = useState(false);
-  const [reviewsErr, setReviewsErr] = useState('');
-  const [avgRating, setAvgRating] = useState(0);
-  const [ratingsCount, setRatingsCount] = useState(0);
-  const [myReview, setMyReview] = useState(null);
-  const [newRating, setNewRating] = useState(5);
-  const [newComment, setNewComment] = useState('');
-  const [sortReviews, setSortReviews] = useState('recent');
-  const [minRating, setMinRating] = useState('');
+  // Sélection locale simple pour "Voir les avis" côté client
+  const [selectionAvis, setSelectionAvis] = useState({}); // { [idTrans]: 'satisfait' | 'moyen' | 'pas_satisfait' }
 
   const fetchTrans = async () => {
     try {
@@ -52,134 +40,6 @@ const RechercheTransitaire = () => {
   };
 
   useEffect(() => { fetchTrans(); }, []);
-
-  // Ouvrir automatiquement les avis si on arrive avec transId dans le hash
-  useEffect(() => {
-    const tryOpenFromHash = () => {
-      const hash = window.location.hash || '';
-      const parts = hash.split('?');
-      if (parts.length < 2) return;
-      const params = new URLSearchParams(parts[1]);
-      const transId = params.get('transId');
-      const open = params.get('open');
-      if (!transId || open !== 'reviews') return;
-      const t = items.find(x => String(x.id) === String(transId));
-      if (t) openReviews(t);
-    };
-    tryOpenFromHash();
-    const onHash = () => tryOpenFromHash();
-    window.addEventListener('hashchange', onHash);
-    return () => window.removeEventListener('hashchange', onHash);
-  }, [items]);
-
-  const openReviews = async (t) => {
-    setSelectedTrans(t);
-    setReviewsOpen(true);
-    setReviews([]);
-    setReviewsErr('');
-    setMyReview(null);
-    setNewRating(5);
-    setNewComment('');
-    try {
-      setReviewsLoading(true);
-      const [list, mine] = await Promise.all([
-        getTranslataireReviews(t.id, { page: 1, limit: 10, sort: sortReviews, minRating: minRating || undefined }),
-        getMyReview(t.id).catch(()=>({}))
-      ]);
-      setReviews(Array.isArray(list?.items) ? list.items : []);
-      setAvgRating(Number(list?.avgRating || 0));
-      setRatingsCount(Number(list?.ratingsCount || 0));
-      setMyReview(mine?.review || null);
-      return { avgRating: Number(list?.avgRating || 0), ratingsCount: Number(list?.ratingsCount || 0) };
-    } catch (e) {
-      setReviewsErr(e?.message || 'Erreur chargement des avis');
-    } finally {
-      setReviewsLoading(false);
-    }
-  };
-
-  const submitReview = async () => {
-    if (!selectedTrans?.id) return;
-    try {
-      const resp = await createReview({ translataireId: selectedTrans.id, rating: newRating, comment: newComment });
-      // Préférer la réponse API si elle renvoie l'avis créé
-      const created = resp?.review || resp?.data || resp || { _id: `local-${Date.now()}`, rating: newRating, comment: newComment, userId: {}, createdAt: new Date().toISOString() };
-      // Si on n'a pas d'_id valide, on refetch pour ne pas casser la suite
-      const hasValidId = created && created._id && !String(created._id).startsWith('local-');
-      if (!hasValidId) {
-        await openReviews(selectedTrans);
-      } else {
-        setReviews((prev) => [created, ...prev]);
-        setRatingsCount((c) => (c || 0) + 1);
-        setAvgRating((prevAvg) => {
-          const c = (ratingsCount || 0) + 1;
-          return ((Number(prevAvg || 0) * (c - 1) + Number(newRating)) / c);
-        });
-        setMyReview(created);
-      }
-      // Rafraîchir la liste et les stats pour refléter immédiatement côté UI
-      try {
-        const stats = await openReviews(selectedTrans);
-        if (stats) setItems(prev => prev.map(x => x.id === selectedTrans.id ? { ...x, rating: stats.avgRating, ratingsCount: stats.ratingsCount } : x));
-      } catch {}
-      success("Avis envoyé");
-    } catch (e) {
-      toastError(e?.message || "Erreur lors de l'envoi de l'avis");
-    }
-  };
-
-  const saveMyReview = async () => {
-    if (!myReview?._id) return;
-    try {
-      // Si l'ID semble local, rafraîchir la liste pour obtenir le véritable ID avant PUT
-      if (String(myReview._id).startsWith('local-')) {
-        await openReviews(selectedTrans);
-      }
-      await updateReview(myReview._id, { rating: newRating, comment: newComment });
-      setReviews((prev) => prev.map(r => r._id === myReview._id ? { ...r, rating: newRating, comment: newComment } : r));
-      setAvgRating((prevAvg) => {
-        const c = (ratingsCount || 0);
-        if (!c) return prevAvg;
-        const old = Number(myReview.rating || 0);
-        const sum = Number(prevAvg || 0) * c;
-        const next = (sum - old + Number(newRating)) / c;
-        return next;
-      });
-      setMyReview((r) => r ? { ...r, rating: newRating, comment: newComment } : r);
-      try {
-        const stats = await openReviews(selectedTrans);
-        if (stats) setItems(prev => prev.map(x => x.id === selectedTrans.id ? { ...x, rating: stats.avgRating, ratingsCount: stats.ratingsCount } : x));
-      } catch {}
-      success('Avis mis à jour');
-    } catch (e) {
-      toastError(e?.message || "Erreur lors de la mise à jour de l'avis");
-    }
-  };
-
-  const removeMyReview = async () => {
-    if (!myReview?._id) return;
-    if (!window.confirm('Supprimer votre avis ?')) return;
-    try {
-      await deleteReview(myReview._id);
-      setReviews((prev) => prev.filter(r => r._id !== myReview._id));
-      setAvgRating((prevAvg) => {
-        const c = (ratingsCount || 0);
-        if (c <= 1) return 0;
-        const sum = Number(prevAvg || 0) * c;
-        const next = (sum - Number(myReview.rating || 0)) / (c - 1);
-        return next;
-      });
-      setRatingsCount((c) => Math.max(0, (c || 0) - 1));
-      setMyReview(null);
-      try {
-        const stats = await openReviews(selectedTrans);
-        if (stats) setItems(prev => prev.map(x => x.id === selectedTrans.id ? { ...x, rating: stats.avgRating, ratingsCount: stats.ratingsCount } : x));
-      } catch {}
-      success('Avis supprimé');
-    } catch (e) {
-      toastError(e?.message || "Erreur lors de la suppression de l'avis");
-    }
-  };
 
   const renderStars = (rating, count) => (
     <div className="d-flex align-items-center gap-1">
@@ -328,12 +188,19 @@ const RechercheTransitaire = () => {
                         </a>
                       );
                     })()}
-                    <button
-                      className="btn btn-outline-secondary"
-                      onClick={() => openReviews(transitaire)}
+                    <select
+                      className="form-select"
+                      value={selectionAvis[transitaire.id] || ''}
+                      onChange={(e) => setSelectionAvis(prev => ({
+                        ...prev,
+                        [transitaire.id]: e.target.value
+                      }))}
                     >
-                      Voir les avis
-                    </button>
+                      <option value="">Appréciation</option>
+                      <option value="satisfait">Satisfait</option>
+                      <option value="moyen">Moyen</option>
+                      <option value="pas_satisfait">Pas satisfait</option>
+                    </select>
                   </div>
                 </div>
               </div>
@@ -365,103 +232,6 @@ const RechercheTransitaire = () => {
         </nav>
       </div>
 
-      {/* Reviews Modal */}
-      {reviewsOpen && (
-        <div className="modal fade show" style={{ display:'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
-          <div className="modal-dialog modal-lg modal-dialog-centered">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">Avis pour {selectedTrans?.name}</h5>
-                <button type="button" className="btn-close" onClick={() => setReviewsOpen(false)}></button>
-              </div>
-              <div className="modal-body">
-                {reviewsLoading && <div className="text-center text-muted py-3">Chargement...</div>}
-                {reviewsErr && <div className="alert alert-danger">{reviewsErr}</div>}
-                {!reviewsLoading && !reviewsErr && (
-                  <>
-                    <div className="d-flex align-items-center gap-3 mb-3">
-                      <div className="fs-4 fw-bold">{Number(avgRating||0).toFixed(1)} / 5</div>
-                      <div className="text-muted">{ratingsCount} avis</div>
-                    </div>
-                    <div className="row g-3 mb-3">
-                      <div className="col-12 col-md-6">
-                        <label className="form-label">Trier par</label>
-                        <select className="form-select" value={sortReviews} onChange={(e)=>setSortReviews(e.target.value)}>
-                          <option value="recent">Plus récent</option>
-                          <option value="rating">Meilleure note</option>
-                        </select>
-                      </div>
-                      <div className="col-12 col-md-6">
-                        <label className="form-label">Note minimale</label>
-                        <select className="form-select" value={minRating} onChange={(e)=>setMinRating(e.target.value)}>
-                          <option value="">Toutes</option>
-                          <option value="4">4★ et plus</option>
-                          <option value="3">3★ et plus</option>
-                          <option value="2">2★ et plus</option>
-                          <option value="1">1★ et plus</option>
-                        </select>
-                      </div>
-                      <div className="col-12">
-                        <button className="btn btn-outline-primary" onClick={()=>openReviews(selectedTrans)}>Appliquer</button>
-                      </div>
-                    </div>
-                    <ul className="list-group mb-4">
-                      {reviews.map((r) => (
-                        <li key={r._id} className="list-group-item">
-                          <div className="d-flex justify-content-between">
-                            <div>
-                              <strong>{r?.userId?.prenom || ''} {r?.userId?.nom || ''}</strong>
-                              <div className="small text-muted">{new Date(r?.createdAt || Date.now()).toLocaleDateString()}</div>
-                            </div>
-                            <div className="badge bg-warning text-dark">{r.rating} ★</div>
-                          </div>
-                          {r.comment && <div className="mt-2">{r.comment}</div>}
-                        </li>
-                      ))}
-                      {reviews.length === 0 && <li className="list-group-item text-muted">Aucun avis pour le moment.</li>}
-                    </ul>
-                    <div className="card border-0 shadow-sm">
-                      <div className="card-body">
-                        <h6 className="fw-bold mb-3">{myReview ? 'Modifier mon avis' : 'Laisser un avis'}</h6>
-                        {myReview && (
-                          <div className="alert alert-info d-flex justify-content-between align-items-center">
-                            <div>Vous avez déjà un avis. Vous pouvez le modifier ou le supprimer.</div>
-                            <div className="d-flex gap-2">
-                              <button className="btn btn-sm btn-outline-danger" onClick={removeMyReview}>Supprimer</button>
-                              <button className="btn btn-sm btn-outline-secondary" onClick={() => { setNewRating(myReview.rating); setNewComment(myReview.comment || ''); }}>Charger mon avis</button>
-                            </div>
-                          </div>
-                        )}
-                        <div className="row g-3">
-                          <div className="col-12 col-md-3">
-                            <label className="form-label">Note</label>
-                            <select className="form-select" value={newRating} onChange={(e)=>setNewRating(Number(e.target.value))}>
-                              {[5,4,3,2,1].map(v => <option key={v} value={v}>{v} ★</option>)}
-                            </select>
-                          </div>
-                          <div className="col-12 col-md-9">
-                            <label className="form-label">Commentaire (optionnel)</label>
-                            <input className="form-control" value={newComment} onChange={(e)=>setNewComment(e.target.value)} placeholder="Votre retour..." />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </>
-                )}
-              </div>
-              <div className="modal-footer">
-                <button className="btn btn-secondary" onClick={() => setReviewsOpen(false)}>Fermer</button>
-                {!myReview && (
-                  <button className="btn btn-primary" onClick={submitReview} disabled={reviewsLoading || !selectedTrans?.id}>Envoyer l'avis</button>
-                )}
-                {myReview && (
-                  <button className="btn btn-primary" onClick={saveMyReview} disabled={reviewsLoading || !selectedTrans?.id}>Enregistrer les modifications</button>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
