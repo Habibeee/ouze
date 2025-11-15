@@ -234,8 +234,7 @@ const NouveauDevis = () => {
                 <div className="mb-4 mb-md-5">
                   <h5 className="fw-bold mb-2 mb-md-3 section-title">Détails de l'expédition</h5>
                   <p className="text-muted small mb-4">
-                    Vous pouvez soit renseigner les champs ci-dessous, soit joindre un ou plusieurs fichiers contenant les détails de votre expédition, ou faire les deux. 
-                    Toutes les informations seront transmises au transitaire et à l'administrateur.
+                    Vous pouvez renseigner les champs ci-dessous, joindre un ou plusieurs fichiers contenant les détails de votre expédition, ou faire les deux.
                   </p>
                   
                   {/* Type de transport */}

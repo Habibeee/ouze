@@ -32,8 +32,10 @@ const TransitaireDashboard = () => {
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [activeSideItem, setActiveSideItem] = useState(() => (typeof window !== 'undefined' && window.location.hash === '#/profile') ? 'profil' : 'dashboard');
   const [avatarUrl, setAvatarUrl] = useState(() => {
-    try { return localStorage.getItem('transLogoUrl') || 'https://i.pravatar.cc/64?img=22'; } catch { return 'https://i.pravatar.cc/64?img=22'; }
+    try { return localStorage.getItem('transLogoUrl') || ''; } catch { return ''; }
   });
+  const [transName, setTransName] = useState('');
+  const [transInitials, setTransInitials] = useState('');
   // Notifications
   const [notifOpen, setNotifOpen] = useState(false);
   const [notifs, setNotifs] = useState([]);
@@ -98,13 +100,24 @@ const TransitaireDashboard = () => {
     return () => { window.removeEventListener('hashchange', syncFromHash); window.removeEventListener('storage', onStorage); };
   }, []);
 
-  // Load logo from API on mount to persist across relogin
+  // Load logo & name from API on mount to persist across relogin
   useEffect(() => {
     (async () => {
       try {
         const res = await get('/translataires/profile').catch(async () => {
           try { return await get('/translataires/me'); } catch { return null; }
         });
+        const name = (res?.nomEntreprise || res?.name || res?.company || '').toString().trim();
+        if (name) {
+          setTransName(name);
+          try {
+            const parts = name.split(' ').filter(Boolean);
+            const first = (parts[0] || '').charAt(0) || '';
+            const last = (parts[1] || '').charAt(0) || '';
+            const initials = (first + last || first || '').toUpperCase();
+            setTransInitials(initials);
+          } catch {}
+        }
         const url = res?.logo || res?.photoProfil || res?.photoUrl || res?.photo || '';
         if (url && typeof url === 'string') {
           setAvatarUrl(url);
@@ -416,7 +429,23 @@ const TransitaireDashboard = () => {
               </div>
             )}
             <button className="btn p-0 border-0 bg-transparent" onClick={() => setProfileMenuOpen(!profileMenuOpen)} aria-label={t('forwarder.header.open_profile_menu')}>
-              <img src={avatarUrl} alt="Profil" className="rounded-circle" style={{ width: 36, height: 36, objectFit: 'cover', border: '2px solid #e9ecef' }} />
+              {avatarUrl ? (
+                <img
+                  src={avatarUrl}
+                  alt="Profil"
+                  className="rounded-circle"
+                  style={{ width: 36, height: 36, objectFit: 'cover', border: '2px solid #e9ecef' }}
+                />
+              ) : (
+                <div
+                  className="rounded-circle d-flex align-items-center justify-content-center"
+                  style={{ width: 36, height: 36, border: '2px solid #e9ecef', backgroundColor: '#E9ECEF' }}
+                >
+                  <span style={{ fontWeight: 600, color: '#495057', fontSize: 14 }}>
+                    {(transInitials || '').trim() || (transName ? transName.charAt(0).toUpperCase() : 'T')}
+                  </span>
+                </div>
+              )}
             </button>
             {profileMenuOpen && (
               <div className="card shadow-sm" style={{ position: 'absolute', top: '100%', right: 0, zIndex: 1050, minWidth: '200px' }}>

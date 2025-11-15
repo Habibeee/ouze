@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import { adminStyles, adminCss } from '../styles/tableauBordAdminStyle.jsx';
 import SideBare from './sideBare';
-import { logout, get, listNotifications, markNotificationRead, markAllNotificationsRead, getUnreadNotificationsCount } from '../services/apiClient.js';
+import { logout, get, listNotifications, markNotificationRead, markAllNotificationsRead, getUnreadNotificationsCount, getAdminProfile } from '../services/apiClient.js';
 import GestionUtilisateurs from './gestionUtilisateur.jsx';
 import GestionTransitaire from './gestionTransitaire.jsx';
 import ValidationCompte from './validationCompte.jsx';
@@ -32,7 +32,9 @@ const AdminDashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [section, setSection] = useState('validation');
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
-  const avatarUrl = 'https://i.pravatar.cc/64?img=12';
+  const [avatarUrl, setAvatarUrl] = useState('');
+  const [adminName, setAdminName] = useState('');
+  const [adminInitials, setAdminInitials] = useState('');
   // Notifications
   const [notifOpen, setNotifOpen] = useState(false);
   const [notifs, setNotifs] = useState([]);
@@ -83,6 +85,35 @@ const AdminDashboard = () => {
       if (isTrans()) window.location.hash = '#/dashboard-transitaire';
       else window.location.hash = '#/dashboard-client';
     }
+  }, []);
+
+  // Charger profil admin pour avatar et nom
+  useEffect(() => {
+    (async () => {
+      try {
+        const prof = await getAdminProfile().catch(async () => {
+          try { return await get('/admin/profile'); } catch { return null; }
+        });
+        const admin = prof?.admin || prof || {};
+        const nom = (admin.nom || admin.lastName || '').toString().trim();
+        const prenom = (admin.prenom || admin.firstName || '').toString().trim();
+        const full = (prenom + ' ' + nom).trim() || (admin.email || '');
+        if (full) {
+          setAdminName(full);
+          try {
+            const parts = full.split(' ').filter(Boolean);
+            const first = (parts[0] || '').charAt(0) || '';
+            const last = (parts[1] || '').charAt(0) || '';
+            const initials = (first + last || first || '').toUpperCase();
+            setAdminInitials(initials);
+          } catch {}
+        }
+        const url = admin.photoProfil || admin.photo || '';
+        if (url && typeof url === 'string') {
+          setAvatarUrl(url);
+        }
+      } catch {}
+    })();
   }, []);
 
   const loadNotifs = async () => {
@@ -343,12 +374,23 @@ const AdminDashboard = () => {
             </div>
           )}
           <button className="btn p-0 border-0 bg-transparent" onClick={() => setProfileMenuOpen(!profileMenuOpen)} aria-label={t('admin.header.open_profile_menu')}>
-            <img 
-              src={avatarUrl}
-              alt="Profil"
-              className="rounded-circle"
-              style={{ width: 36, height: 36, objectFit: 'cover', border: '2px solid #e9ecef' }}
-            />
+            {avatarUrl ? (
+              <img 
+                src={avatarUrl}
+                alt="Profil"
+                className="rounded-circle"
+                style={{ width: 36, height: 36, objectFit: 'cover', border: '2px solid #e9ecef' }}
+              />
+            ) : (
+              <div
+                className="rounded-circle d-flex align-items-center justify-content-center"
+                style={{ width: 36, height: 36, border: '2px solid #e9ecef', backgroundColor: '#E9ECEF' }}
+              >
+                <span style={{ fontWeight: 600, color: '#495057', fontSize: 14 }}>
+                  {(adminInitials || '').trim() || (adminName ? adminName.charAt(0).toUpperCase() : 'A')}
+                </span>
+              </div>
+            )}
           </button>
           {profileMenuOpen && (
             <div className="card shadow-sm" style={{ position: 'absolute', top: '100%', right: 0, zIndex: 1050, minWidth: '200px' }}>

@@ -57,6 +57,14 @@ export const nouveauDevisCss = `
     box-shadow: 0 0 0 0.25rem rgba(13,110,253,.25);
   }
 
+  .form-check-input {
+    width: 1.1rem;
+    height: 1.1rem;
+    border: 2px solid var(--border);
+    background-color: var(--card);
+    cursor: pointer;
+  }
+
   .form-check-input:checked {
     background-color: #28A745;
     border-color: #28A745;
