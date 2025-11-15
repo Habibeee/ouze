@@ -367,7 +367,7 @@ const AdminDashboard = () => {
           )}
         </div>
 
-        {/* Stats Cards */}
+        {/* Stats + Graph + Activity */}
         <div className="container-fluid py-4 px-2 px-md-4">
           {section === 'clients' ? (
             <GestionUtilisateurs />
@@ -377,266 +377,220 @@ const AdminDashboard = () => {
             <ValidationCompte />
           ) : (
             <>
-            <div className="row g-2 g-md-3 g-lg-4 mb-3 mb-md-4">
-              {loading && (
-                <div className="col-12"><div className="alert alert-light text-muted m-0">{t('admin.devis.stats.loading')}</div></div>
-              )}
-              {error && !loading && (
-                <div className="col-12"><div className="alert alert-danger m-0">{t('admin.devis.stats.error')}</div></div>
-              )}
-              {!loading && stats.map((stat, index) => {
-                const Icon = stat.icon;
-                return (
-                  <div key={index} className="col-12 col-sm-6 col-xl-3">
-                    <div className="card border-0 shadow-sm h-100">
-                      <div className="card-body">
-                        <div className="d-flex justify-content-between align-items-start">
-                          <div>
-                            <div className="text-muted small mb-1">{stat.label}</div>
-                            <div className="h2 fw-bold mb-0" style={{ color: 'var(--text)' }}>{stat.value}</div>
-                          </div>
-                          <div 
-                            className="rounded-circle p-3"
-                            style={{ backgroundColor: stat.bgColor }}
-                          >
-                            <Icon size={24} style={{ color: stat.iconColor }} />
+              {/* Stat cards */}
+              <div className="row g-2 g-md-3 g-lg-4 mb-3 mb-md-4">
+                {loading && (
+                  <div className="col-12"><div className="alert alert-light text-muted m-0">{t('admin.devis.stats.loading')}</div></div>
+                )}
+                {error && !loading && (
+                  <div className="col-12"><div className="alert alert-danger m-0">{t('admin.devis.stats.error')}</div></div>
+                )}
+                {!loading && stats.map((stat, index) => {
+                  const Icon = stat.icon;
+                  return (
+                    <div key={index} className="col-12 col-sm-6 col-xl-3">
+                      <div className="card border-0 shadow-sm h-100">
+                        <div className="card-body">
+                          <div className="d-flex justify-content-between align-items-start">
+                            <div>
+                              <div className="text-muted small mb-1">{stat.label}</div>
+                              <div className="h2 fw-bold mb-0" style={{ color: 'var(--text)' }}>{stat.value}</div>
+                            </div>
+                            <div 
+                              className="rounded-circle p-3"
+                              style={{ backgroundColor: stat.bgColor }}
+                            >
+                              <Icon size={24} style={{ color: stat.iconColor }} />
+                            </div>
                           </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      </div>
-    )}
-    <button className="btn p-0 border-0 bg-transparent" onClick={() => setProfileMenuOpen(!profileMenuOpen)} aria-label={t('admin.header.open_profile_menu')}>
-      <img 
-        src={avatarUrl}
-        alt="Profil"
-        className="rounded-circle"
-        style={{ width: 36, height: 36, objectFit: 'cover', border: '2px solid #e9ecef' }}
-      />
-    </button>
-    {profileMenuOpen && (
-      <div className="card shadow-sm" style={{ position: 'absolute', top: '100%', right: 0, zIndex: 1050, minWidth: '200px' }}>
-        <div className="list-group list-group-flush">
-          <button className="list-group-item list-group-item-action" onClick={() => { setProfileMenuOpen(false); window.location.hash = '#/modifier-profil'; }}>
-            {t('admin.header.menu.edit_profile')}
-          </button>
-          <button className="list-group-item list-group-item-action" onClick={() => { setProfileMenuOpen(false); window.location.hash = '#/modifierModpss'; }}>
-            {t('admin.header.menu.edit_password')}
-          </button>
-          <button className="list-group-item list-group-item-action text-danger" onClick={async () => { setProfileMenuOpen(false); try { await logout(); } finally { window.location.hash = '#/connexion'; } }}>
-            {t('admin.header.menu.logout')}
-          </button>
-        </div>
-      </div>
-    )}
-  </div>
+                  );
+                })}
+              </div>
 
-  {/* Stats Cards */}
-  <div className="container-fluid py-4 px-2 px-md-4">
-    {section === 'clients' ? (
-      <GestionUtilisateurs />
-    ) : section === 'transitaires' ? (
-      <GestionTransitaire />
-    ) : section === 'validation' ? (
-      <ValidationCompte />
-    ) : (
-      <>
-      <div className="row g-2 g-md-3 g-lg-4 mb-3 mb-md-4">
-        {loading && (
-          <div className="col-12"><div className="alert alert-light text-muted m-0">{t('admin.devis.stats.loading')}</div></div>
-        )}
-        {error && !loading && (
-          <div className="col-12"><div className="alert alert-danger m-0">{t('admin.devis.stats.error')}</div></div>
-        )}
-        {!loading && stats.map((stat, index) => {
-          const Icon = stat.icon;
-          return (
-            <div key={index} className="col-12 col-sm-6 col-xl-3">
-              <div className="card border-0 shadow-sm h-100">
-                <div className="card-body">
-                  <div className="d-flex justify-content-between align-items-start">
-                    <div>
-                      <div className="text-muted small mb-1">{t(stat.label)}</div>
-                      <div className="h2 fw-bold mb-0" style={{ color: 'var(--text)' }}>{stat.value}</div>
-                    </div>
-                    <div 
-                      className="rounded-circle p-3"
-                      style={{ backgroundColor: stat.bgColor }}
-                    >
-                      <Icon size={24} style={{ color: stat.iconColor }} />
-                          const padding = 36;
-                          const width = 800, height = 280;
-                          const innerW = width - padding * 2; const innerH = height - padding * 2;
-                          const maxVal = Math.max(1, Math.max(...data));
-                          const barW = innerW / data.length * 0.6;
-                          const gap = innerW / data.length * 0.4;
-                          const monthNames = ['Jan','Fév','Mar','Avr','Mai','Jui','Jui','Aoû','Sep','Oct','Nov','Déc'];
-                          const now = new Date();
-                          const grid = [];
-                          for (let i = 0; i <= 4; i++) {
-                            const y = padding + (innerH * i) / 4;
-                            const v = Math.round(((4 - i) * maxVal) / 4);
-                            grid.push(<line key={`hl-${i}`} x1={padding} y1={y} x2={width - padding} y2={y} stroke={colorBorder} strokeWidth="1" />);
-                            grid.push(<text key={`yt-${i}`} x={padding - 8} y={y + 4} textAnchor="end" fontSize="11" fill={colorMuted}>{v}</text>);
-                          }
-                          const bars = data.map((v, i) => {
-                            const x = padding + i * (barW + gap);
-                            const h = (v / maxVal) * innerH;
-                            const y = padding + innerH - h;
-                            const m = new Date(now.getFullYear(), now.getMonth() - (data.length - 1 - i), 1).getMonth();
+              <div className="row g-2 g-md-3 g-lg-4">
+                {/* Chart Section */}
+                <div className="col-12 col-lg-8">
+                  <div className="card border-0 shadow-sm">
+                    <div className="card-body">
+                      <div className="d-flex justify-content-between align-items-center mb-2">
+                        <h5 className="card-title fw-bold m-0">{t('admin.devis.stats.title')}</h5>
+                      </div>
+                      <div style={{ height: '280px', position: 'relative' }}>
+                        <svg ref={chartRef} width="100%" height="280" viewBox="0 0 800 280" preserveAspectRatio="none">
+                          {(() => {
+                            const data = (statsData.series && statsData.series.length ? statsData.series : [5,8,12,15,13,19,24,22,27,30,28,34]);
+                            const padding = 36;
+                            const width = 800, height = 280;
+                            const innerW = width - padding * 2; const innerH = height - padding * 2;
+                            const maxVal = Math.max(1, Math.max(...data));
+                            const barW = innerW / data.length * 0.6;
+                            const gap = innerW / data.length * 0.4;
+                            const monthNames = ['Jan','Fév','Mar','Avr','Mai','Jui','Jui','Aoû','Sep','Oct','Nov','Déc'];
+                            const now = new Date();
+                            const grid = [];
+                            for (let i = 0; i <= 4; i++) {
+                              const y = padding + (innerH * i) / 4;
+                              const v = Math.round(((4 - i) * maxVal) / 4);
+                              grid.push(<line key={`hl-${i}`} x1={padding} y1={y} x2={width - padding} y2={y} stroke={colorBorder} strokeWidth="1" />);
+                              grid.push(<text key={`yt-${i}`} x={padding - 8} y={y + 4} textAnchor="end" fontSize="11" fill={colorMuted}>{v}</text>);
+                            }
+                            const bars = data.map((v, i) => {
+                              const x = padding + i * (barW + gap);
+                              const h = (v / maxVal) * innerH;
+                              const y = padding + innerH - h;
+                              const m = new Date(now.getFullYear(), now.getMonth() - (data.length - 1 - i), 1).getMonth();
+                              return (
+                                <g key={i}>
+                                  <rect x={x} y={y} width={barW} height={h} fill="#28A745" rx={4} />
+                                  <text x={x + barW / 2} y={y - 6} textAnchor="middle" fontSize="11" fill={colorText}>{v}</text>
+                                  <text x={x + barW / 2} y={height - padding + 14} textAnchor="middle" fontSize="11" fill={colorMuted}>{monthNames[m]}</text>
+                                </g>
+                              );
+                            });
                             return (
-                              <g key={i}>
-                                <rect x={x} y={y} width={barW} height={h} fill="#28A745" rx={4} />
-                                <text x={x + barW / 2} y={y - 6} textAnchor="middle" fontSize="11" fill={colorText}>{v}</text>
-                                <text x={x + barW / 2} y={height - padding + 14} textAnchor="middle" fontSize="11" fill={colorMuted}>{monthNames[m]}</text>
+                              <g>
+                                <line x1={padding} y1={padding} x2={padding} y2={height - padding} stroke={colorBorder} strokeWidth="1" />
+                                <line x1={padding} y1={height - padding} x2={width - padding} y2={height - padding} stroke={colorBorder} strokeWidth="1" />
+                                {grid}
+                                {bars}
                               </g>
                             );
-                          });
-                          return (
-                            <g>
-                              <line x1={padding} y1={padding} x2={padding} y2={height - padding} stroke={colorBorder} strokeWidth="1" />
-                              <line x1={padding} y1={height - padding} x2={width - padding} y2={height - padding} stroke={colorBorder} strokeWidth="1" />
-                              {grid}
-                              {bars}
-                            </g>
-                          );
-                        })()}
-                      </svg>
+                          })()}
+                        </svg>
+                      </div>
                     </div>
                   </div>
-                </div>
-                {/* Sous-cartes directement sous l'histogramme (empilées) */}
-                <div className="row g-2 g-md-3 mt-2">
-                  <div className="col-12">
-                    <div className="card border-0 shadow-sm h-100">
-                      <div className="card-body py-3">
-                        <div className="d-flex justify-content-between align-items-center mb-2">
-                          <h6 className="m-0">{t('admin.devis.distribution.title')}</h6>
-                        </div>
-                        {(() => {
-                          const items = (recentActivities || []).filter(x => (x.type||'').includes('devis'));
-                          const total = items.length || 1;
-                          const enAttente = items.filter(x => x.type.includes('new')).length;
-                          const accepte = items.filter(x => x.type.includes('response')).length;
-                          const annule = items.filter(x => x.type.includes('cancel')).length;
-                          const values = [accepte, enAttente, annule];
-                          const colors = ['#28A745','#FFC107','#F44336'];
-                          const labels = [t('admin.devis.status.accepted'), t('admin.devis.status.pending'), t('admin.devis.status.canceled')];
-                          const R = 50, C = 2*Math.PI*R;
-                          let acc = 0;
-                          const arcs = values.map((v, i) => {
-                            const len = C * (v/total);
-                            const dash = `${len} ${C-len}`;
-                            const el = (<circle key={i} r={R} cx={70} cy={70} fill="transparent" stroke={colors[i]} strokeWidth={12} strokeDasharray={dash} strokeDashoffset={-acc} />);
-                            acc += len;
-                            return el;
-                          });
-                          return (
-                            <div className="d-flex align-items-center gap-3">
-                              <svg width={140} height={140} viewBox="0 0 140 140">
-                                <circle r={R} cx={70} cy={70} fill="transparent" stroke="#E5E7EB" strokeWidth={12} />
-                                {arcs}
-                                <text x={70} y={74} textAnchor="middle" fontSize="13" fill="#374151">{items.length}</text>
-                              </svg>
-                              <div className="d-flex flex-column gap-2">
-                                {values.map((v,i)=>(
-                                  <div key={i} className="d-flex align-items-center gap-2">
-                                    <span style={{display:'inline-block',width:10,height:10,background:colors[i],borderRadius:2}}></span>
-                                    <span className="small" style={{minWidth:90}}>{labels[i]}</span>
-                                    <span className="small text-muted">{v}</span>
-                                  </div>
-                                ))}
+
+                  {/* Sous-cartes sous l'histogramme */}
+                  <div className="row g-2 g-md-3 mt-2">
+                    <div className="col-12">
+                      <div className="card border-0 shadow-sm h-100">
+                        <div className="card-body py-3">
+                          <div className="d-flex justify-content-between align-items-center mb-2">
+                            <h6 className="m-0">{t('admin.devis.distribution.title')}</h6>
+                          </div>
+                          {(() => {
+                            const items = (recentActivities || []).filter(x => (x.type||'').includes('devis'));
+                            const total = items.length || 1;
+                            const enAttente = items.filter(x => x.type.includes('new')).length;
+                            const accepte = items.filter(x => x.type.includes('response')).length;
+                            const annule = items.filter(x => x.type.includes('cancel')).length;
+                            const values = [accepte, enAttente, annule];
+                            const colors = ['#28A745','#FFC107','#F44336'];
+                            const labels = [t('admin.devis.status.accepted'), t('admin.devis.status.pending'), t('admin.devis.status.canceled')];
+                            const R = 50, C = 2*Math.PI*R;
+                            let acc = 0;
+                            const arcs = values.map((v, i) => {
+                              const len = C * (v/total);
+                              const dash = `${len} ${C-len}`;
+                              const el = (<circle key={i} r={R} cx={70} cy={70} fill="transparent" stroke={colors[i]} strokeWidth={12} strokeDasharray={dash} strokeDashoffset={-acc} />);
+                              acc += len;
+                              return el;
+                            });
+                            return (
+                              <div className="d-flex align-items-center gap-3">
+                                <svg width={140} height={140} viewBox="0 0 140 140">
+                                  <circle r={R} cx={70} cy={70} fill="transparent" stroke="#E5E7EB" strokeWidth={12} />
+                                  {arcs}
+                                  <text x={70} y={74} textAnchor="middle" fontSize="13" fill="#374151">{items.length}</text>
+                                </svg>
+                                <div className="d-flex flex-column gap-2">
+                                  {values.map((v,i)=>(
+                                    <div key={i} className="d-flex align-items-center gap-2">
+                                      <span style={{display:'inline-block',width:10,height:10,background:colors[i],borderRadius:2}}></span>
+                                      <span className="small" style={{minWidth:90}}>{labels[i]}</span>
+                                      <span className="small text-muted">{v}</span>
+                                    </div>
+                                  ))}
+                                </div>
                               </div>
-                            </div>
-                          );
-                        })()}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="col-12">
-                    <div className="card border-0 shadow-sm h-100">
-                      <div className="card-body py-3">
-                        <div className="d-flex justify-content-between align-items-center mb-2">
-                          <h6 className="m-0">{t('admin.devis.last.title')}</h6>
+                            );
+                          })()}
                         </div>
-                        <table className="table table-sm align-middle mb-0" style={{ tableLayout: 'fixed', width: '100%' }}>
-                          <thead>
-                            <tr>
-                              <th style={{ width: '36%' }}>{t('admin.devis.last.table.forwarder')}</th>
-                              <th style={{ width: '28%' }}>{t('admin.devis.last.table.client')}</th>
-                              <th style={{ width: '18%' }}>{t('admin.devis.last.table.status')}</th>
-                              <th style={{ width: '18%' }}>{t('admin.devis.last.table.date')}</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {(() => {
-                              const rows = (recentActivities || []).filter(x => (x.type||'').includes('devis')).slice(0,5);
-                              if (!rows.length) return (<tr><td colSpan={4} className="text-muted small">{t('admin.devis.last.table.none')}</td></tr>);
-                              return rows.map((r,i) => {
-                                const d = r.data || {};
-                                const trans = d.translataireName || d.translataire || '';
-                                const client = d.actorName || d.clientName || '';
-                                const statut = r.type.includes('response') ? t('admin.devis.status.accepted') : r.type.includes('cancel') ? t('admin.devis.status.canceled') : t('admin.devis.status.pending');
-                                return (
-                                  <tr key={r.id || i}>
-                                    <td style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{trans || '-'}</td>
-                                    <td style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{client || '-'}</td>
-                                    <td className="pe-5" style={{ minWidth: 180 }}>
-                                      <span className={`badge ${statut===t('admin.devis.status.accepted')?'bg-success':statut===t('admin.devis.status.canceled')?'bg-danger':'bg-warning text-dark'}`} style={{ marginRight: 32, padding: '6px 10px' }}>{statut}</span>
-                                    </td>
-                                    <td className="text-muted ps-4" style={{ whiteSpace: 'nowrap', paddingLeft: 24 }}>{r.time || ''}</td>
-                                  </tr>
-                                );
-                              });
-                            })()}
-                          </tbody>
-                        </table>
+                      </div>
+                    </div>
+                    <div className="col-12">
+                      <div className="card border-0 shadow-sm h-100">
+                        <div className="card-body py-3">
+                          <div className="d-flex justify-content-between align-items-center mb-2">
+                            <h6 className="m-0">{t('admin.devis.last.title')}</h6>
+                          </div>
+                          <table className="table table-sm align-middle mb-0" style={{ tableLayout: 'fixed', width: '100%' }}>
+                            <thead>
+                              <tr>
+                                <th style={{ width: '36%' }}>{t('admin.devis.last.table.forwarder')}</th>
+                                <th style={{ width: '28%' }}>{t('admin.devis.last.table.client')}</th>
+                                <th style={{ width: '18%' }}>{t('admin.devis.last.table.status')}</th>
+                                <th style={{ width: '18%' }}>{t('admin.devis.last.table.date')}</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {(() => {
+                                const rows = (recentActivities || []).filter(x => (x.type||'').includes('devis')).slice(0,5);
+                                if (!rows.length) return (<tr><td colSpan={4} className="text-muted small">{t('admin.devis.last.table.none')}</td></tr>);
+                                return rows.map((r,i) => {
+                                  const d = r.data || {};
+                                  const trans = d.translataireName || d.translataire || '';
+                                  const client = d.actorName || d.clientName || '';
+                                  const statut = r.type.includes('response') ? t('admin.devis.status.accepted') : r.type.includes('cancel') ? t('admin.devis.status.canceled') : t('admin.devis.status.pending');
+                                  return (
+                                    <tr key={r.id || i}>
+                                      <td style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{trans || '-'}</td>
+                                      <td style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{client || '-'}</td>
+                                      <td className="pe-5" style={{ minWidth: 180 }}>
+                                        <span className={`badge ${statut===t('admin.devis.status.accepted')?'bg-success':statut===t('admin.devis.status.canceled')?'bg-danger':'bg-warning text-dark'}`} style={{ marginRight: 32, padding: '6px 10px' }}>{statut}</span>
+                                      </td>
+                                      <td className="text-muted ps-4" style={{ whiteSpace: 'nowrap', paddingLeft: 24 }}>{r.time || ''}</td>
+                                    </tr>
+                                  );
+                                });
+                              })()}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Activité récente */}
+                <div className="col-12 col-lg-4">
+                  <div className="card border-0 shadow-sm h-100">
+                    <div className="card-body">
+                      <div className="d-flex justify-content-between align-items-center mb-3">
+                        <h5 className="card-title fw-bold m-0">{t('admin.activity.title')}</h5>
+                      </div>
+                      <div className="d-flex flex-column gap-3">
+                        {recentActivities.length === 0 && (
+                          <div className="text-muted small">{t('admin.activity.none')}</div>
+                        )}
+                        {recentActivities.map((n) => {
+                          const typ = (n.type || 'info');
+                          const meta = typ.includes('success') || typ.includes('approve') ? { bg:'#E8F5E9', ic:'#28A745', Icon: CheckCircle } :
+                                       typ.includes('danger') || typ.includes('block') || typ.includes('delete') ? { bg:'#FFEBEE', ic:'#F44336', Icon: XCircle } :
+                                       typ.includes('devis') ? { bg:'#FFF9E6', ic:'#FFC107', Icon: FileText } : { bg:'#E3F2FD', ic:'#2196F3', Icon: UserPlus };
+                          const Icon = meta.Icon;
+                          return (
+                            <button key={n.id} className="d-flex gap-3 text-start btn btn-link p-0" onClick={() => { setDetailItem(n); setDetailOpen(true); }}>
+                              <div className="rounded-circle p-2 flex-shrink-0" style={{ backgroundColor: meta.bg, width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <Icon size={20} style={{ color: meta.ic }} />
+                              </div>
+                              <div className="flex-grow-1">
+                                <div className="small">{n.title}</div>
+                                {n.text && <div className="text-muted small" style={{ whiteSpace: 'normal' }}>{n.text}</div>}
+                                <div className="text-muted" style={{ fontSize: 12 }}>{n.time}</div>
+                              </div>
+                            </button>
+                          );
+                        })}
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
-              {/* Activité récente */}
-              <div className="col-12 col-lg-4">
-                <div className="card border-0 shadow-sm h-100">
-                  <div className="card-body">
-                    <div className="d-flex justify-content-between align-items-center mb-3">
-                      <h5 className="card-title fw-bold m-0">{t('admin.activity.title')}</h5>
-                    </div>
-                    <div className="d-flex flex-column gap-3">
-                      {recentActivities.length === 0 && (
-                        <div className="text-muted small">{t('admin.activity.none')}</div>
-                      )}
-                      {recentActivities.map((n) => {
-                        const t = (n.type || 'info');
-                        const meta = t.includes('success') || t.includes('approve') ? { bg:'#E8F5E9', ic:'#28A745', Icon: CheckCircle } :
-                                     t.includes('danger') || t.includes('block') || t.includes('delete') ? { bg:'#FFEBEE', ic:'#F44336', Icon: XCircle } :
-                                     t.includes('devis') ? { bg:'#FFF9E6', ic:'#FFC107', Icon: FileText } : { bg:'#E3F2FD', ic:'#2196F3', Icon: UserPlus };
-                        const Icon = meta.Icon;
-                        return (
-                          <button key={n.id} className="d-flex gap-3 text-start btn btn-link p-0" onClick={() => { setDetailItem(n); setDetailOpen(true); }}>
-                            <div className="rounded-circle p-2 flex-shrink-0" style={{ backgroundColor: meta.bg, width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                              <Icon size={20} style={{ color: meta.ic }} />
-                            </div>
-                            <div className="flex-grow-1">
-                              <div className="small">{n.title}</div>
-                              {n.text && <div className="text-muted small" style={{ whiteSpace: 'normal' }}>{n.text}</div>}
-                              <div className="text-muted" style={{ fontSize: 12 }}>{n.time}</div>
-                            </div>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
             </>
           )}
         </div>
