@@ -36,7 +36,7 @@ const NouveauDevis = () => {
       fragile: false
     },
     notes: '',
-    uploadedFile: null
+    uploadedFiles: []
   });
 
   const [progress, setProgress] = useState(0);
@@ -84,7 +84,7 @@ const NouveauDevis = () => {
     const optionalFields = [
       !!formData.pickupDate,
       !!formData.deliveryDate,
-      !!formData.uploadedFile,
+      !!(formData.uploadedFiles && formData.uploadedFiles.length),
       !!formData.weight,
       !!formData.length,
       !!formData.width,
@@ -114,14 +114,20 @@ const NouveauDevis = () => {
   };
 
   const handleFileUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setFormData(prev => ({ ...prev, uploadedFile: file }));
+    const files = Array.from(e.target.files || []);
+    if (files.length) {
+      setFormData(prev => ({
+        ...prev,
+        uploadedFiles: [...(prev.uploadedFiles || []), ...files]
+      }));
     }
   };
 
-  const removeFile = () => {
-    setFormData(prev => ({ ...prev, uploadedFile: null }));
+  const removeFile = (index) => {
+    setFormData(prev => ({
+      ...prev,
+      uploadedFiles: (prev.uploadedFiles || []).filter((_, i) => i !== index)
+    }));
   };
 
   const handleSubmit = () => {
@@ -145,7 +151,10 @@ const NouveauDevis = () => {
             return;
           }
         }
-        if (!formData.description) { toastError('Veuillez décrire votre marchandise'); return; }
+        if (!formData.description && !(formData.uploadedFiles && formData.uploadedFiles.length)) {
+          toastError('Veuillez décrire votre marchandise ou joindre au moins un fichier');
+          return;
+        }
         if (!formData.translataireName) { toastError('Veuillez saisir le nom du transitaire'); return; }
         const fd = new FormData();
         // Champs attendus par le backend
@@ -156,7 +165,11 @@ const NouveauDevis = () => {
         if (formData.pickupDate) fd.append('dateExpiration', formData.pickupDate);
         if (formData.pickupAddress) fd.append('origin', formData.pickupAddress);
         if (formData.deliveryAddress) fd.append('destination', formData.deliveryAddress);
-        if (formData.uploadedFile) fd.append('fichier', formData.uploadedFile);
+        if (formData.uploadedFiles && formData.uploadedFiles.length) {
+          formData.uploadedFiles.forEach((file) => {
+            if (file) fd.append('fichier', file);
+          });
+        }
         if (formData.translataireName) fd.append('translataireName', formData.translataireName);
         await createDevis(tId, fd);
         success('Demande de devis envoyée');
@@ -219,7 +232,11 @@ const NouveauDevis = () => {
                 </div>
                 {/* Détails de l'expédition */}
                 <div className="mb-4 mb-md-5">
-                  <h5 className="fw-bold mb-3 mb-md-4 section-title">Détails de l'expédition</h5>
+                  <h5 className="fw-bold mb-2 mb-md-3 section-title">Détails de l'expédition</h5>
+                  <p className="text-muted small mb-4">
+                    Vous pouvez soit renseigner les champs ci-dessous, soit joindre un ou plusieurs fichiers contenant les détails de votre expédition, ou faire les deux. 
+                    Toutes les informations seront transmises au transitaire et à l'administrateur.
+                  </p>
                   
                   {/* Type de transport */}
                   <div className="mb-4">
@@ -355,54 +372,59 @@ const NouveauDevis = () => {
 
                 {/* Upload File Section */}
                 <div className="mb-5">
-                  <h5 className="fw-bold mb-4 section-title">Document joint</h5>
+                  <h5 className="fw-bold mb-4 section-title">Documents joints</h5>
                   <p className="text-muted small mb-3">
-                    Joignez un document avec les détails de votre expédition (facture, liste de colisage, etc.)
+                    Vous pouvez joindre un ou plusieurs documents avec les détails de votre expédition (facture, liste de colisage, etc.).
                   </p>
                   
-                  {!formData.uploadedFile ? (
-                    <div className="border-2 border-dashed rounded-3 p-4 text-center" style={{ borderColor: '#DEE2E6' }}>
-                      <input
-                        type="file"
-                        id="fileUpload"
-                        className="d-none"
-                        onChange={handleFileUpload}
-                        accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.png"
-                      />
-                      <label htmlFor="fileUpload" className="cursor-pointer">
-                        <div 
-                          className="rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center"
-                          style={{ width: '60px', height: '60px', backgroundColor: '#E8F5E9' }}
-                        >
-                          <Upload size={30} style={{ color: '#28A745' }} />
-                        </div>
-                        <p className="fw-semibold mb-1">Cliquez pour télécharger un fichier</p>
-                        <p className="text-muted small mb-0">PDF, DOC, XLS, JPG, PNG (Max. 10MB)</p>
-                      </label>
-                    </div>
-                  ) : (
-                    <div className="border rounded-3 p-3 d-flex align-items-center justify-content-between">
-                      <div className="d-flex align-items-center gap-3">
-                        <div 
-                          className="rounded d-flex align-items-center justify-content-center flex-shrink-0"
-                          style={{ width: '48px', height: '48px', backgroundColor: '#E8F5E9' }}
-                        >
-                          <FileText size={24} style={{ color: '#28A745' }} />
-                        </div>
-                        <div>
-                          <p className="mb-0 fw-semibold">{formData.uploadedFile.name}</p>
-                          <p className="mb-0 text-muted small">
-                            {(formData.uploadedFile.size / 1024).toFixed(2)} KB
-                          </p>
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        className="btn btn-sm btn-link text-danger"
-                        onClick={removeFile}
+                  <div className="border-2 border-dashed rounded-3 p-4 text-center" style={{ borderColor: '#DEE2E6' }}>
+                    <input
+                      type="file"
+                      id="fileUpload"
+                      className="d-none"
+                      onChange={handleFileUpload}
+                      accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.png"
+                      multiple
+                    />
+                    <label htmlFor="fileUpload" className="cursor-pointer">
+                      <div 
+                        className="rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center"
+                        style={{ width: '60px', height: '60px', backgroundColor: '#E8F5E9' }}
                       >
-                        <X size={20} />
-                      </button>
+                        <Upload size={30} style={{ color: '#28A745' }} />
+                      </div>
+                      <p className="fw-semibold mb-1">Cliquez pour télécharger un ou plusieurs fichiers</p>
+                      <p className="text-muted small mb-0">PDF, DOC, XLS, JPG, PNG (Max. 10MB par fichier)</p>
+                    </label>
+                  </div>
+
+                  {formData.uploadedFiles && formData.uploadedFiles.length > 0 && (
+                    <div className="mt-3">
+                      {formData.uploadedFiles.map((file, index) => (
+                        <div key={index} className="border rounded-3 p-3 d-flex align-items-center justify-content-between mb-2">
+                          <div className="d-flex align-items-center gap-3">
+                            <div 
+                              className="rounded d-flex align-items-center justify-content-center flex-shrink-0"
+                              style={{ width: '40px', height: '40px', backgroundColor: '#E8F5E9' }}
+                            >
+                              <FileText size={20} style={{ color: '#28A745' }} />
+                            </div>
+                            <div>
+                              <p className="mb-0 fw-semibold">{file.name}</p>
+                              <p className="mb-0 text-muted small">
+                                {(file.size / 1024).toFixed(2)} KB
+                              </p>
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-link text-danger"
+                            onClick={() => removeFile(index)}
+                          >
+                            <X size={18} />
+                          </button>
+                        </div>
+                      ))}
                     </div>
                   )}
                 </div>

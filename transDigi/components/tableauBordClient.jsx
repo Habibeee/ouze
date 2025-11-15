@@ -495,6 +495,7 @@ return (
       closeOnNavigate={!isLgUp}
       defaultOpen={true}
       open={sidebarOpen}
+      hideItemsWhenCollapsed={true}
       onOpenChange={(o)=>setSidebarOpen(!!o)}
       activeId={section}
       items={[
