@@ -262,7 +262,7 @@ router.get('/search-translataires', searchTranslataires);
  *       404:
  *         description: Translataire non trouvé
  */
-router.post('/demande-devis/:translatireId', uploadAny.single('fichier'), demandeDevis);
+router.post('/demande-devis/:translatireId', uploadAny.array('fichier'), demandeDevis);
 
 /**
  * @swagger

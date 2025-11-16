@@ -19,8 +19,10 @@ const devisSchema = new mongoose.Schema({
   origin: String,
   destination: String,
   montantEstime: Number,
-  // Pièce jointe fournie par le client lors de la demande
+  // Pièce jointe principale fournie par le client lors de la demande (compatibilité historique)
   clientFichier: String,
+  // Liste complète des pièces jointes fournies par le client (nouveau)
+  clientFichiers: [String],
   // Réponse du translataire (texte) et pièce jointe éventuelle
   reponse: String,
   reponseFichier: String,
@@ -113,6 +115,13 @@ const translatireSchema = new mongoose.Schema({
   },
   ratingsCount: {
     type: Number,
+    default: 0
+  },
+  // Note définie par l'administrateur (1 à 5 étoiles)
+  adminRating: {
+    type: Number,
+    min: 0,
+    max: 5,
     default: 0
   },
   

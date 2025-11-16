@@ -220,6 +220,41 @@ exports.getAllUsers = async (req, res) => {
   }
 };
 
+// @desc    Définir la note admin d'un translataire (1 à 5)
+// @route   PUT /api/admin/translataires/:id/rating
+// @access  Private (Admin)
+exports.setTranslataireRating = async (req, res) => {
+  try {
+    const { id } = req.params;
+    let { rating } = req.body || {};
+    if (rating === undefined || rating === null) {
+      return res.status(400).json({ success: false, message: 'rating requis' });
+    }
+    rating = Number(rating);
+    if (Number.isNaN(rating)) {
+      return res.status(400).json({ success: false, message: 'rating doit être un nombre' });
+    }
+    // Clamp entre 0 et 5, par pas de 0.5 max
+    if (rating < 0) rating = 0;
+    if (rating > 5) rating = 5;
+    rating = Math.round(rating * 2) / 2;
+
+    const translataire = await Translataire.findByIdAndUpdate(
+      id,
+      { adminRating: rating },
+      { new: true }
+    ).select('-motDePasse');
+
+    if (!translataire) {
+      return res.status(404).json({ success: false, message: 'Translataire non trouvé' });
+    }
+
+    res.json({ success: true, message: 'Note mise à jour', translataire });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Erreur lors de la mise à jour de la note', error: error.message });
+  }
+};
+
 // @desc    Approuver un utilisateur (client)
 // @route   PUT /api/admin/users/:id/approve
 // @access  Private (Admin)

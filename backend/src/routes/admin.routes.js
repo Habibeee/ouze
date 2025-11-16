@@ -20,7 +20,8 @@ const {
   changeAdminPassword,
   getAdminProfile,
   updateAdminProfile,
-  updateAdminEmail
+  updateAdminEmail,
+  setTranslataireRating
 } = require('../controllers/admin.controller');
 const { protect, authorize } = require('../middleware/auth.middleware');
 
@@ -267,6 +268,9 @@ router.get('/dashboard/translataires', getDashboardTranslataires);
  *         description: Translataire non trouvé
  */
 router.put('/translataires/:id/approve', approveTranslataire);
+
+// Définir la note admin d'un translataire (1 à 5)
+router.put('/translataires/:id/rating', setTranslataireRating);
 
 /**
  * @swagger

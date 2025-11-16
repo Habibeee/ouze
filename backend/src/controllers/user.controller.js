@@ -209,7 +209,7 @@ exports.searchTranslataires = async (req, res) => {
 // @access  Private
 exports.demandeDevis = async (req, res) => {
   try {
-    const { typeService, description, dateExpiration, translataireName, origin, destination } = req.body;
+    const { typeService, description, dateExpiration, translataireName, origin, destination, devisOrigin } = req.body;
     let translataire = null;
     if (req.params.translatireId && String(req.params.translatireId).length >= 12) {
       try { translataire = await Translataire.findById(req.params.translatireId); } catch {}
@@ -242,11 +242,20 @@ exports.demandeDevis = async (req, res) => {
     if (origin) devis.origin = origin;
     if (destination) devis.destination = destination;
 
-    // Pièce jointe facultative du client
-    if (req.file) {
+    // Pièces jointes facultatives du client (support multi-fichiers)
+    const files = Array.isArray(req.files) && req.files.length ? req.files : (req.file ? [req.file] : []);
+    if (files.length) {
       try {
-        const fileUrl = await uploadFileToCloudinary(req.file, 'devis/demandes');
-        devis.clientFichier = fileUrl;
+        const urls = [];
+        for (const f of files) {
+          const url = await uploadFileToCloudinary(f, 'devis/demandes');
+          if (url) urls.push(url);
+        }
+        if (urls.length) {
+          devis.clientFichiers = urls;
+          // Compatibilité : conserver le premier fichier dans clientFichier
+          devis.clientFichier = urls[0];
+        }
       } catch (e) {
         return res.status(400).json({ success: false, message: "Erreur d'upload de la pièce jointe", error: e.message });
       }
@@ -255,7 +264,7 @@ exports.demandeDevis = async (req, res) => {
     translataire.devis.push(devis);
     await translataire.save();
 
-    // Notifier les admins: nouvelle demande de devis envoyée au translataire
+    // Notifier les admins: nouvelle demande de devis envoyée (via recherche ou via nouveau devis)
     try {
       // Récupérer infos du client pour enrichir la notif et l'email
       const client = await User.findById(req.user.id).select('nom prenom email');
@@ -293,18 +302,22 @@ exports.demandeDevis = async (req, res) => {
     }
 
     // Email au translataire pour l'informer de la nouvelle demande de devis
-    try {
-      const client = await User.findById(req.user.id).select('nom prenom email');
-      await sendNewDevisToTranslataire(translataire.email, {
-        clientName: `${client?.prenom || ''} ${client?.nom || ''}`.trim() || 'Client',
-        typeService,
-        description,
-        fichierUrl: devis.clientFichier || null,
-        translataireNom: translataire.nomEntreprise
-      });
-    } catch (e) {
-      // ne pas bloquer la création du devis si l'email échoue
-      console.error('Erreur envoi email nouvelle demande devis:', e.message);
+    // Pour un devis créé depuis "Nouveau devis" (devisOrigin === 'nouveau-devis'),
+    // on ne notifie pas directement le translataire: seul l'admin reçoit l'information.
+    if ((devisOrigin || '').toString() !== 'nouveau-devis') {
+      try {
+        const client = await User.findById(req.user.id).select('nom prenom email');
+        await sendNewDevisToTranslataire(translataire.email, {
+          clientName: `${client?.prenom || ''} ${client?.nom || ''}`.trim() || 'Client',
+          typeService,
+          description,
+          fichierUrl: devis.clientFichier || null,
+          translataireNom: translataire.nomEntreprise
+        });
+      } catch (e) {
+        // ne pas bloquer la création du devis si l'email échoue
+        console.error('Erreur envoi email nouvelle demande devis:', e.message);
+      }
     }
 
     res.status(201).json({
