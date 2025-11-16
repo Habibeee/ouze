@@ -4,7 +4,7 @@ export const transitaireStyles = {
   publishBtn: { backgroundColor: '#0EA5E9', color: '#ffffff' },
   avatar: { width: '36px', height: '36px', backgroundColor: '#FFB74D' },
   heroTitle: { },
-  cardHover: { transition: 'transform 0.2s, box-shadow 0.2s' },
+  cardHover: { transition: 'transform 0.2s, box-shadow 0.2s', backgroundColor: '#F3F4F6' },
   companyLogo: { width: '60px', height: '60px', fontSize: '18px' },
   verified: { color: '#28A745' },
   serviceBadge: { backgroundColor: 'var(--card)', color: 'var(--text)' },

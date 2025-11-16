@@ -16,6 +16,9 @@ import { createDevis, searchTranslatairesClient } from '../services/apiClient.js
 
 const NouveauDevis = () => {
   const { success, error: toastError } = useToast();
+  const [translataires, setTranslataires] = useState([]);
+  const [loadingTranslataires, setLoadingTranslataires] = useState(false);
+  const [translatairesError, setTranslatairesError] = useState('');
   const [formData, setFormData] = useState({
     translataireId: '',
     translataireName: '',
@@ -75,7 +78,6 @@ const NouveauDevis = () => {
   // Progress computation based on filled fields
   useEffect(() => {
     const baseFields = [
-      !!(formData.translataireName && formData.translataireName.trim()),
       !!(formData.transportType && String(formData.transportType).trim()),
       !!(formData.description && formData.description.trim()),
       !!(formData.pickupAddress && formData.pickupAddress.trim()),
@@ -98,6 +100,25 @@ const NouveauDevis = () => {
     const percent = Math.round((baseScore / baseMax) * 70 + (optScore / Math.max(optMax,1)) * 30);
     setProgress(Math.max(0, Math.min(100, percent)));
   }, [formData]);
+
+  // Charger la liste des transitaires pour alimenter la liste déroulante (optionnelle)
+  useEffect(() => {
+    (async () => {
+      try {
+        setLoadingTranslataires(true);
+        setTranslatairesError('');
+        const result = await searchTranslatairesClient({});
+        const list = Array.isArray(result?.translataires)
+          ? result.translataires
+          : (Array.isArray(result) ? result : []);
+        setTranslataires(list);
+      } catch (e) {
+        setTranslatairesError(e?.message || "Impossible de charger la liste des transitaires.");
+      } finally {
+        setLoadingTranslataires(false);
+      }
+    })();
+  }, []);
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -135,20 +156,29 @@ const NouveauDevis = () => {
     (async () => {
       try {
         let tId = (formData.translataireId || '').trim();
-        const isFromSearch = !!tId;
+        // isFromSearch sert à personnaliser le message de succès lorsqu'on vient de "Trouver un transitaire"
+        const isFromSearch = !!tId && !!(formData.translataireName || '').trim();
+        // Nouveau comportement : le choix du transitaire est optionnel.
+        // Si aucun transitaire n'est sélectionné, on choisit automatiquement le premier disponible
+        // (côté back, l'admin reste le point central grâce à devisOrigin = 'nouveau-devis').
         if (!tId) {
-          const name = (formData.translataireName || '').trim();
-          if (!name) { toastError('Veuillez renseigner le transitaire (ID ou Nom)'); return; }
-          try {
-            const result = await searchTranslatairesClient({ recherche: name });
-            const list = Array.isArray(result?.translataires) ? result.translataires : (Array.isArray(result) ? result : []);
-            // Essayer une correspondance exacte sur le nom d'entreprise
-            const exact = list.find(t => (t.nomEntreprise || '').toLowerCase() === name.toLowerCase());
-            const pick = exact || list[0];
-            if (!pick?._id) { toastError('Transitaire introuvable pour ce nom'); return; }
+          let list = Array.isArray(translataires) ? translataires : [];
+          if (!list.length) {
+            try {
+              const result = await searchTranslatairesClient({});
+              list = Array.isArray(result?.translataires)
+                ? result.translataires
+                : (Array.isArray(result) ? result : []);
+            } catch (e) {
+              toastError(e?.message || "Impossible de trouver un transitaire disponible pour le moment.");
+              return;
+            }
+          }
+          const pick = list[0];
+          if (pick && pick._id) {
             tId = pick._id;
-          } catch (e) {
-            toastError(e?.message || 'Erreur lors de la recherche du transitaire');
+          } else {
+            toastError('Aucun transitaire n\'est disponible pour traiter votre demande pour le moment.');
             return;
           }
         }
@@ -156,7 +186,6 @@ const NouveauDevis = () => {
           toastError('Veuillez décrire votre marchandise ou joindre au moins un fichier');
           return;
         }
-        if (!formData.translataireName) { toastError('Veuillez saisir le nom du transitaire'); return; }
         const fd = new FormData();
         // Champs attendus par le backend
         const allowed = ['maritime','routier','aerien'];
@@ -201,9 +230,13 @@ const NouveauDevis = () => {
             {/* Header */}
             <div className="mb-3 mb-md-4">
               <h1 className="h2 h1-md fw-bold mb-2 mb-md-3">Nouvelle Demande de Devis</h1>
-              <p className="text-muted">
+              <p className="text-muted mb-2">
                 Remplissez les détails ci-dessous pour obtenir un devis pour votre expédition.
               </p>
+              {/* Message de visibilité du destinataire */}
+              <div className="alert alert-info py-2 px-3 mb-0" role="alert">
+                <strong>Information :</strong> Votre devis sera envoyé automatiquement à tous les transitaires.
+              </div>
             </div>
 
             {/* Progress Bar */}
@@ -228,16 +261,38 @@ const NouveauDevis = () => {
                   <h5 className="fw-bold mb-3 mb-md-4 section-title">Informations du transitaire</h5>
                   <div className="row g-3">
                     <div className="col-12">
-                      <label className="form-label fw-semibold">Nom du transitaire</label>
-                      <input
-                        type="text"
-                        className="form-control form-control-lg"
-                        placeholder="Ex: Logistique Express"
-                        value={formData.translataireName}
-                        onChange={(e) => handleInputChange('translataireName', e.target.value)}
-                        required
-                      />
-                      <div className="form-text">Saisissez le nom du transitaire. L'identifiant n'est plus requis.</div>
+                      <label className="form-label fw-semibold">Nom du transitaire (optionnel)</label>
+                      <select
+                        className="form-select form-select-lg"
+                        value={formData.translataireId}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          const selected = (translataires || []).find((t) => t && t._id === val);
+                          setFormData(prev => ({
+                            ...prev,
+                            translataireId: val,
+                            translataireName: selected ? (selected.nomEntreprise || selected.name || '') : ''
+                          }));
+                        }}
+                      >
+                        <option value="">-- Aucun transitaire spécifique (recommandé) --</option>
+                        {(translataires || []).map((t) => (
+                          t && t._id ? (
+                            <option key={t._id} value={t._id}>
+                              {t.nomEntreprise || t.name || 'Transitaire'}
+                            </option>
+                          ) : null
+                        ))}
+                      </select>
+                      <div className="form-text">
+                        Ce choix est optionnel. Votre demande sera de toute façon traitée par la plateforme.
+                      </div>
+                      {loadingTranslataires && (
+                        <div className="form-text text-muted">Chargement de la liste des transitaires...</div>
+                      )}
+                      {translatairesError && (
+                        <div className="form-text text-danger">{translatairesError}</div>
+                      )}
                     </div>
                   </div>
                 </div>

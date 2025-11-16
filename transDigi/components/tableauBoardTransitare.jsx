@@ -191,9 +191,11 @@ const TransitaireDashboard = () => {
     // Essayer objet route sinon champs à la racine
     const label = asRouteLabel(d?.route || d?.itineraire || d?.trajet || d?.shipping || d?.chemin);
     if (label && label !== '-' && !label.includes('[object')) return label;
-    const from = d?.origine || d?.depart || d?.from || d?.source;
+    const from = d?.origin || d?.origine || d?.depart || d?.from || d?.source;
     const to = d?.destination || d?.arrivee || d?.to || d?.target;
-    if (from || to) return `${from || '-' } → ${to || '-'}`;
+    if (from && to) return `${from} → ${to}`;
+    if (to) return to;
+    if (from) return from;
     const alt = d?.description || d?.typeService;
     return alt ? String(alt) : '-';
   };
