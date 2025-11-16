@@ -172,10 +172,15 @@ const NouveauDevis = () => {
         }
         if (formData.translataireName) fd.append('translataireName', formData.translataireName);
         await createDevis(tId, fd);
-        success('Demande de devis envoyée');
+        const cible = (formData.translataireName || '').trim();
+        if (cible) {
+          success(`Votre devis a bien été envoyé à ${cible}.`);
+        } else {
+          success('Votre devis a bien été envoyé.');
+        }
         window.location.hash = '#/historique';
       } catch (e) {
-        toastError(e?.message || "Échec d'envoi de la demande de devis");
+        toastError("Une erreur est survenue lors de l'envoi du devis. Veuillez réessayer.");
       }
     })();
   };

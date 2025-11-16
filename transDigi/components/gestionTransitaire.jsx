@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Search, MoreHorizontal, ChevronLeft, ChevronRight } from 'lucide-react';
 import { gestionTransitaireCss } from '../styles/gestionTransitaireStyle.jsx';
-import { get, put, del, post } from '../services/apiClient.js';
+import { get, put, del, post, setTranslataireAdminRating } from '../services/apiClient.js';
 
 const COLORS = {
   primary: '#28A745',
@@ -44,6 +44,7 @@ const GestionTransitaires = () => {
       ? t.typeServices.join(', ')
       : (t.secteurActivite || t.sector || '-'),
     status: t.isArchived ? 'Archivé' : (t.isBlocked ? 'Bloqué' : 'Actif'),
+    rating: typeof t.adminRating === 'number' ? t.adminRating : (t.adminRating ? Number(t.adminRating) : 0),
     date: t.createdAt ? new Date(t.createdAt).toLocaleDateString() : '',
     raw: t,
   }));
@@ -216,6 +217,7 @@ const GestionTransitaires = () => {
                   <th className="fw-semibold">Entreprise</th>
                   <th className="fw-semibold d-none d-md-table-cell">Email</th>
                   <th className="fw-semibold d-none d-lg-table-cell">Secteur</th>
+                  <th className="fw-semibold">Note (admin)</th>
                   <th className="fw-semibold">Statut</th>
                   <th className="fw-semibold d-none d-xl-table-cell">Date</th>
                   <th className="fw-semibold text-end">Actions</th>
@@ -237,6 +239,26 @@ const GestionTransitaires = () => {
                     <td className="fw-semibold">{r.name}</td>
                     <td className="text-muted d-none d-md-table-cell">{r.email}</td>
                     <td className="d-none d-lg-table-cell">{r.sector}</td>
+                    <td>
+                      <div className="d-flex align-items-center gap-1">
+                        {[1,2,3,4,5].map((star) => (
+                          <span
+                            key={star}
+                            style={{ cursor: 'pointer', color: star <= Math.round(r.rating || 0) ? '#FFC107' : '#E5E7EB', fontSize: 16 }}
+                            onClick={async () => {
+                              try {
+                                await setTranslataireAdminRating(r.id, star);
+                                await fetchTrans();
+                              } catch (e) {
+                                setError(e?.message || 'Erreur lors de la mise à jour de la note');
+                              }
+                            }}
+                          >
+                            ★
+                          </span>
+                        ))}
+                      </div>
+                    </td>
                     <td><StatusBadge status={r.status} type="transitaire" /></td>
                     <td className="text-muted d-none d-xl-table-cell">{r.date}</td>
                     <td className="text-end position-relative">

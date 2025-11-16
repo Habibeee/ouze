@@ -130,6 +130,15 @@ export async function del(path) {
   return apiFetch(path, { method: 'DELETE' });
 }
 
+// Admin - Notation des transitaires
+export async function setTranslataireAdminRating(id, rating) {
+  if (!id) throw new Error('id requis');
+  return apiFetch(`/admin/translataires/${encodeURIComponent(id)}/rating`, {
+    method: 'PUT',
+    body: { rating }
+  });
+}
+
 // Notifications helpers
 export async function listNotifications(limit = 10) {
   const q = typeof limit === 'number' ? `?limit=${encodeURIComponent(limit)}` : '';

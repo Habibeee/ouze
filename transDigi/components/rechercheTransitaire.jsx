@@ -22,16 +22,22 @@ const RechercheTransitaire = () => {
       setLoading(true); setErr('');
       const data = await searchTranslatairesClient({ typeService: searchFilters.service || undefined, ville: searchFilters.location || undefined, recherche: searchFilters.company || undefined });
       const rows = Array.isArray(data?.translataires) ? data.translataires : (Array.isArray(data) ? data : []);
-      const mapped = rows.map(t => ({
-        id: t._id || t.id,
-        name: t.nomEntreprise || t.name || 'Transitaire',
-        location: t.ville || t.location || '',
-        verified: !!(t.isVerified && t.isApproved),
-        rating: typeof t.avgRating === 'number' ? t.avgRating : (t.avgRating ? Number(t.avgRating) : 0),
-        ratingsCount: typeof t.ratingsCount === 'number' ? t.ratingsCount : (t.ratingsCount ? Number(t.ratingsCount) : 0),
-        description: t.secteurActivite || t.description || '',
-        services: (Array.isArray(t.typeServices) ? t.typeServices : []).map(lbl => ({ icon: Package, label: String(lbl) }))
-      }));
+      const mapped = rows.map(t => {
+        const avgRating = typeof t.avgRating === 'number' ? t.avgRating : (t.avgRating ? Number(t.avgRating) : 0);
+        const adminRating = typeof t.adminRating === 'number' ? t.adminRating : (t.adminRating ? Number(t.adminRating) : 0);
+        const ratingForStars = adminRating > 0 ? adminRating : avgRating;
+        const ratingsCount = typeof t.ratingsCount === 'number' ? t.ratingsCount : (t.ratingsCount ? Number(t.ratingsCount) : 0);
+        return {
+          id: t._id || t.id,
+          name: t.nomEntreprise || t.name || 'Transitaire',
+          location: t.ville || t.location || '',
+          verified: !!(t.isVerified && t.isApproved),
+          rating: ratingForStars,
+          ratingsCount,
+          description: t.secteurActivite || t.description || '',
+          services: (Array.isArray(t.typeServices) ? t.typeServices : []).map(lbl => ({ icon: Package, label: String(lbl) }))
+        };
+      });
       setItems(mapped);
       setPage(1);
     } catch (e) {
