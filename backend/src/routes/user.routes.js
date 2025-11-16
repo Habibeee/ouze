@@ -10,7 +10,8 @@ const {
   getMesDevis,
   getMonDevisById,
   annulerDevis,
-  updateMonDevis
+  updateMonDevis,
+  deleteMonDevis,
 } = require('../controllers/user.controller');
 const { protect, authorize } = require('../middleware/auth.middleware');
 const { upload, uploadAny } = require('../middleware/upload.middleware');
@@ -315,6 +316,9 @@ router.get('/devis/:id', getMonDevisById);
 
 // Mettre à jour un devis (client)
 router.put('/devis/:id', uploadAny.single('fichier'), updateMonDevis);
+
+// Supprimer définitivement un devis (client)
+router.delete('/devis/:id', deleteMonDevis);
 
 /**
  * @swagger

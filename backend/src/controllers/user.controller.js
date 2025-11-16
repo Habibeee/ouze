@@ -473,3 +473,34 @@ exports.annulerDevis = async (req, res) => {
     return res.status(500).json({ success: false, message: 'Erreur lors de l\'annulation', error: error.message });
   }
 };
+
+// @desc    Supprimer définitivement un devis (client)
+// @route   DELETE /api/users/devis/:id
+// @access  Private
+exports.deleteMonDevis = async (req, res) => {
+  try {
+    const id = String(req.params.id || '');
+    if (!id || id.length < 12) {
+      return res.status(400).json({ success: false, message: 'ID invalide' });
+    }
+
+    // Trouver le translataire qui contient ce devis pour ce client
+    const translataire = await Translataire.findOne({ 'devis._id': id, 'devis.client': req.user.id });
+    if (!translataire) {
+      return res.status(404).json({ success: false, message: 'Devis non trouvé' });
+    }
+
+    const devis = translataire.devis.id(id);
+    if (!devis) {
+      return res.status(404).json({ success: false, message: 'Devis non trouvé' });
+    }
+
+    // Suppression directe du sous-document
+    devis.remove();
+    await translataire.save();
+
+    return res.json({ success: true, message: 'Devis supprimé définitivement' });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: 'Erreur lors de la suppression', error: error.message });
+  }
+};
