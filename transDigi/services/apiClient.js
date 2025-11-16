@@ -194,6 +194,12 @@ export async function cancelDevis(devisId) {
   return apiFetch(`/users/devis/${encodeURIComponent(devisId)}/cancel`, { method: 'PUT' });
 }
 
+// Client - Supprimer définitivement un devis
+export async function deleteMonDevis(id) {
+  if (!id) throw new Error('id requis');
+  return del(`/users/devis/${encodeURIComponent(id)}`);
+}
+
 // Client - Détail devis
 export async function getMonDevisById(id) {
   if (!id) throw new Error('id requis');

@@ -654,6 +654,9 @@ return (
                 </h1>
               )}
               <p className="text-muted">{t('client.welcome.subtitle')}</p>
+              <p className="text-muted small mt-1">
+                Votre devis peut être envoyé à tous les transitaires via la page Nouveau devis, ou vous pouvez choisir un transitaire spécifique depuis la page Rechercher un transitaire.
+              </p>
             </div>
 
             <div className="row g-2 g-md-3 g-lg-4">

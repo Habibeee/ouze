@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useToast } from './ui/ToastProvider.jsx';
 import { Search, ChevronLeft, ChevronRight, LayoutGrid, FileText, Clock, User, Truck, Search as SearchIcon } from 'lucide-react';
 import { historiqueDevisCss } from '../styles/historiqueDevisStyle.jsx';
-import { listMesDevis, cancelDevis } from '../services/apiClient.js';
+import { listMesDevis, cancelDevis, deleteMonDevis } from '../services/apiClient.js';
 
 const statusMeta = {
   accepte: { label: 'Accepté', className: 'badge-status success' },
@@ -56,11 +56,23 @@ const HistoriqueDevis = () => {
       } finally { setLoading(false); }
   };
 
+  const handleDelete = async (id) => {
+    if (!id) return;
+    if (!window.confirm('Voulez-vous SUPPRIMER définitivement ce devis de votre historique ? Cette action est irréversible.')) return;
+    try {
+      await deleteMonDevis(id);
+      await load();
+      toast.success('Devis supprimé définitivement.');
+    } catch (e) {
+      toast.error(e?.message || 'Erreur lors de la suppression');
+    }
+  };
+
   useEffect(() => { load(); }, []);
 
   const handleCancel = async (id) => {
     if (!id) return;
-    if (!window.confirm('Voulez-vous annuler ce devis ?')) return;
+    if (!window.confirm('Voulez-vous ANNULER ce devis ? Il restera visible dans votre historique avec le statut "Annulé".')) return;
     try {
       await cancelDevis(id);
       await load();
@@ -175,9 +187,12 @@ const HistoriqueDevis = () => {
                     <td className="d-none d-lg-table-cell">{r.destination}</td>
                     <td><span className={(statusMeta[r.statut]||statusMeta['attente']).className}>{(statusMeta[r.statut]||statusMeta['attente']).label}</span></td>
                     <td className="text-end">
-                      {r.statut === 'attente' && (
-                        <button className="btn btn-sm btn-outline-danger" onClick={() => handleCancel(r.id)}>Annuler</button>
-                      )}
+                      <div className="d-inline-flex gap-2">
+                        {r.statut === 'attente' && (
+                          <button className="btn btn-sm btn-outline-warning" onClick={() => handleCancel(r.id)}>Annuler</button>
+                        )}
+                        <button className="btn btn-sm btn-outline-danger" onClick={() => handleDelete(r.id)}>Supprimer</button>
+                      </div>
                     </td>
                   </tr>
                 ))}

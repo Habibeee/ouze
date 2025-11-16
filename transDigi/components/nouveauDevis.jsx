@@ -230,13 +230,9 @@ const NouveauDevis = () => {
             {/* Header */}
             <div className="mb-3 mb-md-4">
               <h1 className="h2 h1-md fw-bold mb-2 mb-md-3">Nouvelle Demande de Devis</h1>
-              <p className="text-muted mb-2">
+              <p className="text-muted">
                 Remplissez les détails ci-dessous pour obtenir un devis pour votre expédition.
               </p>
-              {/* Message de visibilité du destinataire */}
-              <div className="alert alert-info py-2 px-3 mb-0" role="alert">
-                <strong>Information :</strong> Votre devis sera envoyé automatiquement à tous les transitaires.
-              </div>
             </div>
 
             {/* Progress Bar */}
