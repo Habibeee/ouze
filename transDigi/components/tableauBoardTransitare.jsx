@@ -217,6 +217,8 @@ const TransitaireDashboard = () => {
           date: d.createdAt ? new Date(d.createdAt).toLocaleDateString('fr-FR') : (d.date || ''),
           route: routeFromDevis(d),
           status: st,
+          // Conserver l'objet brut pour afficher tous les détails dans le panneau
+          raw: d,
         };
       });
       const onlyCur = mapped.filter(r => r.status === curStatus);
@@ -633,32 +635,77 @@ const TransitaireDashboard = () => {
                 </div>
                 <div className="offcanvas-body">
                   {detailItem ? (
-                    <>
-                      <div className="mb-3">
-                        <div className="text-muted small">ID</div>
-                        <div className="fw-semibold">{detailItem.id}</div>
-                      </div>
-                      <div className="mb-3">
-                        <div className="text-muted small">Client</div>
-                        <div className="fw-semibold">{detailItem.client}</div>
-                      </div>
-                      <div className="mb-3">
-                        <div className="text-muted small">Itinéraire</div>
-                        <div className="fw-semibold">{detailItem.route}</div>
-                      </div>
-                      <div className="mb-3">
-                        <div className="text-muted small">Date</div>
-                        <div className="fw-semibold">{detailItem.date}</div>
-                      </div>
-                      <div className="mb-4">
-                        <div className="text-muted small">Statut</div>
-                        <span className="badge px-3 py-2" style={{ backgroundColor: statusBadge(detailItem.status).bg, color: statusBadge(detailItem.status).fg }}>{statusBadge(detailItem.status).label}</span>
-                      </div>
-                      <div className="d-flex gap-2">
-                        <button className="btn btn-outline-secondary" onClick={() => setDetailOpen(false)}>Fermer</button>
-                        <button className="btn btn-primary" style={{ backgroundColor: transitareStyles.primary, borderColor: transitareStyles.primary }} onClick={() => { setDetailOpen(false); onOpenRespond(detailItem.id); }}>Répondre</button>
-                      </div>
-                    </>
+                    (() => {
+                      const raw = detailItem.raw || {};
+                      const typeService = raw.typeService || '-';
+                      const description = raw.description || '';
+                      const origin = raw.origin || raw.origine || '';
+                      const destination = raw.destination || raw.arrivee || '';
+                      const montant = raw.montantEstime;
+                      const hasFiles = (Array.isArray(raw.clientFichiers) && raw.clientFichiers.length) || raw.clientFichier;
+                      return (
+                        <>
+                          <div className="mb-3">
+                            <div className="text-muted small">ID</div>
+                            <div className="fw-semibold">{detailItem.id}</div>
+                          </div>
+                          <div className="mb-3">
+                            <div className="text-muted small">Client</div>
+                            <div className="fw-semibold">{detailItem.client}</div>
+                          </div>
+                          <div className="mb-3">
+                            <div className="text-muted small">Type de service</div>
+                            <div className="fw-semibold">{typeService}</div>
+                          </div>
+                          <div className="mb-3">
+                            <div className="text-muted small">Origine</div>
+                            <div className="fw-semibold">{origin || '-'}</div>
+                          </div>
+                          <div className="mb-3">
+                            <div className="text-muted small">Destination</div>
+                            <div className="fw-semibold">{destination || '-'}</div>
+                          </div>
+                          <div className="mb-3">
+                            <div className="text-muted small">Itinéraire</div>
+                            <div className="fw-semibold">{detailItem.route}</div>
+                          </div>
+                          <div className="mb-3">
+                            <div className="text-muted small">Date</div>
+                            <div className="fw-semibold">{detailItem.date}</div>
+                          </div>
+                          {description && (
+                            <div className="mb-3">
+                              <div className="text-muted small">Description</div>
+                              <div>{description}</div>
+                            </div>
+                          )}
+                          {typeof montant !== 'undefined' && montant !== null && (
+                            <div className="mb-3">
+                              <div className="text-muted small">Montant estimé (client)</div>
+                              <div className="fw-semibold">{String(montant)}</div>
+                            </div>
+                          )}
+                          {hasFiles && (
+                            <div className="mb-3">
+                              <div className="text-muted small">Pièces jointes du client</div>
+                              <div className="fw-semibold">
+                                {Array.isArray(raw.clientFichiers) && raw.clientFichiers.length
+                                  ? `${raw.clientFichiers.length} fichier(s) joint(s)`
+                                  : '1 fichier joint'}
+                              </div>
+                            </div>
+                          )}
+                          <div className="mb-4">
+                            <div className="text-muted small">Statut</div>
+                            <span className="badge px-3 py-2" style={{ backgroundColor: statusBadge(detailItem.status).bg, color: statusBadge(detailItem.status).fg }}>{statusBadge(detailItem.status).label}</span>
+                          </div>
+                          <div className="d-flex gap-2">
+                            <button className="btn btn-outline-secondary" onClick={() => setDetailOpen(false)}>Fermer</button>
+                            <button className="btn btn-primary" style={{ backgroundColor: transitareStyles.primary, borderColor: transitareStyles.primary }} onClick={() => { setDetailOpen(false); onOpenRespond(detailItem.id); }}>Répondre</button>
+                          </div>
+                        </>
+                      );
+                    })()
                   ) : (
                     <div className="text-muted">Aucune donnée</div>
                   )}
