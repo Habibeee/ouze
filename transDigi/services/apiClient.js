@@ -133,7 +133,8 @@ export async function del(path) {
 // Admin - Notation des transitaires
 export async function setTranslataireAdminRating(id, rating) {
   if (!id) throw new Error('id requis');
-  return apiFetch(`/admin/translataires/${encodeURIComponent(id)}/rating`, {
+  // La route backend est montée sous /api/admin
+  return apiFetch(`/api/admin/translataires/${encodeURIComponent(id)}/rating`, {
     method: 'PUT',
     body: { rating }
   });

@@ -135,6 +135,7 @@ const NouveauDevis = () => {
     (async () => {
       try {
         let tId = (formData.translataireId || '').trim();
+        const isFromSearch = !!tId;
         if (!tId) {
           const name = (formData.translataireName || '').trim();
           if (!name) { toastError('Veuillez renseigner le transitaire (ID ou Nom)'); return; }
@@ -165,6 +166,8 @@ const NouveauDevis = () => {
         if (formData.pickupDate) fd.append('dateExpiration', formData.pickupDate);
         if (formData.pickupAddress) fd.append('origin', formData.pickupAddress);
         if (formData.deliveryAddress) fd.append('destination', formData.deliveryAddress);
+        // Indiquer au backend l'origine du devis (recherche transitaire vs nouveau devis direct)
+        fd.append('devisOrigin', isFromSearch ? 'search' : 'nouveau-devis');
         if (formData.uploadedFiles && formData.uploadedFiles.length) {
           formData.uploadedFiles.forEach((file) => {
             if (file) fd.append('fichier', file);
@@ -173,7 +176,10 @@ const NouveauDevis = () => {
         if (formData.translataireName) fd.append('translataireName', formData.translataireName);
         await createDevis(tId, fd);
         const cible = (formData.translataireName || '').trim();
-        if (cible) {
+        // Message de confirmation :
+        // - depuis "Trouver un transitaire" (isFromSearch) -> on peut afficher le nom
+        // - depuis "Nouveau devis" -> message neutre
+        if (isFromSearch && cible) {
           success(`Votre devis a bien été envoyé à ${cible}.`);
         } else {
           success('Votre devis a bien été envoyé.');
