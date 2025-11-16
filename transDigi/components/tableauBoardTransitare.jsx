@@ -471,20 +471,20 @@ const TransitaireDashboard = () => {
         <div className="container-fluid px-2 px-md-4 py-3 py-md-4">
           {/* Page Title */}
           <div className="d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between gap-2 mb-3 mb-md-4">
-            <h1 className="h3 h2-md fw-bold mb-0">{t('forwarder.page.title')}</h1>
+            <h1 className="h3 h2-md fw-bold mb-0" style={{ color: '#111827' }}>{t('forwarder.page.title')}</h1>
             <button className="btn btn-outline-secondary btn-sm" onClick={async ()=>{ try { await fetchDevis({ page:1, limit, status: activeTab }); lastStatsAtRef.current = 0; await updateStats(); } catch {} }}>{t('forwarder.page.refresh')}</button>
           </div>
 
           {/* Stats Section */}
           <div className="mb-3 mb-md-4">
-            <h5 className="fw-semibold mb-3">{t('forwarder.stats.title')}</h5>
+            <h5 className="fw-semibold mb-3" style={{ color: '#111827' }}>{t('forwarder.stats.title')}</h5>
             <div className="row g-2 g-md-3">
               {stats.map((stat, index) => (
                 <div key={index} className="col-12 col-sm-6 col-lg-3">
                   <div className="card border-0 shadow-sm h-100">
                     <div className="card-body p-3">
-                      <div className="text-muted small mb-2">{stat.label}</div>
-                      <div className="h3 fw-bold mb-0" style={{ color: 'var(--text)' }}>{stat.value}</div>
+                      <div className="small mb-2" style={{ color: '#4B5563' }}>{stat.label}</div>
+                      <div className="h3 fw-bold mb-0" style={{ color: '#111827' }}>{stat.value}</div>
                     </div>
                   </div>
                 </div>
@@ -550,8 +550,8 @@ const TransitaireDashboard = () => {
                       <tr key={item.id}>
                         <td className="px-4 py-3 fw-semibold">{item.id}</td>
                         <td className="py-3">{item.client}</td>
-                        <td className="py-3 text-muted">{item.date}</td>
-                        <td className="py-3">{item.route}</td>
+                        <td className="py-3" style={{ color: '#111827' }}>{item.date}</td>
+                        <td className="py-3" style={{ color: '#111827' }}>{item.route}</td>
                         <td className="py-3">
                           <span className="badge px-3 py-2" style={{ backgroundColor: statusBadge(item.status).bg, color: statusBadge(item.status).fg, fontWeight: '500' }}>
                             {statusBadge(item.status).label}
