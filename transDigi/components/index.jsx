@@ -117,11 +117,11 @@ import { useI18n } from '../src/i18n.jsx';
     <>
       <style>{`
         @media (max-width: 575.98px) {
-          /* Sur mobile, on fait en sorte que toute la zone hero soit l'image */
-          .hero-section, .hero-inner { min-height: 70vh !important; }
+          /* Sur mobile, on réduit la hauteur pour éviter le grand espace vide */
+          .hero-section, .hero-inner { min-height: 60vh !important; padding-bottom: 0 !important; }
           .hero-section .carousel-inner,
           .hero-section .carousel-item,
-          .hero-section .carousel-item img { height: 70vh !important; object-fit: cover; }
+          .hero-section .carousel-item img { height: 60vh !important; object-fit: cover; }
           .hero-section .display-4 { font-size: 1.75rem !important; }
           .hero-section .lead { font-size: 1rem !important; }
           .hero-cta { gap: .5rem !important; }
@@ -131,11 +131,14 @@ import { useI18n } from '../src/i18n.jsx';
           .hero-inner { align-items: center !important; justify-content: center !important; padding-top: 0 !important; }
           .hero-section h1.display-4 { margin-bottom: .5rem !important; }
           .hero-section .lead { margin-bottom: .75rem !important; }
-          /* Indicateurs bien à l'intérieur de l'image, collés en bas de la photo */
+          /* Coller la section suivante (Types de services) à l'image sur mobile */
+          .hero-section + section { padding-top: 0 !important; margin-top: 0 !important; }
+          /* Indicateurs à l'intérieur de l'image (HomeHero) */
           .hero-section { position: relative; overflow: hidden; }
           .hero-section .carousel-indicators {
             position: absolute;
-            bottom: 16px !important;
+            bottom: auto;
+            top: calc(70vh - 40px);
             z-index: 5;
             margin-bottom: 0 !important;
           }
@@ -468,19 +471,33 @@ function IndexPage() {
     <div>
       <style>{`
         @media (max-width: 575.98px) {
-          .hero-section { min-height: 48vh !important; position: relative; overflow: hidden; }
-          .hero-section .carousel-inner,
-          .hero-section .carousel-item,
-          .hero-section .carousel-item img { height: 48vh !important; object-fit: cover; }
-          .hero-section .display-3 { font-size: 1.75rem !important; }
-          .hero-section .lead { font-size: 1rem !important; }
+          .hero-section { min-height: auto !important; position: relative; overflow: hidden; margin-bottom: 0 !important; }
+          /* Revenir à une hauteur de carrousel un peu plus grande mais coller la section suivante */
+          #heroCarousel { height: 34vh !important; }
+          #heroCarousel .carousel-inner,
+          #heroCarousel .carousel-item,
+          #heroCarousel .carousel-item img { height: 34vh !important; object-fit: cover; }
+          .hero-section .display-3 { font-size: 1.6rem !important; }
+          .hero-section .lead { font-size: 0.95rem !important; }
           .hero-section .btn-lg { padding: .5rem 1rem !important; font-size: .95rem !important; border-radius: 10px !important; }
-          /* Move content higher in the image for IndexPage hero */
-          .hero-section .container.position-relative.d-flex { align-items: flex-start !important; justify-content: flex-start !important; padding-top: 9vh !important; }
-          .hero-section h1.display-3 { margin-bottom: .5rem !important; }
-          .hero-section .lead { margin-bottom: .75rem !important; }
-          /* Ensure indicators are inside image (IndexPage) */
-          .hero-section .carousel-indicators { position: absolute; bottom: 40px !important; z-index: 5; margin-bottom: 0 !important; }
+          /* Remonter le contenu dans l'image pour IndexPage hero */
+          .hero-section .container.position-relative.d-flex { align-items: flex-start !important; justify-content: flex-start !important; padding-top: 5vh !important; }
+          .hero-section h1.display-3 { margin-bottom: .4rem !important; }
+          .hero-section .lead { margin-bottom: .4rem !important; }
+          /* Réduire l'espace à l'intérieur du hero sur mobile */
+          .hero-section .container { min-height: 42vh !important; padding-bottom: 0 !important; }
+          /* Coller complètement la section suivante à l'image sur mobile */
+          .hero-section + section { padding-top: 0 !important; margin-top: 0 !important; }
+          .hero-section + section h2 { margin-top: 0 !important; }
+          .hero-section + section p { margin-bottom: 1.25rem !important; }
+          /* Indicateurs à l'intérieur de l'image (IndexPage) : collés en bas de la photo */
+          .hero-section .carousel-indicators {
+            position: absolute;
+            bottom: 16px !important;
+            top: auto !important;
+            z-index: 5;
+            margin-bottom: 0 !important;
+          }
           .hero-section .carousel-indicators [data-bs-target] { width: 26px; height: 4px; border-radius: 3px; background-color: rgba(255,255,255,0.7); }
           .hero-section .carousel-indicators .active { background-color: #ffffff; width: 28px; }
         }
@@ -507,7 +524,7 @@ function IndexPage() {
             </div>
             <div className="carousel-item h-100">
               <img src={'/slide2.jpg'} alt="Slide 2" className="d-block w-100 h-100" style={{ objectFit: 'cover' }} />
-            </div>
+          c  </div>
             <div className="carousel-item h-100">
               <img src={'/slider3.jpg'} alt="Slide 3" className="d-block w-100 h-100" style={{ objectFit: 'cover' }} />
             </div>
