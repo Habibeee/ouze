@@ -248,8 +248,17 @@ exports.demandeDevis = async (req, res) => {
       try {
         const urls = [];
         for (const f of files) {
-          const url = await uploadFileToCloudinary(f, 'devis/demandes');
-          if (url) urls.push(url);
+          console.log(`[UPLOAD] Tentative d'upload fichier: ${f.originalname}, taille: ${f.size} bytes, type: ${f.mimetype}`);
+          try {
+            const url = await uploadFileToCloudinary(f, 'devis/demandes');
+            if (url) {
+              console.log(`[UPLOAD] Succès: ${f.originalname} -> ${url}`);
+              urls.push(url);
+            }
+          } catch (uploadErr) {
+            console.error(`[UPLOAD] Erreur pour ${f.originalname}:`, uploadErr.message);
+            throw uploadErr;
+          }
         }
         if (urls.length) {
           devis.clientFichiers = urls;
@@ -257,7 +266,12 @@ exports.demandeDevis = async (req, res) => {
           devis.clientFichier = urls[0];
         }
       } catch (e) {
-        return res.status(400).json({ success: false, message: "Erreur d'upload de la pièce jointe", error: e.message });
+        console.error('[UPLOAD] Erreur globale:', e.message);
+        return res.status(400).json({ 
+          success: false, 
+          message: "Erreur lors de l'upload des pièces jointes. Veuillez vérifier les fichiers et réessayer.",
+          details: e.message 
+        });
       }
     }
 

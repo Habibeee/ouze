@@ -59,16 +59,33 @@ exports.uploadToCloudinary = async (file, folder) => {
 // Upload tout type de fichier (pdf, docx, images, etc.)
 exports.uploadFileToCloudinary = async (file, folder) => {
   return new Promise((resolve, reject) => {
+    if (!file || !file.buffer) {
+      return reject(new Error('Fichier invalide ou manquant'));
+    }
     const uploadStream = cloudinary.uploader.upload_stream(
       {
         folder: `transdigisn/${folder}`,
-        resource_type: 'auto'
+        resource_type: 'auto',
+        max_file_size: 10 * 1024 * 1024, // 10 MB
+        timeout: 60000 // 60 secondes de timeout
       },
       (error, result) => {
-        if (error) reject(error);
-        else resolve(result.secure_url);
+        if (error) {
+          console.error('[CLOUDINARY] Erreur upload:', {
+            message: error.message,
+            code: error.http_code,
+            status: error.status
+          });
+          reject(new Error(`Cloudinary: ${error.message}`));
+        } else {
+          resolve(result.secure_url);
+        }
       }
     );
+    uploadStream.on('error', (err) => {
+      console.error('[CLOUDINARY] Stream error:', err.message);
+      reject(new Error(`Upload stream error: ${err.message}`));
+    });
     uploadStream.end(file.buffer);
   });
 };
