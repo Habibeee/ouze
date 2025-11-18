@@ -344,4 +344,57 @@ router.delete('/devis/:id', deleteMonDevis);
  */
 router.put('/devis/:devisId/cancel', annulerDevis);
 
+/**
+ * @swagger
+ * /users/debug/cloudinary-upload:
+ *   post:
+ *     summary: Route de diagnostic - tester upload Cloudinary directement
+ *     tags: [Debug]
+ *     security:
+ *       - BearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               fichier:
+ *                 type: string
+ *                 format: binary
+ *     responses:
+ *       200:
+ *         description: Upload réussi
+ *       400:
+ *         description: Erreur d'upload
+ */
+router.post('/debug/cloudinary-upload', uploadAny.single('fichier'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'Aucun fichier reçu' });
+    }
+    console.log('[DEBUG] Fichier reçu:', {
+      originalname: req.file.originalname,
+      mimetype: req.file.mimetype,
+      size: req.file.size,
+      buffer: !!req.file.buffer
+    });
+    const { uploadFileToCloudinary } = require('../middleware/upload.middleware');
+    const url = await uploadFileToCloudinary(req.file, 'debug/test');
+    return res.status(200).json({
+      success: true,
+      message: 'Upload réussi',
+      url
+    });
+  } catch (e) {
+    console.error('[DEBUG] Erreur upload:', e);
+    return res.status(400).json({
+      success: false,
+      message: 'Erreur upload',
+      error: e.message,
+      stack: process.env.NODE_ENV === 'development' ? e.stack : undefined
+    });
+  }
+});
+
 module.exports = router;
