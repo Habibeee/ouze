@@ -4,6 +4,7 @@ import { post } from '../services/apiClient.js';
 
 function TransdigiRegister() {
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formData, setFormData] = useState({
     companyName: '',
     ninea: '',
@@ -11,6 +12,7 @@ function TransdigiRegister() {
     email: '',
     sector: '',
     password: '',
+    confirmPassword: '',
     photo: null
   });
   const [photoPreview, setPhotoPreview] = useState(null);
@@ -22,7 +24,7 @@ function TransdigiRegister() {
   const isEmail = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
   const isPhone = (v) => /^\+?\d[\d\s.-]{7,}$/.test(v);
   const minLen = (v, n) => (v || '').trim().length >= n;
-  const validateField = (name, value) => {
+  const validateField = (name, value, all) => {
     switch (name) {
       case 'companyName':
         if (!value.trim()) return "Ce champ est obligatoire";
@@ -48,6 +50,10 @@ function TransdigiRegister() {
         if (value.length < 8) return 'Au moins 8 caractères';
         if (!/[A-Za-z]/.test(value) || !/\d/.test(value)) return 'Incluez 1 lettre et 1 chiffre';
         return '';
+      case 'confirmPassword':
+        if (!value) return 'Veuillez confirmer le mot de passe';
+        if (value !== (all?.password || formData.password)) return 'Les mots de passe ne correspondent pas';
+        return '';
       default:
         return '';
     }
@@ -55,8 +61,9 @@ function TransdigiRegister() {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-    const err = validateField(name, value);
+    const newForm = { ...formData, [name]: value };
+    setFormData(newForm);
+    const err = validateField(name, value, newForm);
     setErrors(prev => ({ ...prev, [name]: err }));
   };
 
@@ -76,9 +83,9 @@ function TransdigiRegister() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const fields = ['companyName','ninea','phone','email','sector','password'];
+    const fields = ['companyName','ninea','phone','email','sector','password','confirmPassword'];
     const newErrors = fields.reduce((acc, n) => {
-      acc[n] = validateField(n, formData[n]);
+      acc[n] = validateField(n, formData[n], formData);
       return acc;
     }, {});
     setErrors(newErrors);
@@ -199,6 +206,17 @@ function TransdigiRegister() {
                     </button>
                   </div>
                   {errors.password && <div className="text-danger small mt-1">{errors.password}</div>}
+                </div>
+
+                <div className="mb-2">
+                  <label className="form-label fw-semibold">Confirmer le mot de passe</label>
+                  <div className="position-relative">
+                    <input type={showConfirmPassword ? 'text' : 'password'} className="form-control form-control-lg pe-5" placeholder="Confirmez votre mot de passe" name="confirmPassword" value={formData.confirmPassword} onChange={handleInputChange} autoComplete="new-password" />
+                    <button type="button" onClick={() => setShowConfirmPassword(s => !s)} className="btn position-absolute top-50 end-0 translate-middle-y border-0 bg-transparent" style={{ paddingRight: 12 }} aria-label={showConfirmPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}>
+                      <i className={`bi ${showConfirmPassword ? 'bi-eye-slash' : 'bi-eye'} text-muted`}></i>
+                    </button>
+                  </div>
+                  {errors.confirmPassword && <div className="text-danger small mt-1">{errors.confirmPassword}</div>}
                 </div>
 
                 <div className="alert alert-light border d-flex align-items-start gap-3" role="alert">

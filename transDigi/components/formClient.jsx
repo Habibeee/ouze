@@ -4,6 +4,7 @@ import { post } from '../services/apiClient.js';
 
 const FreightForwardPage = () => {
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formData, setFormData] = useState({
     prenom: '',
     nom: '',
@@ -238,15 +239,25 @@ const FreightForwardPage = () => {
             </div>
             <div>
               <label className="block font-semibold mb-2">Confirmer le mot de passe</label>
-              <input
-                type="password"
-                className="form-control"
-                placeholder="Confirmez votre mot de passe"
-                name="confirmPassword"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                autoComplete="new-password"
-              />
+              <div className="input-group">
+                <input
+                  type={showConfirmPassword ? "text" : "password"}
+                  className="form-control"
+                  placeholder="Confirmez votre mot de passe"
+                  name="confirmPassword"
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  autoComplete="new-password"
+                />
+                <button
+                  type="button"
+                  className="btn btn-outline-secondary"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  aria-label={showConfirmPassword ? 'Masquer le mot de passe confirmé' : 'Afficher le mot de passe confirmé'}
+                >
+                  <i className={`bi ${showConfirmPassword ? 'bi-eye-slash' : 'bi-eye'}`}></i>
+                </button>
+              </div>
               {errors.confirmPassword && <div className="text-danger small mt-1">{errors.confirmPassword}</div>}
             </div>
           </div>
