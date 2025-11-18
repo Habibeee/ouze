@@ -28,15 +28,16 @@ import { useI18n } from '../src/i18n.jsx';
     const subStyle = { color: dark ? 'rgba(255,255,255,0.85)' : '#6c757d' };
     const bulletIcon = (active) => ({
       fontSize: 14,
-      color: '#ffffff',
-      backgroundColor: active ? '#16a34a' : 'rgba(22,163,74,0.85)',
+      color: active ? '#ffffff' : (dark ? '#16a34a' : '#16a34a'),
+      backgroundColor: active ? '#16a34a' : 'transparent',
       width: 28,
       height: 28,
       borderRadius: '999px',
       display: 'inline-flex',
       alignItems: 'center',
       justifyContent: 'center',
-      transition: 'transform 260ms ease, background-color 260ms ease, box-shadow 260ms ease',
+      border: active ? 'none' : '1px solid rgba(22,163,74,0.35)',
+      transition: 'transform 260ms ease, background-color 260ms ease, box-shadow 260ms ease, color 260ms ease, border-color 260ms ease',
       transform: active ? 'translateY(-1px) scale(1.05)' : 'none',
       boxShadow: active ? '0 0 0 3px rgba(22,163,74,0.25)' : 'none'
     });
@@ -449,15 +450,16 @@ function IndexPage() {
                   <span
                     style={{
                       fontSize: 14,
-                      color: '#ffffff',
-                      backgroundColor: hover ? '#16a34a' : 'rgba(22,163,74,0.85)',
+                      color: hover ? '#ffffff' : '#16a34a',
+                      backgroundColor: hover ? '#16a34a' : 'transparent',
                       width: 28,
                       height: 28,
                       borderRadius: '999px',
                       display: 'inline-flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      transition: 'transform 260ms ease, background-color 260ms ease, box-shadow 260ms ease',
+                      border: hover ? 'none' : '1px solid rgba(22,163,74,0.35)',
+                      transition: 'transform 260ms ease, background-color 260ms ease, box-shadow 260ms ease, color 260ms ease, border-color 260ms ease',
                       transform: hover ? 'translateY(-1px) scale(1.05)' : 'none',
                       boxShadow: hover ? '0 0 0 3px rgba(22,163,74,0.25)' : 'none'
                     }}

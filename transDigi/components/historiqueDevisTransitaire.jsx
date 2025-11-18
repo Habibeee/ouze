@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
-import { listTransitaireDevis } from '../services/apiClient.js';
+import { listTransitaireDevis, logout } from '../services/apiClient.js';
+import { useI18n } from '../src/i18n.jsx';
 
 const normalizeStatus = (raw) => {
   const v = (raw || '').toString().toLowerCase();
@@ -13,6 +14,7 @@ const normalizeStatus = (raw) => {
 };
 
 const HistoriqueDevisTransitaire = () => {
+  const { t } = useI18n();
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -20,6 +22,10 @@ const HistoriqueDevisTransitaire = () => {
   const [date, setDate] = useState('');
   const [page, setPage] = useState(1);
   const pageSize = 10;
+  const [avatarUrl, setAvatarUrl] = useState(() => {
+    try { return localStorage.getItem('transLogoUrl') || ''; } catch { return ''; }
+  });
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -94,6 +100,61 @@ const HistoriqueDevisTransitaire = () => {
 
   return (
     <div className="bg-body" style={{ minHeight: '100vh' }}>
+      {/* AppBar simplifiée du transitaire */}
+      <div className="w-100 d-flex justify-content-between align-items-center gap-2 px-2 px-md-3 py-2 bg-white border-bottom" style={{ position: 'sticky', top: 0, zIndex: 100 }}>
+        <div className="d-flex flex-column">
+          <span className="fw-semibold" style={{ fontSize: 14 }}>{t('forwarder.page.title') || 'Tableau de bord transitaire'}</span>
+          <small className="text-muted">Historique des devis</small>
+        </div>
+        <div className="d-flex align-items-center gap-2 position-relative">
+          <button
+            className="btn p-0 border-0 bg-transparent"
+            onClick={() => setProfileMenuOpen(!profileMenuOpen)}
+            aria-label={t('forwarder.header.open_profile_menu')}
+          >
+            {avatarUrl ? (
+              <img
+                src={avatarUrl}
+                alt="Profil"
+                className="rounded-circle"
+                style={{ width: 32, height: 32, objectFit: 'cover', border: '2px solid #e9ecef' }}
+              />
+            ) : (
+              <div
+                className="rounded-circle d-flex align-items-center justify-content-center"
+                style={{ width: 32, height: 32, border: '2px solid #e9ecef', backgroundColor: '#E9ECEF' }}
+              >
+                <span style={{ fontWeight: 600, color: '#495057', fontSize: 13 }}>T</span>
+              </div>
+            )}
+          </button>
+          {profileMenuOpen && (
+            <div className="card shadow-sm" style={{ position: 'absolute', top: '100%', right: 0, zIndex: 1050, minWidth: '200px' }}>
+              <div className="list-group list-group-flush">
+                <button
+                  className="list-group-item list-group-item-action"
+                  onClick={() => {
+                    setProfileMenuOpen(false);
+                    window.location.hash = '#/profile';
+                  }}
+                >
+                  {t('forwarder.header.menu.edit_profile')}
+                </button>
+                <button
+                  className="list-group-item list-group-item-action text-danger"
+                  onClick={async () => {
+                    setProfileMenuOpen(false);
+                    try { await logout(); } finally { window.location.hash = '#/connexion'; }
+                  }}
+                >
+                  {t('forwarder.header.menu.logout')}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
       <div className="container-fluid px-3 px-md-4 py-4">
         <div className="d-flex align-items-center justify-content-between gap-2 mb-3 flex-wrap">
           <button
