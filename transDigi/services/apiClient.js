@@ -172,6 +172,30 @@ export async function updateAdminEmail(email) {
   return put('/admin/profile/email', { email });
 }
 
+// Admin - Devis (liste, archivage, détail)
+export async function listAdminDevis(params = {}) {
+  const search = new URLSearchParams();
+  if (params.status) search.set('statut', String(params.status));
+  if (typeof params.page !== 'undefined') search.set('page', String(params.page));
+  if (typeof params.limit !== 'undefined') search.set('limit', String(params.limit));
+  if (params.search) search.set('search', String(params.search));
+  const q = search.toString() ? `?${search.toString()}` : '';
+  return get(`/admin/devis${q}`);
+}
+
+export async function archiveAdminDevis(id) {
+  if (!id) throw new Error('id requis');
+  return apiFetch(`/admin/devis/${encodeURIComponent(id)}`, {
+    method: 'PUT',
+    body: { statut: 'archive' },
+  });
+}
+
+export async function getAdminDevisById(id) {
+  if (!id) throw new Error('id requis');
+  return get(`/admin/devis/${encodeURIComponent(id)}`);
+}
+
 // Client - Devis
 export async function createDevis(translataireId, body) {
   if (!translataireId) throw new Error('translataireId requis');

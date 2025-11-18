@@ -15,7 +15,8 @@ import {
   FileText,
   Menu,
   X,
-  User
+  User,
+  Clock,
 } from 'lucide-react';
 import { adminStyles, adminCss } from '../styles/tableauBordAdminStyle.jsx';
 import SideBare from './sideBare';
@@ -24,6 +25,8 @@ import GestionUtilisateurs from './gestionUtilisateur.jsx';
 import GestionTransitaire from './gestionTransitaire.jsx';
 import ValidationCompte from './validationCompte.jsx';
 import HistoriqueDevis from './historiqueDevis.jsx';
+import AdminDevis from './adminDevis.jsx';
+import HistoriqueDevisAdmin from './historiqueDevisAdmin.jsx';
 import { useI18n } from '../src/i18n.jsx';
 
 const AdminDashboard = () => {
@@ -300,6 +303,8 @@ const AdminDashboard = () => {
     { id: 'validation', label: t('admin.sidebar.validation'), icon: Shield },
     { id: 'utilisateurs', label: t('admin.sidebar.clients'), icon: Users },
     { id: 'transitaires', label: t('admin.sidebar.forwarders'), icon: Truck },
+    { id: 'devis', label: 'Devis', icon: FileText },
+    { id: 'historique-devis-admin', label: 'Historique des devis', icon: Clock },
     { id: 'statistiques', label: t('admin.devis.stats.title'), icon: TrendingUp }
   ];
 
@@ -326,6 +331,8 @@ const AdminDashboard = () => {
           { id: 'validation', label: t('admin.sidebar.validation'), icon: Shield },
           { id: 'clients', label: t('admin.sidebar.clients'), icon: Users },
           { id: 'transitaires', label: t('admin.sidebar.forwarders'), icon: Truck },
+          { id: 'devis', label: 'Devis', icon: FileText },
+          { id: 'historique-devis-admin', label: 'Historique des devis', icon: Clock },
         ]}
         closeOnNavigate={false}
         defaultOpen={true}
@@ -417,6 +424,10 @@ const AdminDashboard = () => {
             <GestionTransitaire />
           ) : section === 'validation' ? (
             <ValidationCompte />
+          ) : section === 'devis' ? (
+            <AdminDevis />
+          ) : section === 'historique-devis-admin' ? (
+            <HistoriqueDevisAdmin />
           ) : (
             <>
               {/* Stat cards */}
