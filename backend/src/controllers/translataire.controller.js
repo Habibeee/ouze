@@ -100,7 +100,7 @@ exports.uploadPhoto = async (req, res) => {
   }
 };
 
-// @desc    Obtenir toutes les demandes de devis
+// @desc    Obtenir les demandes de devis (avec filtrage par statut)
 // @route   GET /api/translataires/devis
 // @access  Private (Translataire)
 exports.getDevis = async (req, res) => {
@@ -108,13 +108,27 @@ exports.getDevis = async (req, res) => {
     const translataire = await Translataire.findById(req.user.id)
       .populate('devis.client', 'nom prenom email telephone');
 
-    res.json({
+    if (!translataire) {
+      return res.status(404).json({ success: false, message: 'Translataire non trouvé' });
+    }
+
+    const rawStatut = (req.query.statut || '').toString().toLowerCase().trim();
+
+    let devis = translataire.devis || [];
+    if (rawStatut) {
+      devis = devis.filter(d => {
+        const s = (d.statut || d.status || 'en_attente').toString().toLowerCase();
+        return s === rawStatut;
+      });
+    }
+
+    return res.json({
       success: true,
-      count: translataire.devis.length,
-      devis: translataire.devis
+      count: devis.length,
+      devis
     });
   } catch (error) {
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: 'Erreur lors de la récupération',
       error: error.message
