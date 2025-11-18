@@ -430,7 +430,12 @@ const TransitaireDashboard = () => {
             </button>
           )}
           <div className="d-flex align-items-center gap-2 ms-auto">
-            <button className="btn btn-link position-relative text-body" onClick={onBellClick} aria-label={t('forwarder.header.notifications')}>
+            <button
+              className="btn btn-link position-relative"
+              style={{ color: 'var(--bs-body-color)' }}
+              onClick={onBellClick}
+              aria-label={t('forwarder.header.notifications')}
+            >
               <Bell size={20} />
               {unreadCount > 0 && <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">{unreadCount}</span>}
             </button>
@@ -513,8 +518,8 @@ const TransitaireDashboard = () => {
                 <div key={index} className="col-12 col-sm-6 col-lg-3">
                   <div className="card border-0 shadow-sm h-100">
                     <div className="card-body p-3">
-                      <div className="small mb-2 text-muted">{stat.label}</div>
-                      <div className="h3 fw-bold mb-0 text-body">{stat.value}</div>
+                      <div className="small mb-2" style={{ color: 'var(--bs-body-color)' }}>{stat.label}</div>
+                      <div className="h3 fw-bold mb-0" style={{ color: 'var(--bs-body-color)' }}>{stat.value}</div>
                     </div>
                   </div>
                 </div>
