@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import { transitareStyles, transitareCss } from '../styles/tableauBoardTransitareStyle.jsx';
 import SideBare from './sideBare';
-import { logout, listNotifications, markNotificationRead, markAllNotificationsRead, getUnreadNotificationsCount, listTransitaireDevis, respondDevisTransitaire, getTransitaireStats, get } from '../services/apiClient.js';
+import { logout, listNotifications, markNotificationRead, markAllNotificationsRead, getUnreadNotificationsCount, listTransitaireDevis, respondDevisTransitaire, getTransitaireStats, get, archiveDevisTransitaire } from '../services/apiClient.js';
 import { useI18n } from '../src/i18n.jsx';
 
 const TransitaireDashboard = () => {
@@ -30,7 +30,13 @@ const TransitaireDashboard = () => {
   const { t } = useI18n();
   const [searchFilter, setSearchFilter] = useState('');
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
-  const [activeSideItem, setActiveSideItem] = useState(() => (typeof window !== 'undefined' && window.location.hash === '#/profile') ? 'profil' : 'dashboard');
+  const [activeSideItem, setActiveSideItem] = useState(() => {
+    if (typeof window === 'undefined') return 'dashboard';
+    const h = window.location.hash;
+    if (h === '#/profile') return 'profil';
+    if (h === '#/historique-transitaire') return 'historique-devis';
+    return 'dashboard';
+  });
   const [avatarUrl, setAvatarUrl] = useState(() => {
     try { return localStorage.getItem('transLogoUrl') || ''; } catch { return ''; }
   });
@@ -91,6 +97,7 @@ const TransitaireDashboard = () => {
     const syncFromHash = () => {
       const hash = window.location.hash;
       if (hash === '#/profile') setActiveSideItem('profil');
+      else if (hash === '#/historique-transitaire') setActiveSideItem('historique-devis');
       else if (hash === '#/dashboard-transitaire') setActiveSideItem('dashboard');
     };
     syncFromHash();
@@ -289,6 +296,18 @@ const TransitaireDashboard = () => {
   // Charger statistiques réelles au montage
   useEffect(() => { updateStats().catch(()=>{}); }, []);
 
+  const onArchive = async (id) => {
+    if (!id) return;
+    if (!window.confirm("Archiver ce devis ? Il disparaîtra de la liste principale mais restera accessible dans l'historique.")) return;
+    try {
+      await archiveDevisTransitaire(id);
+      await fetchDevis();
+      try { lastStatsAtRef.current = 0; await updateStats(); } catch {}
+    } catch (e) {
+      alert(e?.message || "Erreur lors de l'archivage");
+    }
+  };
+
   const [respondOpen, setRespondOpen] = useState(false);
   const [respondDevisId, setRespondDevisId] = useState(null);
   const [respAmount, setRespAmount] = useState('');
@@ -324,7 +343,9 @@ const TransitaireDashboard = () => {
             <button className="btn btn-sm btn-primary" onClick={() => onOpenRespond(id)}>
               Répondre
             </button>
-          
+            <button className="btn btn-sm btn-outline-secondary" onClick={() => onArchive(id)}>
+              Archiver
+            </button>
           </>
         );
       case 'en-cours':
@@ -333,10 +354,12 @@ const TransitaireDashboard = () => {
           <button className="btn btn-sm btn-outline-secondary" onClick={() => { const it = rows.find(r=>r.id===id); setDetailItem(it||null); setDetailOpen(true); }}>
               Détails
             </button>
-          <button className="btn btn-sm btn-primary" onClick={() => onOpenRespond(id)}>
+            <button className="btn btn-sm btn-primary" onClick={() => onOpenRespond(id)}>
               Répondre
             </button>
-            
+            <button className="btn btn-sm btn-outline-secondary" onClick={() => onArchive(id)}>
+              Archiver
+            </button>
           </>
         );
       case 'traite':
@@ -345,10 +368,12 @@ const TransitaireDashboard = () => {
              <button className="btn btn-sm btn-outline-secondary" onClick={() => { const it = rows.find(r=>r.id===id); setDetailItem(it||null); setDetailOpen(true); }}>
               Détails
             </button>
-             <button className="btn btn-sm btn-primary" onClick={() => onOpenRespond(id)}>
+            <button className="btn btn-sm btn-primary" onClick={() => onOpenRespond(id)}>
               Répondre
             </button>
-            
+            <button className="btn btn-sm btn-outline-secondary" onClick={() => onArchive(id)}>
+              Archiver
+            </button>
           </>
         );
       default:
@@ -371,12 +396,15 @@ const TransitaireDashboard = () => {
         activeId={activeSideItem}
         items={[
           { id: 'dashboard', label: t('forwarder.sidebar.dashboard'), icon: LayoutGrid },
+          { id: 'historique-devis', label: 'Historique des devis', icon: Clock },
           { id: 'profil', label: t('forwarder.sidebar.profile'), icon: User },
         ]}
         onNavigate={(id) => {
           setActiveSideItem(id);
           if (id === 'dashboard') {
             window.location.hash = '#/dashboard-transitaire';
+          } else if (id === 'historique-devis') {
+            window.location.hash = '#/historique-transitaire';
           } else if (id === 'profil') {
             window.location.hash = '#/profile';
           }

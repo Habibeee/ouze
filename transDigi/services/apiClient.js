@@ -270,6 +270,7 @@ export async function listTransitaireDevis(params = {}) {
   if (uiStatus === 'en-attente') search.set('statut', 'en_attente');
   else if (uiStatus === 'en-cours') search.set('statut', 'accepte');
   else if (uiStatus === 'traites') search.set('statut', 'traite');
+  else if (uiStatus === 'archive') search.set('statut', 'archive');
   if (typeof params.page !== 'undefined') search.set('page', String(params.page));
   if (typeof params.limit !== 'undefined') search.set('limit', String(params.limit));
   if (params.search) search.set('search', String(params.search));
@@ -277,6 +278,15 @@ export async function listTransitaireDevis(params = {}) {
   search.set('_ts', String(Date.now()));
   const q = search.toString() ? `?${search.toString()}` : '';
   return get(`/translataires/devis${q}`);
+}
+
+// Transitaire - Archiver un devis (reste visible dans l'historique)
+export async function archiveDevisTransitaire(devisId) {
+  if (!devisId) throw new Error('devisId requis');
+  return apiFetch(`/translataires/devis/${encodeURIComponent(devisId)}`, {
+    method: 'PUT',
+    body: { statut: 'archive' },
+  });
 }
 
 // Transitaire - Répondre à un devis (contre‑offre)

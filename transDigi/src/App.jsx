@@ -16,6 +16,7 @@ import ClientDashboard from '../components/tableauBordClient.jsx';
 import AdminDashboard from '../components/tableauBordAdmin.jsx';
 import GestionUtilisateurs from '../components/gestionUtilisateur.jsx';
 import HistoriqueDevis from '../components/historiqueDevis.jsx';
+import HistoriqueDevisTransitaire from '../components/historiqueDevisTransitaire.jsx';
 import ProfilTransitaire from '../components/profilTransitaire.jsx';
 import ModofierProfClient from '../components/modofierProfClient.jsx';
 import DetailDevis from '../components/detailDevis.jsx';
@@ -88,7 +89,7 @@ function App() {
     const token = (() => { try { return localStorage.getItem('token'); } catch { return null; } })();
     const userType = getUserTypeFromStorage();
     const hasUserType = !!(userType && userType.length);
-    const isProtected = ['#/dashboard-client','#/dashboard-transitaire','#/dashboard-admin','#/profil-client','#/profile','#/historique','#/nouveau-devis','#/recherche-transitaire','#/envois'].includes(baseRoute);
+    const isProtected = ['#/dashboard-client','#/dashboard-transitaire','#/dashboard-admin','#/profil-client','#/profile','#/historique','#/historique-transitaire','#/nouveau-devis','#/recherche-transitaire','#/envois'].includes(baseRoute);
     const isAuthPages = ['#/connexion','#/signup','#/client','#/transitaire','#/oauth-callback'].includes(baseRoute) || route.startsWith('#/reinitialiser/') || route.startsWith('#/verifier/');
 
     // Si l'utilisateur clique sur "Se connecter", on autorise l'accès en nettoyant l'état auth
@@ -117,6 +118,10 @@ function App() {
     localStorage.setItem('theme', theme);
     try {
       document.body.classList.toggle('theme-dark', theme === 'dark');
+      // Flag de page de connexion pour ajuster le layout (ex: footer en mobile)
+      const baseRoute = (window.location.hash || '#/').split('?')[0];
+      const isLogin = baseRoute === '#/connexion';
+      document.body.classList.toggle('login-page', isLogin);
     } catch {}
   }, [theme]);
 
@@ -154,6 +159,8 @@ function App() {
         return <RechercheTransitaire />;
       case '#/dashboard-transitaire':
         return <TransitaireDashboard />;
+      case '#/historique-transitaire':
+        return <HistoriqueDevisTransitaire />;
       case '#/dashboard-client':
         return <ClientDashboard />;
       case '#/dashboard-admin':

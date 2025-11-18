@@ -27,10 +27,18 @@ import { useI18n } from '../src/i18n.jsx';
     // Subtitles in brand green as requested
     const subStyle = { color: dark ? 'rgba(255,255,255,0.85)' : '#6c757d' };
     const bulletIcon = (active) => ({
-      fontSize: 20,
-      color: active ? color : (dark ? 'rgba(255,255,255,0.7)' : '#6c757d'),
-      transition: 'transform 260ms ease, color 260ms ease',
-      transform: active ? 'translateY(-1px) rotate(-2deg)' : 'none'
+      fontSize: 14,
+      color: '#ffffff',
+      backgroundColor: active ? '#16a34a' : 'rgba(22,163,74,0.85)',
+      width: 28,
+      height: 28,
+      borderRadius: '999px',
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      transition: 'transform 260ms ease, background-color 260ms ease, box-shadow 260ms ease',
+      transform: active ? 'translateY(-1px) scale(1.05)' : 'none',
+      boxShadow: active ? '0 0 0 3px rgba(22,163,74,0.25)' : 'none'
     });
     useEffect(() => {
       let ticking = false;
@@ -438,7 +446,24 @@ function IndexPage() {
             <div className="d-grid gap-3">
               {steps.map((s, i) => (
                 <div key={i} className="d-flex align-items-start gap-3">
-                  <span style={{ fontSize: 20, color: hover ? color : (dark ? 'rgba(255,255,255,0.7)' : '#6c757d') }}>✓</span>
+                  <span
+                    style={{
+                      fontSize: 14,
+                      color: '#ffffff',
+                      backgroundColor: hover ? '#16a34a' : 'rgba(22,163,74,0.85)',
+                      width: 28,
+                      height: 28,
+                      borderRadius: '999px',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      transition: 'transform 260ms ease, background-color 260ms ease, box-shadow 260ms ease',
+                      transform: hover ? 'translateY(-1px) scale(1.05)' : 'none',
+                      boxShadow: hover ? '0 0 0 3px rgba(22,163,74,0.25)' : 'none'
+                    }}
+                  >
+                    ✓
+                  </span>
                   <div>
                     <div className="fw-bold" style={{ color: dark ? '#fff' : '#111827' }}>{s.title}</div>
                     <div className="small" style={{ color: dark ? 'rgba(255,255,255,0.8)' : '#6c757d' }}>{s.text}</div>

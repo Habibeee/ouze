@@ -112,6 +112,8 @@ a:hover { color: #0066d6; }
 footer .container-fluid { padding-left: 1rem; padding-right: 1rem; }
 @media (max-width: 576px) {
   footer .row > [class^="col-"] { margin-bottom: 1rem; }
+  /* Cacher le footer uniquement sur la page de connexion en mobile */
+  body.login-page footer { display: none !important; }
 }
 
 /* ==========================

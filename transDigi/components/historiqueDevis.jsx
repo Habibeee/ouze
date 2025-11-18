@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useToast } from './ui/ToastProvider.jsx';
 import { Search, ChevronLeft, ChevronRight, LayoutGrid, FileText, Clock, User, Truck, Search as SearchIcon } from 'lucide-react';
 import { historiqueDevisCss } from '../styles/historiqueDevisStyle.jsx';
-import { listMesDevis, cancelDevis, deleteMonDevis } from '../services/apiClient.js';
+import { listMesDevis, cancelDevis } from '../services/apiClient.js';
 
 const statusMeta = {
   accepte: { label: 'Accepté', className: 'badge-status success' },
@@ -56,15 +56,15 @@ const HistoriqueDevis = () => {
       } finally { setLoading(false); }
   };
 
-  const handleDelete = async (id) => {
+  const handleArchive = async (id) => {
     if (!id) return;
-    if (!window.confirm('Voulez-vous SUPPRIMER définitivement ce devis de votre historique ? Cette action est irréversible.')) return;
+    if (!window.confirm('Voulez-vous ARCHIVER ce devis ? Il restera visible dans votre historique avec un statut mis à jour.')) return;
     try {
-      await deleteMonDevis(id);
+      await cancelDevis(id);
       await load();
-      toast.success('Devis supprimé définitivement.');
+      toast.success('Devis archivé avec succès.');
     } catch (e) {
-      toast.error(e?.message || 'Erreur lors de la suppression');
+      toast.error(e?.message || "Erreur lors de l'archivage");
     }
   };
 
@@ -130,6 +130,8 @@ const HistoriqueDevis = () => {
                 <option value="tous">Statut: Tous</option>
                 <option value="accepte">Accepté</option>
                 <option value="attente">En attente</option>
+                <option value="refuse">Refusé</option>
+                <option value="annule">Annulé / Archivé</option>
               </select>
               <select className="form-select filter-select" value={type} onChange={(e) => setType(e.target.value)}>
                 <option value="tous">Type de service</option>
@@ -191,7 +193,7 @@ const HistoriqueDevis = () => {
                         {r.statut === 'attente' && (
                           <button className="btn btn-sm btn-outline-warning" onClick={() => handleCancel(r.id)}>Annuler</button>
                         )}
-                        <button className="btn btn-sm btn-outline-danger" onClick={() => handleDelete(r.id)}>Supprimer</button>
+                        <button className="btn btn-sm btn-outline-secondary" onClick={() => handleArchive(r.id)}>Archiver</button>
                       </div>
                     </td>
                   </tr>

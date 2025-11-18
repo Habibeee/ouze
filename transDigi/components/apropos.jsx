@@ -95,7 +95,19 @@ function Apropos() {
 
   return (
     <section className="py-5 bg-body" style={aproposStyles.section}>
-      <style>{`.apropos-hero h2, .apropos-hero p { color: #fff !important; }`}</style>
+      <style>{`
+        .apropos-hero h2, .apropos-hero p { color: #fff !important; }
+        .team-avatar {
+          width: 140px;
+          height: 140px;
+        }
+        @media (max-width: 575.98px) {
+          .team-avatar {
+            width: 96px;
+            height: 96px;
+          }
+        }
+      `}</style>
       <div className="container d-grid gap-4 gap-md-5">
         <div className="p-4 p-md-5 apropos-hero" style={aproposStyles.hero}>
           <div className="row g-4 align-items-center justify-content-center">
@@ -197,6 +209,7 @@ function Apropos() {
                 <img
                   src={m.img}
                   alt={m.name}
+                  className="team-avatar"
                   style={{
                     ...aproposStyles.avatar,
                     transition: 'transform 220ms ease, box-shadow 220ms ease, filter 220ms ease',
@@ -208,6 +221,7 @@ function Apropos() {
                 />
               ) : (
                 <div
+                  className="team-avatar d-flex align-items-center justify-content-center"
                   style={{
                     ...aproposStyles.avatarFallback,
                     transition: 'transform 220ms ease, box-shadow 220ms ease',
