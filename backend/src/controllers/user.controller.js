@@ -209,6 +209,14 @@ exports.searchTranslataires = async (req, res) => {
 // @access  Private
 exports.demandeDevis = async (req, res) => {
   try {
+    console.log('[DEVIS-API] Requête reçue. Params:', { translatireId: req.params.translatireId });
+    console.log('[DEVIS-API] Req.body:', req.body);
+    console.log('[DEVIS-API] Req.files:', req.files ? `${req.files.length} fichiers` : 'aucun');
+    if (req.files && req.files.length) {
+      req.files.forEach((f, i) => {
+        console.log(`[DEVIS-API] Fichier ${i}:`, { name: f.originalname, size: f.size, type: f.mimetype });
+      });
+    }
     const { typeService, description, dateExpiration, translataireName, origin, destination, devisOrigin } = req.body;
     let translataire = null;
     if (req.params.translatireId && String(req.params.translatireId).length >= 12) {
@@ -219,6 +227,7 @@ exports.demandeDevis = async (req, res) => {
     }
 
     if (!translataire) {
+      console.error('[DEVIS-API] Translataire non trouvé');
       return res.status(404).json({
         success: false,
         message: 'Translataire non trouvé'
@@ -226,6 +235,7 @@ exports.demandeDevis = async (req, res) => {
     }
 
     if (!translataire.isApproved) {
+      console.error('[DEVIS-API] Translataire non approuvé');
       return res.status(400).json({
         success: false,
         message: 'Ce translataire n\'est pas encore approuvé'
@@ -244,6 +254,7 @@ exports.demandeDevis = async (req, res) => {
 
     // Pièces jointes facultatives du client (support multi-fichiers)
     const files = Array.isArray(req.files) && req.files.length ? req.files : (req.file ? [req.file] : []);
+    console.log('[DEVIS-API] Nombre de fichiers à traiter:', files.length);
     if (files.length) {
       try {
         const urls = [];

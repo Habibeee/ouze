@@ -30,7 +30,24 @@ app.use(express.urlencoded({ extended: true }));
 // Logging middleware
 app.use((req, res, next) => {
   console.log(` ${req.method} ${req.path}`);
+  // Log file upload details
+  if (req.method === 'POST' && req.path.includes('demande-devis')) {
+    console.log(`[UPLOAD-INIT] Requête POST demande-devis reçue. Content-Type: ${req.headers['content-type']}`);
+  }
   next();
+});
+
+// Middleware pour capturer erreurs Multer
+app.use((err, req, res, next) => {
+  if (err && err.code === 'LIMIT_FILE_SIZE') {
+    console.error('[MULTER] Erreur: Fichier trop volumineux', { size: err.limit });
+    return res.status(400).json({ success: false, message: `Fichier trop volumineux (max: ${err.limit / 1024 / 1024} MB)` });
+  }
+  if (err && err.code === 'LIMIT_FILE_COUNT') {
+    console.error('[MULTER] Erreur: Trop de fichiers');
+    return res.status(400).json({ success: false, message: 'Trop de fichiers' });
+  }
+  next(err);
 });
 
 // Rate limiting (configurable)
