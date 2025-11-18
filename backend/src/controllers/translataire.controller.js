@@ -122,13 +122,13 @@ exports.getDevis = async (req, res) => {
   }
 };
 
-// @desc    Répondre à un devis
+// @desc    Répondre à un devis ou mettre à jour son statut (accepte / archive)
 // @route   PUT /api/translataires/devis/:devisId
 // @access  Private (Translataire)
 exports.repondreDevis = async (req, res) => {
   try {
     const { montantEstime, statut } = req.body;
-    
+
     const translataire = await Translataire.findById(req.user.id);
     const devis = translataire.devis.id(req.params.devisId);
 
@@ -139,11 +139,12 @@ exports.repondreDevis = async (req, res) => {
       });
     }
 
-    // Interdire le refus d'un devis: seul 'accepte' est autorisé
-    if (statut && statut !== 'accepte') {
+    // Autoriser uniquement les statuts attendus : 'accepte' (réponse) ou 'archive' (archivage)
+    const allowedStatus = ['accepte', 'archive'];
+    if (statut && !allowedStatus.includes(statut)) {
       return res.status(400).json({
         success: false,
-        message: "Le translataire ne peut pas refuser un devis. Seul le statut 'accepte' est autorisé."
+        message: "Statut invalide. Seuls 'accepte' ou 'archive' sont autorisés pour cette route."
       });
     }
 
@@ -167,8 +168,9 @@ exports.repondreDevis = async (req, res) => {
       }
     }
     if (statut === 'accepte') devis.statut = 'accepte';
+    if (statut === 'archive') devis.statut = 'archive';
 
-    // Mettre à jour les statistiques
+    // Mettre à jour les statistiques uniquement pour les devis acceptés
     if (statut === 'accepte') {
       translataire.nombreDevisTraites += 1;
     }

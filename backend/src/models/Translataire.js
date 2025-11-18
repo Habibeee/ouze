@@ -28,7 +28,7 @@ const devisSchema = new mongoose.Schema({
   reponseFichier: String,
   statut: {
     type: String,
-    enum: ['en_attente', 'accepte', 'refuse', 'expire', 'annule'],
+    enum: ['en_attente', 'accepte', 'refuse', 'expire', 'annule', 'archive', 'traite'],
     default: 'en_attente'
   },
   dateExpiration: Date,

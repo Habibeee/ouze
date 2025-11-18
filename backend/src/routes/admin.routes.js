@@ -12,6 +12,8 @@ const {
   getDashboardUsers,
   getDashboardTranslataires,
   getAllDevis,
+  getDevisById,
+  updateDevisStatus,
   bulkAccountsAction,
   listAdmins,
   createAdmin,
@@ -506,6 +508,12 @@ router.get('/statistiques', getStatistiques);
  *                   type: object
  */
 router.get('/devis', getAllDevis);
+
+// Détail d'un devis (admin)
+router.get('/devis/:id', getDevisById);
+
+// Mettre à jour le statut d'un devis (admin)
+router.put('/devis/:id', updateDevisStatus);
 
 /**
  * @swagger

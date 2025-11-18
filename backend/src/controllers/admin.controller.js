@@ -220,6 +220,84 @@ exports.getAllUsers = async (req, res) => {
   }
 };
 
+// @desc    Obtenir un devis par ID (vue admin)
+// @route   GET /api/admin/devis/:id
+// @access  Private (Admin)
+exports.getDevisById = async (req, res) => {
+  try {
+    const id = String(req.params.id || '');
+    if (!id || id.length < 12) {
+      return res.status(400).json({ success: false, message: 'ID invalide' });
+    }
+
+    const translataire = await Translataire.findOne({ 'devis._id': id })
+      .populate('devis.client', 'nom prenom email telephone')
+      .select('nomEntreprise devis');
+
+    if (!translataire) {
+      return res.status(404).json({ success: false, message: 'Devis non trouvé' });
+    }
+
+    const devis = translataire.devis.id(id);
+    if (!devis) {
+      return res.status(404).json({ success: false, message: 'Devis non trouvé' });
+    }
+
+    const dto = {
+      ...devis.toObject(),
+      translataire: {
+        id: translataire._id,
+        nom: translataire.nomEntreprise
+      },
+      origin: devis.origin || devis.origine,
+      destination: devis.destination || devis.route
+    };
+
+    return res.json({ success: true, devis: dto });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: 'Erreur récupération devis', error: error.message });
+  }
+};
+
+// @desc    Mettre à jour le statut d'un devis (admin)
+// @route   PUT /api/admin/devis/:id
+// @access  Private (Admin)
+exports.updateDevisStatus = async (req, res) => {
+  try {
+    const id = String(req.params.id || '');
+    if (!id || id.length < 12) {
+      return res.status(400).json({ success: false, message: 'ID invalide' });
+    }
+
+    const { statut } = req.body || {};
+    if (!statut) {
+      return res.status(400).json({ success: false, message: 'statut requis' });
+    }
+
+    const allowedStatus = ['en_attente', 'accepte', 'refuse', 'expire', 'annule', 'archive', 'traite'];
+    if (!allowedStatus.includes(statut)) {
+      return res.status(400).json({ success: false, message: 'Statut invalide' });
+    }
+
+    const translataire = await Translataire.findOne({ 'devis._id': id }).select('nomEntreprise devis');
+    if (!translataire) {
+      return res.status(404).json({ success: false, message: 'Devis non trouvé' });
+    }
+
+    const devis = translataire.devis.id(id);
+    if (!devis) {
+      return res.status(404).json({ success: false, message: 'Devis non trouvé' });
+    }
+
+    devis.statut = statut;
+    await translataire.save();
+
+    return res.json({ success: true, message: 'Statut du devis mis à jour', devis: devis.toObject() });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: 'Erreur mise à jour devis', error: error.message });
+  }
+};
+
 // @desc    Définir la note admin d'un translataire (1 à 5)
 // @route   PUT /api/admin/translataires/:id/rating
 // @access  Private (Admin)
