@@ -357,7 +357,7 @@ import { useI18n } from '../src/i18n.jsx';
               <div className="p-4 border rounded-4 h-100 bg-white" style={{ boxShadow: '0 16px 36px rgba(0,0,0,0.15)', borderColor: 'rgba(0,0,0,0.08)' }}>
                 <p className="mb-4">{t('home.testimonials.quote2.text')}</p>
                 <div className="d-flex align-items-center gap-3">
-                  <img src={'/transitaire2.jpg'} alt="Transitaire" className="rounded-circle" style={{ width: 48, height: 48, objectFit: 'cover', boxShadow: '0 6px 16px rgba(0,0,0,0.18)' }} />
+                  <img src={'/geo.jpeg'} alt="Mouhamadou Fadal Diagne" className="rounded-circle" style={{ width: 48, height: 48, objectFit: 'cover', boxShadow: '0 6px 16px rgba(0,0,0,0.18)' }} />
                   <div>
                     <div className="fw-bold">{t('home.testimonials.quote2.author')}</div>
                     <div className="text-muted small">{t('home.testimonials.quote2.role')}</div>
