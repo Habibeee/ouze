@@ -613,5 +613,11 @@ export const transitareCss = `
     .text-muted {
       color: var(--bs-dark-muted) !important;
     }
+
+    /* Forcer les titres principaux en clair sur le dashboard transitaire */
+    .forwarder-main-title,
+    .forwarder-stats-title {
+      color: var(--bs-light) !important;
+    }
   }
 `;

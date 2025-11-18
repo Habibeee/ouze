@@ -443,7 +443,7 @@ const TransitaireDashboard = () => {
               <div className="card shadow-sm" style={{ position: 'absolute', top: '100%', right: 48, zIndex: 1050, minWidth: 320 }}>
                 <div className="card-body p-0">
                   <div className="d-flex justify-content-between align-items-center px-3 py-2 border-bottom">
-                    <div className="fw-semibold">{t('forwarder.header.notifications')}</div>
+                    <div className="fw-semibold" style={{ color: 'var(--bs-body-color)' }}>{t('forwarder.header.notifications')}</div>
                     <button className="btn btn-sm btn-link" onClick={onMarkAll}>{t('forwarder.header.mark_all_read')}</button>
                   </div>
                   {notifLoading ? (
@@ -506,13 +506,13 @@ const TransitaireDashboard = () => {
         <div className="container-fluid px-2 px-md-4 py-3 py-md-4">
           {/* Page Title */}
           <div className="d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between gap-2 mb-3 mb-md-4">
-            <h1 className="h3 h2-md fw-bold mb-0 text-body">{t('forwarder.page.title')}</h1>
+            <h1 className="h3 h2-md fw-bold mb-0 text-body forwarder-main-title">{t('forwarder.page.title')}</h1>
             <button className="btn btn-outline-secondary btn-sm" onClick={async ()=>{ try { await fetchDevis({ page:1, limit, status: activeTab }); lastStatsAtRef.current = 0; await updateStats(); } catch {} }}>{t('forwarder.page.refresh')}</button>
           </div>
 
           {/* Stats Section */}
           <div className="mb-3 mb-md-4">
-            <h5 className="fw-semibold mb-3 text-body">{t('forwarder.stats.title')}</h5>
+            <h5 className="fw-semibold mb-3 text-body forwarder-stats-title">{t('forwarder.stats.title')}</h5>
             <div className="row g-2 g-md-3">
               {stats.map((stat, index) => (
                 <div key={index} className="col-12 col-sm-6 col-lg-3">
