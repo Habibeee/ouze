@@ -414,7 +414,7 @@ const TransitaireDashboard = () => {
       {/* Main Content */}
       <div className="flex-grow-1" style={{ marginLeft: isLgUp ? (sidebarOpen ? '240px' : '56px') : '0', transition: 'margin-left .25s ease', minWidth: 0, width: '100%', maxWidth: '100vw', overflowX: 'hidden', backgroundColor: 'var(--bg)' }}>
         {/* Header with icons */}
-        <div className="w-100 d-flex justify-content-between align-items-center gap-2 px-2 px-md-3 py-2 bg-white border-bottom" style={{ position: 'sticky', top: 0, zIndex: 100 }}>
+        <div className="w-100 d-flex justify-content-between align-items-center gap-2 px-2 px-md-3 py-2 bg-body border-bottom" style={{ position: 'sticky', top: 0, zIndex: 100 }}>
           {/* Hamburger menu button - visible only on mobile */}
           {!isLgUp && (
             <button 
@@ -430,7 +430,7 @@ const TransitaireDashboard = () => {
             </button>
           )}
           <div className="d-flex align-items-center gap-2 ms-auto">
-            <button className="btn btn-link position-relative" onClick={onBellClick} aria-label={t('forwarder.header.notifications')}>
+            <button className="btn btn-link position-relative text-body" onClick={onBellClick} aria-label={t('forwarder.header.notifications')}>
               <Bell size={20} />
               {unreadCount > 0 && <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">{unreadCount}</span>}
             </button>
@@ -465,15 +465,15 @@ const TransitaireDashboard = () => {
                 <img
                   src={avatarUrl}
                   alt="Profil"
-                  className="rounded-circle"
-                  style={{ width: 36, height: 36, objectFit: 'cover', border: '2px solid #e9ecef' }}
+                  className="rounded-circle border"
+                  style={{ width: 36, height: 36, objectFit: 'cover' }}
                 />
               ) : (
                 <div
-                  className="rounded-circle d-flex align-items-center justify-content-center"
-                  style={{ width: 36, height: 36, border: '2px solid #e9ecef', backgroundColor: '#E9ECEF' }}
+                  className="rounded-circle d-flex align-items-center justify-content-center bg-body-secondary border"
+                  style={{ width: 36, height: 36 }}
                 >
-                  <span style={{ fontWeight: 600, color: '#495057', fontSize: 14 }}>
+                  <span className="text-body" style={{ fontWeight: 600, fontSize: 14 }}>
                     {(transInitials || '').trim() || (transName ? transName.charAt(0).toUpperCase() : 'T')}
                   </span>
                 </div>
@@ -501,20 +501,20 @@ const TransitaireDashboard = () => {
         <div className="container-fluid px-2 px-md-4 py-3 py-md-4">
           {/* Page Title */}
           <div className="d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between gap-2 mb-3 mb-md-4">
-            <h1 className="h3 h2-md fw-bold mb-0" style={{ color: '#111827' }}>{t('forwarder.page.title')}</h1>
+            <h1 className="h3 h2-md fw-bold mb-0 text-body">{t('forwarder.page.title')}</h1>
             <button className="btn btn-outline-secondary btn-sm" onClick={async ()=>{ try { await fetchDevis({ page:1, limit, status: activeTab }); lastStatsAtRef.current = 0; await updateStats(); } catch {} }}>{t('forwarder.page.refresh')}</button>
           </div>
 
           {/* Stats Section */}
           <div className="mb-3 mb-md-4">
-            <h5 className="fw-semibold mb-3" style={{ color: '#111827' }}>{t('forwarder.stats.title')}</h5>
+            <h5 className="fw-semibold mb-3 text-body">{t('forwarder.stats.title')}</h5>
             <div className="row g-2 g-md-3">
               {stats.map((stat, index) => (
                 <div key={index} className="col-12 col-sm-6 col-lg-3">
                   <div className="card border-0 shadow-sm h-100">
                     <div className="card-body p-3">
-                      <div className="small mb-2" style={{ color: '#4B5563' }}>{stat.label}</div>
-                      <div className="h3 fw-bold mb-0" style={{ color: '#111827' }}>{stat.value}</div>
+                      <div className="small mb-2 text-muted">{stat.label}</div>
+                      <div className="h3 fw-bold mb-0 text-body">{stat.value}</div>
                     </div>
                   </div>
                 </div>
@@ -540,10 +540,10 @@ const TransitaireDashboard = () => {
                   ))}
                 </div>
                 <div className="input-group" style={{ maxWidth: '300px' }}>
-                  <span className="input-group-text bg-white">
+                  <span className="input-group-text bg-body-secondary border-end-0">
                     <Search size={18} />
                   </span>
-                  <input type="text" className="form-control" placeholder={t('forwarder.search.placeholder')} value={searchFilter} onChange={(e) => setSearchFilter(e.target.value)} />
+                  <input type="text" className="form-control border-start-0" placeholder={t('forwarder.search.placeholder')} value={searchFilter} onChange={(e) => setSearchFilter(e.target.value)} />
                 </div>
               </div>
 
@@ -580,8 +580,8 @@ const TransitaireDashboard = () => {
                       <tr key={item.id}>
                         <td className="px-4 py-3 fw-semibold">{item.id}</td>
                         <td className="py-3">{item.client}</td>
-                        <td className="py-3" style={{ color: '#111827' }}>{item.date}</td>
-                        <td className="py-3" style={{ color: '#111827' }}>{item.route}</td>
+                        <td className="py-3 text-body">{item.date}</td>
+                        <td className="py-3 text-body">{item.route}</td>
                         <td className="py-3">
                           <span className="badge px-3 py-2" style={{ backgroundColor: statusBadge(item.status).bg, color: statusBadge(item.status).fg, fontWeight: '500' }}>
                             {statusBadge(item.status).label}

@@ -101,9 +101,9 @@ const HistoriqueDevisTransitaire = () => {
   return (
     <div className="bg-body" style={{ minHeight: '100vh' }}>
       {/* AppBar simplifiée du transitaire */}
-      <div className="w-100 d-flex justify-content-between align-items-center gap-2 px-2 px-md-3 py-2 bg-white border-bottom" style={{ position: 'sticky', top: 0, zIndex: 100 }}>
+      <div className="w-100 d-flex justify-content-between align-items-center gap-2 px-2 px-md-3 py-2 bg-body border-bottom" style={{ position: 'sticky', top: 0, zIndex: 100 }}>
         <div className="d-flex flex-column">
-          <span className="fw-semibold" style={{ fontSize: 14 }}>{t('forwarder.page.title') || 'Tableau de bord transitaire'}</span>
+          <span className="fw-semibold text-body" style={{ fontSize: 14 }}>{t('forwarder.page.title') || 'Tableau de bord transitaire'}</span>
           <small className="text-muted">Historique des devis</small>
         </div>
         <div className="d-flex align-items-center gap-2 position-relative">
@@ -121,10 +121,10 @@ const HistoriqueDevisTransitaire = () => {
               />
             ) : (
               <div
-                className="rounded-circle d-flex align-items-center justify-content-center"
-                style={{ width: 32, height: 32, border: '2px solid #e9ecef', backgroundColor: '#E9ECEF' }}
+                className="rounded-circle d-flex align-items-center justify-content-center bg-body-secondary border"
+                style={{ width: 32, height: 32 }}
               >
-                <span style={{ fontWeight: 600, color: '#495057', fontSize: 13 }}>T</span>
+                <span className="text-body" style={{ fontWeight: 600, fontSize: 13 }}>T</span>
               </div>
             )}
           </button>
