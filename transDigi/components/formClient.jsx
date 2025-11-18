@@ -113,10 +113,11 @@ const FreightForwardPage = () => {
         motDePasse: formData.password,
       };
       const res = await post('/auth/register/client', payload);
-      setSubmitOk(res?.message || "Inscription réussie. Veuillez vérifier votre email.");
+      setSubmitOk("Inscription réussie, vous pouvez connecter avec votre email ou numéro de téléphone.");
       // stocker l'avatar en attente pour upload après premier login
       try { if (photoPreview) localStorage.setItem('pendingPhoto:user', photoPreview); } catch {}
-      // Ne pas rediriger automatiquement; laisser l'utilisateur lire le message et accéder à sa boîte mail
+      // Redirection vers la page de connexion après 2 secondes
+      setTimeout(() => { window.location.hash = '#/connexion'; }, 2000);
     } catch (err) {
       setSubmitError(err?.message || 'Erreur lors de l\'inscription');
     } finally {
@@ -282,15 +283,6 @@ const FreightForwardPage = () => {
             </div>
           </div>
 
-          <div className="bg-blue-50 border border-blue-200 rounded p-4 mb-4 flex items-start gap-2">
-            <svg width="20" height="20" fill="currentColor" className="text-blue-600 mt-1 flex-shrink-0">
-              <circle cx="10" cy="10" r="9" stroke="currentColor" strokeWidth="2" fill="none"/>
-              <text x="10" y="15" textAnchor="middle" fontSize="14" fill="currentColor">i</text>
-            </svg>
-            <small>
-              Un e-mail de vérification sera envoyé à votre adresse e-mail. Veuillez cliquer sur le lien pour activer votre compte.
-            </small>
-          </div>
           {submitError && <div className="alert alert-danger py-2 mb-3">{submitError}</div>}
           {submitOk && <div className="alert alert-success py-2 mb-3">{submitOk}</div>}
 

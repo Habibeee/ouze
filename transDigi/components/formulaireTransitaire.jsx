@@ -119,8 +119,9 @@ function TransdigiRegister() {
       setSubmitError('');
       setSubmitOk('');
       const res = await post('/auth/register/translataire', payload);
-      setSubmitOk(res?.message || 'Inscription réussie. En attente d\'approbation.');
-      setTimeout(() => { window.location.hash = '#/connexion'; }, 1000);
+      setSubmitOk('Inscription réussie, vous pouvez connecter avec votre email ou numéro de téléphone.');
+      // Redirection vers la page de connexion après 2 secondes
+      setTimeout(() => { window.location.hash = '#/connexion'; }, 2000);
     } catch (err) {
       setSubmitError(err?.message || 'Erreur lors de l\'inscription');
     } finally {

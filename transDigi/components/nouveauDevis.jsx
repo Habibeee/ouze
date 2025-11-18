@@ -215,7 +215,8 @@ const NouveauDevis = () => {
         }
         window.location.hash = '#/historique';
       } catch (e) {
-        toastError("Une erreur est survenue lors de l'envoi du devis. Veuillez réessayer.");
+        const errorMsg = e?.message || "Une erreur est survenue lors de l'envoi du devis.";
+        toastError(errorMsg.includes('400') ? "Erreur lors de l'upload du fichier. Vérifiez la taille et le format." : errorMsg);
       }
     })();
   };
