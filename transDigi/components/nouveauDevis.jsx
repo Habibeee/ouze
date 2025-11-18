@@ -134,14 +134,37 @@ const NouveauDevis = () => {
     }));
   };
 
+  const MAX_CLIENT_FILE_SIZE = Number(import.meta.env.VITE_MAX_UPLOAD_FILE_SIZE) || (50 * 1024 * 1024); // 50 MB default
+  const ALLOWED_TYPES = ['application/pdf','application/msword','application/vnd.openxmlformats-officedocument.wordprocessingml.document','application/vnd.ms-excel','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet','image/jpeg','image/png'];
+
   const handleFileUpload = (e) => {
     const files = Array.from(e.target.files || []);
-    if (files.length) {
+    if (!files.length) return;
+    const accepted = [];
+    const rejected = [];
+    files.forEach((f) => {
+      if (f.size > MAX_CLIENT_FILE_SIZE) {
+        rejected.push({ name: f.name, reason: 'Taille trop volumineuse' });
+        return;
+      }
+      if (ALLOWED_TYPES.length && !ALLOWED_TYPES.includes(f.type)) {
+        rejected.push({ name: f.name, reason: 'Format non supporté' });
+        return;
+      }
+      accepted.push(f);
+    });
+    if (rejected.length) {
+      const list = rejected.map(r => `${r.name} (${r.reason})`).join(', ');
+      toastError(`Fichiers rejetés: ${list}. Taille max par fichier: ${Math.round(MAX_CLIENT_FILE_SIZE/1024/1024)} MB.`);
+    }
+    if (accepted.length) {
       setFormData(prev => ({
         ...prev,
-        uploadedFiles: [...(prev.uploadedFiles || []), ...files]
+        uploadedFiles: [...(prev.uploadedFiles || []), ...accepted]
       }));
     }
+    // clear the input to allow re-selecting same file if needed
+    try { e.target.value = null; } catch {}
   };
 
   const removeFile = (index) => {
