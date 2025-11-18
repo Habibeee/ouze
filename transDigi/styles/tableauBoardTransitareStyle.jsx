@@ -28,6 +28,12 @@ export const transitareCss = `
     background-color: var(--card) !important;
   }
 
+  /* Titres principaux du dashboard transitaire : foncés par défaut (mode clair) */
+  .forwarder-main-title,
+  .forwarder-stats-title {
+    color: #111827;
+  }
+
   .card h1, .card h2, .card h3, .card h4, .card h5, .card h6,
   .card .h1, .card .h2, .card .h3, .card .h4, .card .h5, .card .h6 {
     color: var(--text) !important;
@@ -614,7 +620,7 @@ export const transitareCss = `
       color: var(--bs-dark-muted) !important;
     }
 
-    /* Forcer les titres principaux en clair sur le dashboard transitaire */
+    /* Forcer les titres principaux en clair sur le dashboard transitaire en mode sombre */
     .forwarder-main-title,
     .forwarder-stats-title {
       color: var(--bs-light) !important;
