@@ -23,11 +23,15 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
+// Taille max par fichier configurable via l'env `MAX_UPLOAD_FILE_SIZE` (octets)
+const DEFAULT_MAX_UPLOAD = 50 * 1024 * 1024; // 50 MB
+const MAX_UPLOAD_FILE_SIZE = parseInt(process.env.MAX_UPLOAD_FILE_SIZE, 10) || DEFAULT_MAX_UPLOAD;
+
 const upload = multer({
   storage,
   fileFilter,
   limits: {
-    fileSize: 5 * 1024 * 1024 // 5 MB max
+    fileSize: MAX_UPLOAD_FILE_SIZE
   }
 });
 
@@ -35,7 +39,7 @@ const upload = multer({
 const uploadAny = multer({
   storage,
   limits: {
-    fileSize: 10 * 1024 * 1024 // 10 MB max pour pièces jointes
+    fileSize: MAX_UPLOAD_FILE_SIZE // limite par fichier
   }
 });
 
