@@ -95,7 +95,19 @@ const HistoriqueDevisTransitaire = () => {
   return (
     <div className="bg-body" style={{ minHeight: '100vh' }}>
       <div className="container-fluid px-3 px-md-4 py-4">
-        <h2 className="fw-bold mb-3">Historique des devis (Transitaire)</h2>
+        <div className="d-flex align-items-center justify-content-between gap-2 mb-3 flex-wrap">
+          <button
+            type="button"
+            className="btn btn-outline-secondary d-inline-flex align-items-center gap-1"
+            onClick={() => {
+              try { window.location.hash = '#/dashboard-transitaire'; } catch {}
+            }}
+          >
+            <ChevronLeft size={16} />
+            <span>Retour au tableau de bord</span>
+          </button>
+          <h2 className="fw-bold mb-0 ms-auto text-nowrap">Historique des devis (Transitaire)</h2>
+        </div>
 
         <div className="card border-0 shadow-sm mb-4">
           <div className="card-body p-3 p-md-4">
