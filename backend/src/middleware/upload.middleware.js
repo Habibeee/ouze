@@ -66,6 +66,15 @@ exports.uploadFileToCloudinary = async (file, folder) => {
     if (!file || !file.buffer) {
       return reject(new Error('Fichier invalide ou manquant'));
     }
+    // Vérifier que Cloudinary est configuré
+    if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
+      console.error('[CLOUDINARY] Configuration manquante:', {
+        cloud_name: !!process.env.CLOUDINARY_CLOUD_NAME,
+        api_key: !!process.env.CLOUDINARY_API_KEY,
+        api_secret: !!process.env.CLOUDINARY_API_SECRET
+      });
+      return reject(new Error('Cloudinary non configuré (clés manquantes)'));
+    }
     const uploadStream = cloudinary.uploader.upload_stream(
       {
         folder: `transdigisn/${folder}`,
@@ -76,19 +85,27 @@ exports.uploadFileToCloudinary = async (file, folder) => {
       (error, result) => {
         if (error) {
           console.error('[CLOUDINARY] Erreur upload:', {
-            message: error.message,
-            code: error.http_code,
-            status: error.status
+            message: error.message || 'Pas de message',
+            code: error.http_code || error.code,
+            status: error.status,
+            fullError: error.toString()
           });
-          reject(new Error(`Cloudinary: ${error.message}`));
+          reject(new Error(`Cloudinary: ${error.message || error.toString() || 'Erreur inconnue'}`));
+        } else if (!result || !result.secure_url) {
+          console.error('[CLOUDINARY] Réponse invalide:', result);
+          reject(new Error('Cloudinary a retourné une réponse invalide'));
         } else {
           resolve(result.secure_url);
         }
       }
     );
     uploadStream.on('error', (err) => {
-      console.error('[CLOUDINARY] Stream error:', err.message);
-      reject(new Error(`Upload stream error: ${err.message}`));
+      console.error('[CLOUDINARY] Stream error:', {
+        message: err.message,
+        code: err.code,
+        fullError: err.toString()
+      });
+      reject(new Error(`Upload stream error: ${err.message || err.toString()}`));
     });
     uploadStream.end(file.buffer);
   });
