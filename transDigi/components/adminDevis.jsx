@@ -2,6 +2,23 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { listAdminDevis, archiveAdminDevis } from '../services/apiClient.js';
 
+// Force le téléchargement pour les URLs Cloudinary (fl_attachment)
+const toDownloadUrl = (url, name) => {
+  if (!url) return url;
+  try {
+    const u = new URL(url);
+    if (!u.hostname.includes('res.cloudinary.com')) return url;
+  } catch {
+    return url;
+  }
+  if (url.includes('/upload/')) {
+    const safeName = (name || 'document').toString().replace(/[^a-z0-9._-]/gi, '_');
+    const parts = url.split('/upload/');
+    return `${parts[0]}/upload/fl_attachment:${safeName}/${parts[1]}`;
+  }
+  return url;
+};
+
 const normalizeStatus = (raw) => {
   const v = (raw || '').toString().toLowerCase();
   if (v.includes('attent') || v.includes('pending')) return 'en_attente';
@@ -277,7 +294,9 @@ const AdminDevis = () => {
                   {detail.details.docs.map((doc, idx) => (
                     <li key={idx}>
                       {doc.url ? (
-                        <a href={doc.url} download>{doc.name || `Document ${idx + 1}`}</a>
+                        <a href={toDownloadUrl(doc.url, doc.name || `Document ${idx + 1}`)} download>
+                          {doc.name || `Document ${idx + 1}`}
+                        </a>
                       ) : (
                         doc.name || `Document ${idx + 1}`
                       )}

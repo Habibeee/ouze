@@ -22,6 +22,23 @@ import SideBare from './sideBare';
 import { logout, listNotifications, markNotificationRead, markAllNotificationsRead, getUnreadNotificationsCount, listTransitaireDevis, respondDevisTransitaire, getTransitaireStats, get, archiveDevisTransitaire } from '../services/apiClient.js';
 import { useI18n } from '../src/i18n.jsx';
 
+// Force le téléchargement pour les URLs Cloudinary (fl_attachment)
+const toDownloadUrl = (url, name) => {
+  if (!url) return url;
+  try {
+    const u = new URL(url);
+    if (!u.hostname.includes('res.cloudinary.com')) return url;
+  } catch {
+    return url;
+  }
+  if (url.includes('/upload/')) {
+    const safeName = (name || 'fichier').toString().replace(/[^a-z0-9._-]/gi, '_');
+    const parts = url.split('/upload/');
+    return `${parts[0]}/upload/fl_attachment:${safeName}/${parts[1]}`;
+  }
+  return url;
+};
+
 const TransitaireDashboard = () => {
   const [activeTab, setActiveTab] = useState('en-attente');
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -317,6 +334,24 @@ const TransitaireDashboard = () => {
 
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailItem, setDetailItem] = useState(null);
+
+  const triggerClientFileDownload = (urlRaw, name) => {
+    if (!urlRaw) return;
+    const safeName = (name || 'fichier').toString();
+    const url = toDownloadUrl(urlRaw, safeName);
+    if (!url) return;
+    try {
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = safeName;
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } catch {
+      try { window.open(url, '_blank'); } catch {}
+    }
+  };
 
   const onOpenRespond = (id) => { setRespondDevisId(id); setRespAmount(''); setRespMessage(''); setRespFiles([]); setRespondOpen(true); };
   const onSubmitRespond = async () => {
@@ -728,11 +763,18 @@ const TransitaireDashboard = () => {
                               <div className="text-muted small">Pièces jointes du client</div>
                               <ul className="small mb-0">
                                 {clientFiles.map((f, idx) => {
-                                  const url = (f && typeof f === 'object') ? (f.url || f.link || f.location) : f;
+                                  const urlRaw = (f && typeof f === 'object') ? (f.url || f.link || f.location) : f;
                                   const name = (f && typeof f === 'object') ? (f.name || f.filename || f.originalName || `Fichier ${idx + 1}`) : `Fichier ${idx + 1}`;
+                                  const url = toDownloadUrl(urlRaw, name);
                                   return url ? (
                                     <li key={idx}>
-                                      <a href={url} download={name}>{name}</a>
+                                      <button
+                                        type="button"
+                                        className="btn btn-link p-0 align-baseline"
+                                        onClick={() => triggerClientFileDownload(urlRaw, name)}
+                                      >
+                                        {name}
+                                      </button>
                                     </li>
                                   ) : null;
                                 })}
