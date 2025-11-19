@@ -65,15 +65,27 @@ const GestionUtilisateurs = () => {
   const rowAction = async (id, type) => {
     try {
       setError('');
+      let response;
       if (type === 'approve') {
-        await put(`/admin/users/${id}/approve`);
+        response = await put(`/admin/users/${id}/approve`);
       } else if (['block','unblock','archive','unarchive','delete'].includes(type)) {
         if (type === 'delete') {
-          await post(`/admin/user/bulk/delete`, { ids: [id] });
+          response = await post(`/admin/user/bulk/delete`, { ids: [id] });
         } else {
-          await post(`/admin/user/bulk/${type}`, { ids: [id] });
+          response = await post(`/admin/user/bulk/${type}`, { ids: [id] });
         }
       }
+      
+      // Show email status if available
+      if (response?.emailStatus) {
+        const emailMsg = response.emailStatus.sent 
+          ? '✓ Email envoyé avec succès'
+          : response.emailStatus.error 
+          ? `⚠ Email non envoyé: ${response.emailStatus.error}`
+          : '⚠ Email non envoyé';
+        setError(emailMsg);
+      }
+      
       // Refresh current page
       const params = new URLSearchParams({ page: String(page), limit: String(pageSize) });
       if (searchTerm) params.set('search', searchTerm);
