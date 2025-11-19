@@ -226,41 +226,42 @@ function App() {
   };
 
   if (isClientRoute) {
+    const hasGlobalSidebar = baseRoute !== '#/client' && baseRoute !== '#/transitaire' && baseRoute !== '#/dashboard-client' && baseRoute !== '#/detail-devis-client';
     return (
       <ToastProvider>
       <div className="d-flex" style={{ minHeight: '100vh' }}>
         <style>{themeCss}</style>
         <style>{clientCss}</style>
-        {baseRoute !== '#/client' && baseRoute !== '#/transitaire' && (
-        <SideBare
-          topOffset={96}
-          activeId={clientActiveId}
-          defaultOpen={true}
-          closeOnNavigate={false}
-          open={sidebarOpen}
-          onOpenChange={(o)=>setSidebarOpen(!!o)}
-          items={[
-            { id: 'dashboard', label: 'Tableau de bord', icon: LayoutGrid },
-            { id: 'recherche', label: 'Trouver un transitaire', icon: Search },
-            { id: 'devis', label: 'Nouveau devis', icon: FileText },
-            { id: 'historique', label: 'Historique', icon: Clock },
-            { id: 'envois', label: 'Suivi des envois', icon: Truck },
-            { id: 'profile', label: 'Mon profil', icon: User },
-          ]}
-          onNavigate={(id) => {
-            switch(id){
-              case 'dashboard': window.location.hash = '#/dashboard-client'; break;
-              case 'recherche': window.location.hash = '#/recherche-transitaire'; break;
-              case 'devis': window.location.hash = '#/nouveau-devis'; break;
-              case 'historique': window.location.hash = '#/historique'; break;
-              case 'envois': window.location.hash = '#/envois'; break;
-              case 'profile': window.location.hash = '#/profil-client'; break;
-              default: break;
-            }
-          }}
-        />
+        {hasGlobalSidebar && (
+          <SideBare
+            topOffset={96}
+            activeId={clientActiveId}
+            defaultOpen={true}
+            closeOnNavigate={false}
+            open={sidebarOpen}
+            onOpenChange={(o)=>setSidebarOpen(!!o)}
+            items={[
+              { id: 'dashboard', label: 'Tableau de bord', icon: LayoutGrid },
+              { id: 'recherche', label: 'Trouver un transitaire', icon: Search },
+              { id: 'devis', label: 'Nouveau devis', icon: FileText },
+              { id: 'historique', label: 'Historique', icon: Clock },
+              { id: 'envois', label: 'Suivi des envois', icon: Truck },
+              { id: 'profile', label: 'Mon profil', icon: User },
+            ]}
+            onNavigate={(id) => {
+              switch(id){
+                case 'dashboard': window.location.hash = '#/dashboard-client'; break;
+                case 'recherche': window.location.hash = '#/recherche-transitaire'; break;
+                case 'devis': window.location.hash = '#/nouveau-devis'; break;
+                case 'historique': window.location.hash = '#/historique'; break;
+                case 'envois': window.location.hash = '#/envois'; break;
+                case 'profile': window.location.hash = '#/profil-client'; break;
+                default: break;
+              }
+            }}
+          />
         )}
-        <div className="flex-grow-1" style={{ marginLeft: (baseRoute !== '#/client' && baseRoute !== '#/transitaire') ? (isLgUp ? (sidebarOpen ? '240px' : '56px') : '0') : '0', transition: 'margin-left .25s ease' }}>
+        <div className="flex-grow-1" style={{ marginLeft: hasGlobalSidebar ? (isLgUp ? (sidebarOpen ? '240px' : '56px') : '0') : '0', transition: 'margin-left .25s ease' }}>
           <Header showSidebarToggle={false} hideNavbarToggler={false} onToggleSidebar={() => setSidebarOpen(o=>!o)} />
           <main className="flex-fill">
             {renderRoute()}
