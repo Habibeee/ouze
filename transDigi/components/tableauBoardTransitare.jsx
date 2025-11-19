@@ -732,7 +732,7 @@ const TransitaireDashboard = () => {
                                   const name = (f && typeof f === 'object') ? (f.name || f.filename || f.originalName || `Fichier ${idx + 1}`) : `Fichier ${idx + 1}`;
                                   return url ? (
                                     <li key={idx}>
-                                      <a href={url} target="_blank" rel="noreferrer">{name}</a>
+                                      <a href={url} download={name}>{name}</a>
                                     </li>
                                   ) : null;
                                 })}

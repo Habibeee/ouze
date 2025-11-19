@@ -277,7 +277,7 @@ const AdminDevis = () => {
                   {detail.details.docs.map((doc, idx) => (
                     <li key={idx}>
                       {doc.url ? (
-                        <a href={doc.url} target="_blank" rel="noreferrer">{doc.name || `Document ${idx + 1}`}</a>
+                        <a href={doc.url} download>{doc.name || `Document ${idx + 1}`}</a>
                       ) : (
                         doc.name || `Document ${idx + 1}`
                       )}
