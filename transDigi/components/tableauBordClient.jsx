@@ -550,14 +550,14 @@ return (
   
     {/* Main Content */}
     <div className="flex-grow-1" style={{ marginLeft: isLgUp ? (sidebarOpen ? '240px' : '56px') : '0 !important', transition: 'margin-left .25s ease', paddingLeft: 0, minWidth: 0, width: '100%', maxWidth: '100vw', overflowX: 'hidden', position: 'relative', backgroundColor: 'var(--bg)' }}>
-      <div className="w-100 d-flex align-items-center gap-2 px-2 px-md-3 py-2">
+      {/* Header: menu + notifications + profil */}
+      <div className="w-100 d-flex justify-content-between align-items-center gap-2 px-2 px-md-3 py-2">
         {/* Hamburger menu button - visible only on mobile */}
         {!isLgUp && (
           <button 
             className="btn btn-link p-1" 
             onClick={() => setSidebarOpen(!sidebarOpen)}
             aria-label="Toggle menu"
-            style={{ marginRight: 'auto' }}
           >
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <line x1="3" y1="12" x2="21" y2="12"></line>
@@ -566,7 +566,7 @@ return (
             </svg>
           </button>
         )}
-        <div className="ms-auto d-flex align-items-center gap-2 position-relative">
+        <div className="d-flex align-items-center gap-2 position-relative ms-auto">
           <button className="btn btn-link position-relative" onClick={onBellClick} aria-label={t('client.header.notifications')}>
             <Bell size={20} />
             {unreadCount > 0 && (
