@@ -25,7 +25,10 @@ const devisSchema = new mongoose.Schema({
   clientFichiers: [String],
   // Réponse du translataire (texte) et pièce jointe éventuelle
   reponse: String,
+  // Pièce jointe principale de réponse (compatibilité historique)
   reponseFichier: String,
+  // Liste complète des pièces jointes de réponse (nouveau)
+  reponseFichiers: [String],
   statut: {
     type: String,
     enum: ['en_attente', 'accepte', 'refuse', 'expire', 'annule', 'archive', 'traite'],

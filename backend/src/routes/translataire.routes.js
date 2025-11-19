@@ -208,9 +208,11 @@ router.get('/devis', checkApproval, getDevis);
  *                 type: string
  *                 example: Nous pouvons prendre en charge votre demande dans les délais
  *               fichier:
- *                 type: string
- *                 format: binary
- *                 description: Pièce jointe (PDF/DOCX/Image) envoyée au client
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                   format: binary
+ *                 description: Une ou plusieurs pièces jointes (PDF/DOCX/Image) envoyées au client
  *     responses:
  *       200:
  *         description: Réponse enregistrée avec succès
@@ -230,7 +232,7 @@ router.get('/devis', checkApproval, getDevis);
  *       404:
  *         description: Devis non trouvé
  */
-router.put('/devis/:devisId', checkApproval, uploadAny.single('fichier'), repondreDevis);
+router.put('/devis/:devisId', checkApproval, uploadAny.array('fichier'), repondreDevis);
 
 /**
  * @swagger

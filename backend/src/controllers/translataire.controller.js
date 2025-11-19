@@ -172,11 +172,20 @@ exports.repondreDevis = async (req, res) => {
 
     if (montantEstime !== undefined) devis.montantEstime = montantEstime;
     if (req.body.reponse !== undefined) devis.reponse = req.body.reponse;
-    // Pièce jointe facultative envoyée au client
-    if (req.file) {
+    // Pièces jointes facultatives envoyées au client (support multi-fichiers)
+    const filesArray = Array.isArray(req.files) && req.files.length ? req.files : (req.file ? [req.file] : []);
+    if (filesArray.length) {
       try {
-        const fileUrl = await uploadFileToCloudinary(req.file, 'devis/reponses');
-        devis.reponseFichier = fileUrl;
+        const urls = [];
+        for (const f of filesArray) {
+          const url = await uploadFileToCloudinary(f, 'devis/reponses');
+          if (url) urls.push(url);
+        }
+        if (urls.length) {
+          devis.reponseFichiers = urls;
+          // Compatibilité : conserver le premier fichier dans reponseFichier
+          devis.reponseFichier = urls[0];
+        }
       } catch (e) {
         return res.status(400).json({ success: false, message: "Erreur d'upload de la pièce jointe de réponse", error: e.message });
       }
