@@ -40,7 +40,13 @@ const extractDetails = (d = {}) => {
   const mode = d.modeTransport || d.mode || '';
   const dimensions = d.dimensions || d.dimension || '';
   const notes = d.notes || d.commentaires || d.comment || '';
-  const docs = d.documents || d.docs || d.fichiers || d.files || [];
+  let docs = d.documents || d.docs || d.fichiers || d.files || [];
+  // Inclure aussi les fichiers explicitement marqués côté client
+  if (Array.isArray(d.clientFichiers) && d.clientFichiers.length) {
+    docs = docs.concat(d.clientFichiers);
+  } else if (d.clientFichier) {
+    docs = docs.concat([d.clientFichier]);
+  }
   return { marchandise, poids, volume, mode, dimensions, notes, docs };
 };
 

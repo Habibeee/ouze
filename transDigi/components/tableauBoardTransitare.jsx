@@ -677,7 +677,10 @@ const TransitaireDashboard = () => {
                       const origin = raw.origin || raw.origine || '';
                       const destination = raw.destination || raw.arrivee || '';
                       const montant = raw.montantEstime;
-                      const hasFiles = (Array.isArray(raw.clientFichiers) && raw.clientFichiers.length) || raw.clientFichier;
+                      const clientFiles = Array.isArray(raw.clientFichiers)
+                        ? raw.clientFichiers
+                        : (raw.clientFichiers ? [raw.clientFichiers] : (raw.clientFichier ? [raw.clientFichier] : []));
+                      const hasFiles = clientFiles && clientFiles.length;
                       return (
                         <>
                           <div className="mb-3">
@@ -723,11 +726,17 @@ const TransitaireDashboard = () => {
                           {hasFiles && (
                             <div className="mb-3">
                               <div className="text-muted small">Pièces jointes du client</div>
-                              <div className="fw-semibold">
-                                {Array.isArray(raw.clientFichiers) && raw.clientFichiers.length
-                                  ? `${raw.clientFichiers.length} fichier(s) joint(s)`
-                                  : '1 fichier joint'}
-                              </div>
+                              <ul className="small mb-0">
+                                {clientFiles.map((f, idx) => {
+                                  const url = (f && typeof f === 'object') ? (f.url || f.link || f.location) : f;
+                                  const name = (f && typeof f === 'object') ? (f.name || f.filename || f.originalName || `Fichier ${idx + 1}`) : `Fichier ${idx + 1}`;
+                                  return url ? (
+                                    <li key={idx}>
+                                      <a href={url} target="_blank" rel="noreferrer">{name}</a>
+                                    </li>
+                                  ) : null;
+                                })}
+                              </ul>
                             </div>
                           )}
                           <div className="mb-4">
