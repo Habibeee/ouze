@@ -28,10 +28,12 @@ export const transitareCss = `
     background-color: var(--card) !important;
   }
 
-  /* Titres principaux du dashboard transitaire : foncés par défaut (mode clair) */
+  /* Titres principaux du dashboard transitaire :
+     - mode clair : texte foncé bien contrasté
+     - mode sombre : ajusté plus bas avec !important */
   .forwarder-main-title,
   .forwarder-stats-title {
-    color: #111827;
+    color: #111827 !important;
   }
 
   .card h1, .card h2, .card h3, .card h4, .card h5, .card h6,
