@@ -89,7 +89,19 @@ function App() {
     const token = (() => { try { return localStorage.getItem('token'); } catch { return null; } })();
     const userType = getUserTypeFromStorage();
     const hasUserType = !!(userType && userType.length);
-    const isProtected = ['#/dashboard-client','#/dashboard-transitaire','#/dashboard-admin','#/profil-client','#/profile','#/historique','#/historique-transitaire','#/nouveau-devis','#/recherche-transitaire','#/envois'].includes(baseRoute);
+    const isProtected = [
+      '#/dashboard-client',
+      '#/dashboard-transitaire',
+      '#/dashboard-admin',
+      '#/profil-client',
+      '#/profile',
+      '#/historique',
+      '#/historique-transitaire',
+      '#/nouveau-devis',
+      '#/recherche-transitaire',
+      '#/envois',
+      '#/fichiers-recus'
+    ].includes(baseRoute);
     const isAuthPages = ['#/connexion','#/signup','#/client','#/transitaire','#/oauth-callback'].includes(baseRoute) || route.startsWith('#/reinitialiser/') || route.startsWith('#/verifier/');
 
     // Si l'utilisateur clique sur "Se connecter", on autorise l'accès en nettoyant l'état auth
@@ -126,7 +138,18 @@ function App() {
   }, [theme]);
 
   const baseRoute = (route || '').split('?')[0];
-  const isClientRoute = ['#/dashboard-client','#/recherche-transitaire','#/nouveau-devis','#/historique','#/profil-client','#/envois','#/detail-devis-client','#/client','#/transitaire'].includes(baseRoute);
+  const isClientRoute = [
+    '#/dashboard-client',
+    '#/recherche-transitaire',
+    '#/nouveau-devis',
+    '#/historique',
+    '#/profil-client',
+    '#/envois',
+    '#/detail-devis-client',
+    '#/client',
+    '#/transitaire',
+    '#/fichiers-recus'
+  ].includes(baseRoute);
 
   const clientActiveId = (() => {
     switch(baseRoute){
@@ -136,6 +159,7 @@ function App() {
       case '#/historique': return 'historique';
       case '#/envois': return 'envois';
       case '#/profil-client': return 'profile';
+      case '#/fichiers-recus': return 'dashboard';
       case '#/client': return 'dashboard';
       case '#/transitaire': return 'dashboard';
       default: return 'dashboard';
@@ -170,6 +194,8 @@ function App() {
       case '#/historique':
         return <HistoriqueDevis />;
       case '#/envois':
+        return <ClientDashboard />;
+      case '#/fichiers-recus':
         return <ClientDashboard />;
       case '#/detail-devis':
         return <DetailDevis />;
