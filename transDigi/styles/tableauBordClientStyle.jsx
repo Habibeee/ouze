@@ -66,7 +66,9 @@ export const clientCss = `
       padding-left: 0 !important;
     }
 
-    .d-flex {
+    /* Ne pas casser tous les .d-flex (pour le header),
+       uniquement ceux à l'intérieur du contenu principal */
+    .default-wrap .d-flex {
       display: block !important;
     }
   }
