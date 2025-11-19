@@ -321,8 +321,11 @@ export async function respondDevisTransitaire(devisId, { amount, message, attach
   fd.append('statut', 'accepte');
   if (amount !== undefined) fd.append('montantEstime', String(amount));
   if (message !== undefined) fd.append('reponse', String(message));
-  const firstFile = attachments && Array.isArray(attachments) && attachments.length ? attachments[0] : null;
-  if (firstFile) fd.append('fichier', firstFile);
+  if (attachments && Array.isArray(attachments) && attachments.length) {
+    attachments.forEach((f) => {
+      if (f) fd.append('fichier', f);
+    });
+  }
   return apiFetch(`/translataires/devis/${encodeURIComponent(devisId)}`, { method: 'PUT', body: fd, headers: {} });
 }
 

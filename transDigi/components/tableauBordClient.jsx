@@ -10,6 +10,7 @@ import NouveauDevis from './nouveauDevis.jsx';
 import TrackingApp from './suiviEnvoi.jsx';
 import ModofierProfClient from './modofierProfClient.jsx';
 import HistoriqueDevis from './historiqueDevis.jsx';
+import MesFichiersRecus from './mesFichiersRecus.jsx';
 import { get, post, logout, listNotifications, markNotificationRead, markAllNotificationsRead, getUnreadNotificationsCount, cancelDevis as cancelDevisApi, listMesDevis as listMesDevisApi, updateMonDevis, getMonDevisById } from '../services/apiClient.js';
 import { useToast } from './ui/ToastProvider.jsx';
 import { getAuth, isAdmin as isAdminRole, isTrans as isTransRole } from '../services/authStore.js';
@@ -36,6 +37,7 @@ const ClientDashboard = () => {
       case '#/historique': return 'historique';
       case '#/profil-client': return 'profil';
       case '#/envois': return 'envois';
+      case '#/fichiers-recus': return 'fichiers';
       case '#/dashboard-client': return 'dashboard';
       default: return 'dashboard';
     }
@@ -171,6 +173,7 @@ const ClientDashboard = () => {
         if (goto === 'historique') return setSection('historique');
         if (goto === 'envois') return setSection('envois');
         if (goto === 'profil-client') return setSection('profil');
+        if (goto === 'fichiers') return setSection('fichiers');
       }
       if (hash.startsWith('#/historique')) setSection('historique');
       else if (hash.startsWith('#/dashboard-client')) setSection('dashboard');
@@ -178,6 +181,7 @@ const ClientDashboard = () => {
       else if (hash.startsWith('#/recherche-transitaire')) setSection('recherche');
       else if (hash.startsWith('#/envois')) setSection('envois');
       else if (hash.startsWith('#/profil-client')) setSection('profil');
+      else if (hash.startsWith('#/fichiers-recus')) setSection('fichiers');
     };
     const onHash = () => syncFromHash();
     window.addEventListener('hashchange', onHash);
@@ -521,6 +525,7 @@ return (
         { id: 'devis', label: t('client.sidebar.new_quote'), icon: FileText },
         { id: 'historique', label: t('client.sidebar.history'), icon: Clock },
         { id: 'envois', label: t('client.sidebar.shipments'), icon: Truck },
+        { id: 'fichiers', label: 'Mes fichiers reçus', icon: FileText },
         { id: 'profil', label: t('client.sidebar.profile'), icon: User },
       ]}
       onNavigate={(id) => {
@@ -535,6 +540,8 @@ return (
           window.location.hash = '#/historique';
         } else if (id === 'envois') {
           window.location.hash = '#/envois';
+        } else if (id === 'fichiers') {
+          window.location.hash = '#/fichiers-recus';
         } else if (id === 'profil') {
           window.location.hash = '#/profil-client';
         }
@@ -636,6 +643,8 @@ return (
           <NouveauDevis />
         ) : section === 'envois' ? (
           <TrackingApp />
+        ) : section === 'fichiers' ? (
+          <MesFichiersRecus />
         ) : section === 'profil' ? (
           <ModofierProfClient />
         ) : section === 'historique' ? (

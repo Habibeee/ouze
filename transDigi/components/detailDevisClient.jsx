@@ -10,6 +10,22 @@ const DetailDevisClient = () => {
   const toast = useToast();
   const [item, setItem] = useState(null);
 
+  const triggerDownload = (urlRaw, name) => {
+    if (!urlRaw) return;
+    const safeName = (name || 'document').toString();
+    try {
+      const a = document.createElement('a');
+      a.href = urlRaw;
+      a.download = safeName;
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } catch {
+      try { window.open(urlRaw, '_blank'); } catch {}
+    }
+  };
+
   const idFromHash = useMemo(() => {
     try {
       const h = window.location.hash || '';
@@ -42,6 +58,12 @@ const DetailDevisClient = () => {
       }
       if (!found) { setErr('Devis introuvable'); setItem(null); return; }
       const norm = normalize(found.statut || found.status);
+      const clientFiles = Array.isArray(found.clientFichiers)
+        ? found.clientFichiers
+        : (found.clientFichiers ? [found.clientFichiers] : (found.clientFichier ? [found.clientFichier] : []));
+      const transFiles = Array.isArray(found.reponseFichiers)
+        ? found.reponseFichiers
+        : (found.reponseFichiers ? [found.reponseFichiers] : (found.reponseFichier ? [found.reponseFichier] : []));
       setItem({
         id: found._id || found.id || '#',
         translataire: found.translataire || '',
@@ -52,6 +74,9 @@ const DetailDevisClient = () => {
         destination: found.destination || found.route || '',
         expiration: found.dateExpiration ? new Date(found.dateExpiration).toISOString().slice(0,10) : '',
         statut: norm,
+        montantEstime: typeof found.montantEstime !== 'undefined' ? found.montantEstime : null,
+        clientFiles,
+        transFiles,
       });
     } catch (e) {
       setErr(e?.message || 'Erreur de chargement');
@@ -151,10 +176,39 @@ const DetailDevisClient = () => {
                         <div className="text-muted small">Destination</div>
                         <div className="fw-semibold">{item.destination || '-'}</div>
                       </div>
+                      {typeof item.montantEstime !== 'undefined' && item.montantEstime !== null && (
+                        <div className="col-12 col-md-6">
+                          <div className="text-muted small">Montant proposé par le transitaire</div>
+                          <div className="fw-semibold">{String(item.montantEstime)}</div>
+                        </div>
+                      )}
                       {item.expiration && (
                         <div className="col-12 col-md-6">
                           <div className="text-muted small">Date d'expiration</div>
                           <div className="fw-semibold">{item.expiration}</div>
+                        </div>
+                      )}
+                      {item.clientFiles && item.clientFiles.length > 0 && (
+                        <div className="col-12">
+                          <div className="text-muted small">Pièces jointes envoyées au transitaire</div>
+                          <ul className="small mb-0">
+                            {item.clientFiles.map((f, idx) => {
+                              const url = (f && typeof f === 'object') ? (f.url || f.link || f.location) : f;
+                              const name = (f && typeof f === 'object') ? (f.name || f.filename || f.originalName || `Pièce jointe ${idx + 1}`) : `Pièce jointe ${idx + 1}`;
+                              if (!url) return null;
+                              return (
+                                <li key={idx}>
+                                  <button
+                                    type="button"
+                                    className="btn btn-link p-0 align-baseline"
+                                    onClick={() => triggerDownload(url, name)}
+                                  >
+                                    {name}
+                                  </button>
+                                </li>
+                              );
+                            })}
+                          </ul>
                         </div>
                       )}
                     </div>
@@ -168,6 +222,38 @@ const DetailDevisClient = () => {
                       <a className="btn btn-outline-secondary" href={`#/historique`}>Retour à l'historique</a>
                       {item.statut === 'attente' && (
                         <button className="btn btn-outline-danger" onClick={handleCancel}>Annuler le devis</button>
+                      )}
+                      <a className="btn btn-outline-primary" href="#/fichiers-recus">
+                        Aller à mes fichiers reçus
+                      </a>
+                      {item.transFiles && item.transFiles.length > 0 && (
+                        <div className="mt-2">
+                          <div className="text-muted small mb-1">Documents envoyés par le transitaire</div>
+                          <ul className="small mb-0">
+                            {item.transFiles.map((f, idx) => {
+                              const url = (f && typeof f === 'object') ? (f.url || f.link || f.location) : f;
+                              const name = (f && typeof f === 'object') ? (f.name || f.filename || f.originalName || `Document ${idx + 1}`) : `Document ${idx + 1}`;
+                              if (!url) return null;
+                              return (
+                                <li key={idx}>
+                                  <button
+                                    type="button"
+                                    className="btn btn-link p-0 align-baseline"
+                                    onClick={() => triggerDownload(url, name)}
+                                  >
+                                    {name}
+                                  </button>
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        </div>
+                      )}
+                      {item.reponse && (
+                        <div className="mt-2 small text-muted">
+                          <span className="d-block fw-semibold">Message du transitaire</span>
+                          <span>{item.reponse}</span>
+                        </div>
                       )}
                     </div>
                   </div>

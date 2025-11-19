@@ -77,24 +77,6 @@ const AdminDevis = () => {
   const [total, setTotal] = useState(0);
   const [detail, setDetail] = useState(null);
 
-  const triggerDocumentDownload = (urlRaw, name) => {
-    if (!urlRaw) return;
-    const safeName = (name || 'document').toString();
-    const url = toDownloadUrl(urlRaw, safeName);
-    if (!url) return;
-    try {
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = safeName;
-      a.style.display = 'none';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-    } catch {
-      try { window.open(url, '_blank'); } catch {}
-    }
-  };
-
   useEffect(() => {
     const load = async () => {
       try {
@@ -312,13 +294,9 @@ const AdminDevis = () => {
                   {detail.details.docs.map((doc, idx) => (
                     <li key={idx}>
                       {doc.url ? (
-                        <button
-                          type="button"
-                          className="btn btn-link p-0 align-baseline"
-                          onClick={() => triggerDocumentDownload(doc.url, doc.name || `Document ${idx + 1}`)}
-                        >
+                        <a href={toDownloadUrl(doc.url, doc.name || `Document ${idx + 1}`)} download>
                           {doc.name || `Document ${idx + 1}`}
-                        </button>
+                        </a>
                       ) : (
                         doc.name || `Document ${idx + 1}`
                       )}
