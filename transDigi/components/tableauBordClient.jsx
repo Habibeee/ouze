@@ -638,6 +638,19 @@ return (
 
       {/* Main Content Area */}
       <div className="container-fluid px-2 px-md-4 py-3 py-md-4" style={{ backgroundColor: 'var(--bg)' }}>
+        {/* Bouton retour vers le dashboard sur mobile, pour les autres sections */}
+        {(isGotoDevis || section !== 'dashboard') && (
+          <div className="d-md-none mb-3">
+            <button
+              type="button"
+              className="btn btn-outline-light btn-sm"
+              onClick={() => { setSection('dashboard'); window.location.hash = '#/dashboard-client'; }}
+            >
+              Retour au tableau de bord
+            </button>
+          </div>
+        )}
+
         {/* Toasts globaux gèrent désormais les messages */}
         {isGotoDevis ? (
           <NouveauDevis />
