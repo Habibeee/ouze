@@ -95,6 +95,8 @@ app.use('/api/translataires', require('./routes/translataire.routes'));
 app.use('/api/admin', require('./routes/admin.routes'));
 app.use('/api/notifications', require('./routes/notification.routes'));
 app.use('/api/reviews', require('./routes/review.routes'));
+// Debug routes (SMTP/connectivity checks)
+app.use('/api/debug', require('./routes/debug.routes'));
 
 // Route de test (mise à jour avec lien vers la doc)
 app.get('/', (req, res) => {

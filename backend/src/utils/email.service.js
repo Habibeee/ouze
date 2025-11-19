@@ -516,3 +516,14 @@ exports.sendApprovalNotification = async (email, nomEntreprise) => {
 
   await transporter.sendMail(mailOptions);
 };
+
+// Expose une fonction de vérification du transporteur SMTP pour debug
+exports.verifySmtp = async () => {
+  try {
+    await transporter.verify();
+    return { ok: true };
+  } catch (e) {
+    // propager l'erreur pour permettre au caller d'inspecter le message complet
+    throw e;
+  }
+};
