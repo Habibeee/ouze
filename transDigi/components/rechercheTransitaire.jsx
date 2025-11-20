@@ -27,15 +27,20 @@ const RechercheTransitaire = () => {
         const adminRating = typeof t.adminRating === 'number' ? t.adminRating : (t.adminRating ? Number(t.adminRating) : 0);
         const ratingForStars = adminRating > 0 ? adminRating : avgRating;
         const ratingsCount = typeof t.ratingsCount === 'number' ? t.ratingsCount : (t.ratingsCount ? Number(t.ratingsCount) : 0);
+        const name = t.nomEntreprise || t.name || 'Transitaire';
+        const logoRaw = t.logo || t.photoProfil || t.profileImage || t.logoUrl || t.avatar;
+        const defaultLogo = 'https://via.placeholder.com/80x80?text=Logo';
+        const logoUrl = (typeof logoRaw === 'string' && logoRaw.trim()) ? logoRaw : defaultLogo;
         return {
           id: t._id || t.id,
-          name: t.nomEntreprise || t.name || 'Transitaire',
+          name,
           location: t.ville || t.location || '',
           verified: !!(t.isVerified && t.isApproved),
           rating: ratingForStars,
           ratingsCount,
           description: t.secteurActivite || t.description || '',
-          services: (Array.isArray(t.typeServices) ? t.typeServices : []).map(lbl => ({ icon: Package, label: String(lbl) }))
+          services: (Array.isArray(t.typeServices) ? t.typeServices : []).map(lbl => ({ icon: Package, label: String(lbl) })),
+          logoUrl,
         };
       });
       setItems(mapped);
@@ -137,8 +142,15 @@ const RechercheTransitaire = () => {
                   {/* Header */}
                   <div className="d-flex align-items-start justify-content-between mb-3">
                     <div className="d-flex align-items-center gap-3">
-                      <div className="rounded d-flex align-items-center justify-content-center fw-bold" style={{ ...transitaireStyles.companyLogo, backgroundColor: transitaire.logoColor }}>
-                        {transitaire.logo}
+                      <div
+                        className="rounded-circle overflow-hidden d-flex align-items-center justify-content-center bg-light border"
+                        style={{ ...transitaireStyles.companyLogo }}
+                      >
+                        <img
+                          src={transitaire.logoUrl}
+                          alt={transitaire.name}
+                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        />
                       </div>
                       <div>
                         <h5 className="mb-1 fw-bold">{transitaire.name}</h5>
