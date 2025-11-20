@@ -467,54 +467,75 @@ exports.sendPasswordResetEmail = async (email, token) => {
 
 // Envoyer notification d'approbation de compte translataire
 exports.sendApprovalNotification = async (email, nomEntreprise) => {
-  const mailOptions = {
-    from: `TransDigiSN <${process.env.EMAIL_USER}>`,
-    to: email,
-    subject: '✅ Votre compte a été approuvé !',
-    html: `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <style>
-            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-            .header { background: linear-gradient(135deg, #28a745 0%, #20c997 100%); 
-                      color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-            .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
-            .button { display: inline-block; padding: 12px 30px; background: #28a745; 
-                      color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; }
-            .footer { text-align: center; margin-top: 20px; color: #666; font-size: 12px; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <div class="header">
-              <h1>🎉 Compte Approuvé !</h1>
-            </div>
-            <div class="content">
-              <h2>Félicitations ${nomEntreprise} !</h2>
-              <p>Votre compte translataire a été approuvé par notre équipe administrative.</p>
-              <p>Vous pouvez maintenant accéder à toutes les fonctionnalités de la plateforme :</p>
-              <ul>
-                <li>Recevoir et répondre aux demandes de devis</li>
-                <li>Gérer vos formulaires de marchandises</li>
-                <li>Consulter vos statistiques</li>
-                <li>Et bien plus encore...</li>
-              </ul>
-              <center>
-                <a href="${process.env.FRONTEND_URL}/login" class="button">Se connecter</a>
-              </center>
-            </div>
-            <div class="footer">
-              <p>&copy; 2025 TransDigiSN. Tous droits réservés.</p>
-            </div>
-          </div>
-        </body>
-      </html>
-    `
-  };
+  try {
+    console.log(`[APPROVAL-EMAIL] Config check:`, {
+      EMAIL_HOST: process.env.EMAIL_HOST,
+      EMAIL_PORT: process.env.EMAIL_PORT,
+      EMAIL_USER: process.env.EMAIL_USER,
+      EMAIL_PASS: process.env.EMAIL_PASS ? '***configured***' : 'MISSING',
+      FRONTEND_URL: process.env.FRONTEND_URL
+    });
 
-  await transporter.sendMail(mailOptions);
+    const mailOptions = {
+      from: `TransDigiSN <${process.env.EMAIL_USER}>`,
+      to: email,
+      subject: '✅ Votre compte a été approuvé !',
+      html: `
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <style>
+              body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+              .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+              .header { background: linear-gradient(135deg, #28a745 0%, #20c997 100%); 
+                        color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+              .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+              .button { display: inline-block; padding: 12px 30px; background: #28a745; 
+                        color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+              .footer { text-align: center; margin-top: 20px; color: #666; font-size: 12px; }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <div class="header">
+                <h1>🎉 Compte Approuvé !</h1>
+              </div>
+              <div class="content">
+                <h2>Félicitations ${nomEntreprise} !</h2>
+                <p>Votre compte translataire a été approuvé par notre équipe administrative.</p>
+                <p>Vous pouvez maintenant accéder à toutes les fonctionnalités de la plateforme :</p>
+                <ul>
+                  <li>Recevoir et répondre aux demandes de devis</li>
+                  <li>Gérer vos formulaires de marchandises</li>
+                  <li>Consulter vos statistiques</li>
+                  <li>Et bien plus encore...</li>
+                </ul>
+                <center>
+                  <a href="${process.env.FRONTEND_URL}/login" class="button">Se connecter</a>
+                </center>
+              </div>
+              <div class="footer">
+                <p>&copy; 2025 TransDigiSN. Tous droits réservés.</p>
+              </div>
+            </div>
+          </body>
+        </html>
+      `
+    };
+
+    console.log(`[APPROVAL-EMAIL] Avant sendMail:`, { to: email, subject: mailOptions.subject });
+    await transporter.sendMail(mailOptions);
+    console.log(`[APPROVAL-EMAIL] ✓ Email envoyé avec succès`);
+  } catch (e) {
+    console.error(`[APPROVAL-EMAIL] ✗ Erreur lors du sendMail:`, {
+      message: e.message,
+      code: e.code,
+      command: e.command,
+      response: e.response,
+      stack: e.stack
+    });
+    throw e;
+  }
 };
 
 // Expose une fonction de vérification du transporteur SMTP pour debug
