@@ -41,15 +41,6 @@ export default function SideBare({ activeId = 'dashboard', onNavigate, onOpenCha
     }
   };
 
-  // Body scroll lock on mobile overlay when open
-  useEffect(() => {
-    if (!isLgUp && open) {
-      const prev = document.body.style.overflow;
-      document.body.style.overflow = 'hidden';
-      return () => { document.body.style.overflow = prev; };
-    }
-  }, [isLgUp, open]);
-
   return (
     <>
       <style>{sideBareCss}</style>

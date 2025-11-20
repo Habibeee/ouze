@@ -60,8 +60,15 @@ function MesFichiersRecusTransitaire() {
 
   return (
     <div className="container-fluid px-2 px-md-3 py-3 py-md-4">
-      <div className="d-flex align-items-center justify-content-between mb-3 mb-md-4">
+      <div className="d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between gap-2 mb-3 mb-md-4">
         <h1 className="h4 h3-md fw-bold mb-0">Mes fichiers reçus</h1>
+        <button
+          type="button"
+          className="btn btn-outline-secondary btn-sm"
+          onClick={() => { window.location.hash = '#/dashboard-transitaire'; }}
+        >
+          Retour au tableau de bord
+        </button>
       </div>
       {err && <div className="alert alert-danger" role="alert">{err}</div>}
       {loading && !items.length && <div className="text-muted">Chargement...</div>}
