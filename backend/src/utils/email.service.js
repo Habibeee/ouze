@@ -511,7 +511,7 @@ exports.sendApprovalNotification = async (email, nomEntreprise) => {
                   <li>Et bien plus encore...</li>
                 </ul>
                 <center>
-                  <a href="${process.env.FRONTEND_URL}/login" class="button">Se connecter</a>
+                  <a href="${process.env.FRONTEND_URL}/#/connexion" class="button">Se connecter</a>
                 </center>
               </div>
               <div class="footer">
@@ -524,7 +524,33 @@ exports.sendApprovalNotification = async (email, nomEntreprise) => {
     };
 
     console.log(`[APPROVAL-EMAIL] Avant sendMail:`, { to: email, subject: mailOptions.subject });
-    await transporter.sendMail(mailOptions);
+    
+    // Use Promise with timeout to catch any hanging
+    const sendPromise = new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        reject(new Error('Email send timeout (30s)'));
+      }, 30000);
+
+      transporter.sendMail(mailOptions, (err, info) => {
+        clearTimeout(timeout);
+        if (err) {
+          console.error(`[APPROVAL-EMAIL] Erreur sendMail (callback):`, {
+            message: err.message,
+            code: err.code,
+            response: err.response
+          });
+          reject(err);
+        } else {
+          console.log(`[APPROVAL-EMAIL] ✓ Email envoyé (callback):`, {
+            messageId: info.messageId,
+            response: info.response
+          });
+          resolve(info);
+        }
+      });
+    });
+
+    await sendPromise;
     console.log(`[APPROVAL-EMAIL] ✓ Email envoyé avec succès`);
   } catch (e) {
     console.error(`[APPROVAL-EMAIL] ✗ Erreur lors du sendMail:`, {
