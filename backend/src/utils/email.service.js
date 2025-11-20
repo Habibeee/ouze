@@ -1,35 +1,112 @@
 // src/utils/email.service.js
 const nodemailer = require('nodemailer');
 
-// Créer le transporteur
-const port = Number(process.env.EMAIL_PORT) || 587;
-const secure = (String(process.env.EMAIL_SECURE || '').toLowerCase() === 'true') || port === 465;
+// Configuration du transporteur SMTP pour Brevo avec des paramètres optimisés
 const transporter = nodemailer.createTransport({
-  host: process.env.EMAIL_HOST || 'smtp.gmail.com',
-  port,
-  secure,
+  // Paramètres de connexion
+  host: 'smtp-relay.brevo.com',
+  port: 587,
+  secure: false, // true pour le port 465, false pour les autres
+  
+  // Authentification
   auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS
+    user: process.env.BREVO_SMTP_USER || 'votre_email_brevo@votredomaine.com',
+    pass: process.env.BREVO_SMTP_PASSWORD || 'votre_mot_de_passe_smtp'
+  },
+  
+  // Options de connexion
+  pool: true, // Utiliser le pool de connexions
+  maxConnections: 5, // Nombre maximal de connexions simultanées
+  maxMessages: 100, // Nombre maximal de messages par connexion
+  
+  // Gestion des timeouts (en millisecondes)
+  connectionTimeout: 30000, // 30 secondes
+  greetingTimeout: 30000,
+  socketTimeout: 60000, // 1 minute
+  dnsTimeout: 30000,
+  
+  // Options TLS/SSL
+  tls: {
+    rejectUnauthorized: false, // Accepter les certificats auto-signés
+    minVersion: 'TLSv1.2' // Forcer la version minimale de TLS
+  },
+  
+  // Options de débogage
+  logger: true, // Activer les logs
+  debug: true,  // Activer le mode debug
+  
+  // Désactiver certaines vérifications
+  disableFileAccess: true,
+  disableUrlAccess: true
+});
+
+// Vérification de la connexion SMTP avec plus de détails
+const verifySMTP = async () => {
+  console.log('Vérification de la connexion SMTP...');
+  console.log('Configuration SMTP:', {
+    host: 'smtp-relay.brevo.com',
+    port: 587,
+    user: process.env.BREVO_SMTP_USER ? '***' : 'non défini',
+    hasPassword: !!process.env.BREVO_SMTP_PASSWORD
+  });
+  
+  try {
+    await transporter.verify();
+    console.log('✅ Serveur SMTP Brevo connecté avec succès');
+    return true;
+  } catch (error) {
+    console.error('❌ Erreur de connexion SMTP:', {
+      message: error.message,
+      code: error.code,
+      command: error.command,
+      stack: error.stack
+    });
+    
+    // Vérification DNS supplémentaire
+    const dns = require('dns');
+    try {
+      const addresses = await dns.promises.resolve('smtp-relay.brevo.com');
+      console.log('Résolution DNS réussie:', addresses);
+    } catch (dnsError) {
+      console.error('❌ Erreur de résolution DNS:', dnsError);
+    }
+    
+    return false;
+  }
+};
+
+// Exécuter la vérification au démarrage
+verifySMTP().then(success => {
+  if (!success) {
+    console.warn('⚠️ La vérification SMTP a échoué, certaines fonctionnalités d\'email pourraient ne pas fonctionner');
   }
 });
 
-// Vérifier la configuration SMTP au démarrage (log uniquement)
-// Désactivé temporairement car l'email n'est pas configuré
-// try {
-//   transporter.verify().then(() => {
-//     console.info(`[MAIL] SMTP ready on ${process.env.EMAIL_HOST || 'smtp.gmail.com'}:${port} secure=${secure}`);
-//   }).catch((e) => {
-//     console.error('[MAIL] SMTP verify failed:', e?.message || e);
-//   });
-// } catch {}
+// Fonction pour envoyer un email via SMTP
+const sendEmail = async (mailOptions) => {
+  try {
+    const defaultFrom = `"${process.env.BREVO_FROM_NAME || 'TransDigi'}" <${process.env.BREVO_FROM_EMAIL || 'no-reply@votredomaine.com'}>`;
+    
+    const info = await transporter.sendMail({
+      from: defaultFrom,
+      ...mailOptions,
+      // Forcer l'encodage en UTF-8 pour les caractères spéciaux
+      encoding: 'UTF-8'
+    });
+    
+    console.log('Email envoyé avec succès:', info.messageId);
+    return info;
+  } catch (error) {
+    console.error('Erreur lors de l\'envoi de l\'email:', error);
+    throw error;
+  }
+};
 
-// Envoyer email de vérification
+// Fonction pour envoyer un email de vérification
 exports.sendVerificationEmail = async (email, token, userType) => {
   const verificationUrl = `${process.env.FRONTEND_URL}/#/verifier/${token}`;
 
   const mailOptions = {
-    from: `TransDigiSN <${process.env.EMAIL_USER}>`,
     to: email,
     subject: 'Vérification de votre compte TransDigiSN',
     html: `
@@ -72,10 +149,11 @@ exports.sendVerificationEmail = async (email, token, userType) => {
       </html>
     `
   };
-  await transporter.sendMail(mailOptions);
+
+  return sendEmail(mailOptions);
 };
 
-// Email aux administrateurs: réponse/acceptation de devis par un transitaire
+// Envoyer email aux administrateurs: réponse/acceptation de devis par un transitaire
 exports.sendAdminDevisResponseEmail = async (email, { translataireNom, montant, devisId } = {}) => {
   const mailOptions = {
     from: `TransDigiSN <${process.env.EMAIL_USER}>`,
@@ -101,7 +179,7 @@ exports.sendAdminDevisResponseEmail = async (email, { translataireNom, montant, 
       </body></html>
     `
   };
-  await transporter.sendMail(mailOptions);
+  await sendEmail(mailOptions);
 };
 
 // Email aux administrateurs: annulation d’un devis par le client
@@ -130,7 +208,7 @@ exports.sendAdminDevisCancelledEmail = async (email, { translataireNom, clientNa
       </body></html>
     `
   };
-  await transporter.sendMail(mailOptions);
+  await sendEmail(mailOptions);
 };
 
 // Email aux administrateurs: nouvelle demande de devis
@@ -161,7 +239,7 @@ exports.sendAdminNewDevisEmail = async (email, { translataireNom, clientName, cl
       </body></html>
     `
   };
-  await transporter.sendMail(mailOptions);
+  await sendEmail(mailOptions);
 };
 
 // Email aux administrateurs: nouvel avis client
@@ -192,7 +270,7 @@ exports.sendAdminNewReviewEmail = async (email, { translataireNom, rating, comme
       </body></html>
     `
   };
-  await transporter.sendMail(mailOptions);
+  await sendEmail(mailOptions);
 };
 
 // ================= Admin: Notifications par email =================
@@ -227,7 +305,7 @@ exports.sendAdminNewRegistrationEmail = async (email, { type = 'client', display
       </body></html>
     `
   };
-  await transporter.sendMail(mailOptions);
+  await sendEmail(mailOptions);
 };
 
 // Notifier un changement de statut de compte (block/unblock/archive/unarchive/reject/suspend)
@@ -266,7 +344,7 @@ exports.sendAccountStatusChange = async ({ email, displayName, userType, status,
       </body></html>
     `
   };
-  await transporter.sendMail(mailOptions);
+  await sendEmail(mailOptions);
 };
 
 // Notifier une suppression de compte
@@ -295,7 +373,7 @@ exports.sendAccountDeleted = async ({ email, displayName, userType, reason }) =>
       </body></html>
     `
   };
-  await transporter.sendMail(mailOptions);
+  await sendEmail(mailOptions);
 };
 
 // Nouvelle demande de devis -> email au translataire
@@ -329,7 +407,7 @@ exports.sendNewDevisToTranslataire = async (email, { clientName, typeService, de
       </body></html>
     `
   };
-  await transporter.sendMail(mailOptions);
+  await sendEmail(mailOptions);
 };
 
 // Devis accepté -> email au client
@@ -363,7 +441,7 @@ exports.sendDevisAcceptedToClient = async (email, { clientName, translataireNom,
       </body></html>
     `
   };
-  await transporter.sendMail(mailOptions);
+  await sendEmail(mailOptions);
 };
 
 // Envoyer notification d'approbation de compte utilisateur (client)
@@ -408,9 +486,8 @@ exports.sendUserApprovalNotification = async (email, displayName) => {
     `
   };
 
-  await transporter.sendMail(mailOptions);
+  await sendEmail(mailOptions);
 };
-
 
 // Envoyer email de réinitialisation de mot de passe
 exports.sendPasswordResetEmail = async (email, token) => {
@@ -462,57 +539,78 @@ exports.sendPasswordResetEmail = async (email, token) => {
     `
   };
 
-  await transporter.sendMail(mailOptions);
+  await sendEmail(mailOptions);
 };
 
 // Envoyer notification d'approbation de compte translataire
 exports.sendApprovalNotification = async (email, nomEntreprise) => {
-  const mailOptions = {
-    from: `TransDigiSN <${process.env.EMAIL_USER}>`,
-    to: email,
-    subject: '✅ Votre compte a été approuvé !',
-    html: `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <style>
-            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-            .header { background: linear-gradient(135deg, #28a745 0%, #20c997 100%); 
-                      color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-            .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
-            .button { display: inline-block; padding: 12px 30px; background: #28a745; 
-                      color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; }
-            .footer { text-align: center; margin-top: 20px; color: #666; font-size: 12px; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <div class="header">
-              <h1>🎉 Compte Approuvé !</h1>
+  try {
+    console.log(`[APPROVAL-EMAIL] Envoi email pour ${nomEntreprise} à ${email}`);
+    
+    const mailOptions = {
+      to: email,
+      subject: '✅ Votre compte a été approuvé !',
+      html: `
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <style>
+              body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+              .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+              .header { background: linear-gradient(135deg, #28a745 0%, #20c997 100%); 
+                        color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+              .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+              .button { display: inline-block; padding: 12px 30px; background: #28a745; 
+                        color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+              .footer { text-align: center; margin-top: 20px; color: #666; font-size: 12px; }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <div class="header">
+                <h1>🎉 Compte Approuvé !</h1>
+              </div>
+              <div class="content">
+                <h2>Félicitations ${nomEntreprise} !</h2>
+                <p>Votre compte translataire a été approuvé par notre équipe administrative.</p>
+                <p>Vous pouvez maintenant accéder à toutes les fonctionnalités de la plateforme :</p>
+                <ul>
+                  <li>Recevoir et répondre aux demandes de devis</li>
+                  <li>Gérer vos formulaires de marchandises</li>
+                  <li>Consulter vos statistiques</li>
+                  <li>Et bien plus encore...</li>
+                </ul>
+                <center>
+                  <a href="${process.env.FRONTEND_URL}/#/connexion" class="button">Se connecter</a>
+                </center>
+              </div>
+              <div class="footer">
+                <p>&copy; 2025 TransDigiSN. Tous droits réservés.</p>
+              </div>
             </div>
-            <div class="content">
-              <h2>Félicitations ${nomEntreprise} !</h2>
-              <p>Votre compte translataire a été approuvé par notre équipe administrative.</p>
-              <p>Vous pouvez maintenant accéder à toutes les fonctionnalités de la plateforme :</p>
-              <ul>
-                <li>Recevoir et répondre aux demandes de devis</li>
-                <li>Gérer vos formulaires de marchandises</li>
-                <li>Consulter vos statistiques</li>
-                <li>Et bien plus encore...</li>
-              </ul>
-              <center>
-                <a href="${process.env.FRONTEND_URL}/login" class="button">Se connecter</a>
-              </center>
-            </div>
-            <div class="footer">
-              <p>&copy; 2025 TransDigiSN. Tous droits réservés.</p>
-            </div>
-          </div>
-        </body>
-      </html>
-    `
-  };
+          </body>
+        </html>
+      `
+    };
 
-  await transporter.sendMail(mailOptions);
+    await sendEmail(mailOptions);
+    console.log(`[APPROVAL-EMAIL] ✓ Email envoyé avec succès`);
+  } catch (e) {
+    console.error(`[APPROVAL-EMAIL] ✗ Erreur lors de l'envoi:`, {
+      message: e.message,
+      code: e.code
+    });
+    throw e;
+  }
+};
+
+// Expose une fonction de vérification du transporteur SMTP pour debug
+exports.verifySmtp = async () => {
+  try {
+    await transporter.verify();
+    return { ok: true };
+  } catch (e) {
+    // propager l'erreur pour permettre au caller d'inspecter le message complet
+    throw e;
+  }
 };

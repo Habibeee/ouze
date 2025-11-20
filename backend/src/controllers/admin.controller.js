@@ -347,11 +347,22 @@ exports.approveUser = async (req, res) => {
     await user.save();
 
     // Email de notification d'approbation
+    let emailStatus = { sent: false, error: null };
     try {
       const displayName = `${user.prenom || ''} ${user.nom || ''}`.trim();
+      console.log(`[APPROVAL-EMAIL] Envoi email approbation user: ${user.email}`);
       await sendUserApprovalNotification(user.email, displayName);
+      emailStatus.sent = true;
+      console.log(`[APPROVAL-EMAIL] Email approbation envoyé avec succès à ${user.email}`);
     } catch (e) {
-      console.error('Erreur envoi email approbation user:', e.message);
+      emailStatus.error = e.message;
+      console.error(`[APPROVAL-EMAIL] Erreur envoi email approbation user ${user.email}:`, {
+        message: e.message,
+        code: e.code,
+        errno: e.errno,
+        syscall: e.syscall,
+        stack: e.stack
+      });
     }
 
     // Créer une notification in-app
@@ -369,7 +380,8 @@ exports.approveUser = async (req, res) => {
       console.error('Erreur création notification approval (user):', e.message);
     }
 
-    return res.json({ success: true, message: 'Utilisateur approuvé', user });
+    const responseMessage = `Utilisateur approuvé${emailStatus.sent ? ' - Email envoyé' : emailStatus.error ? ` - Erreur email: ${emailStatus.error}` : ' - Email non envoyé'}`;
+    return res.json({ success: true, message: responseMessage, user, emailStatus });
   } catch (error) {
     return res.status(500).json({ success: false, message: 'Erreur lors de l\'approbation', error: error.message });
   }
@@ -491,7 +503,22 @@ exports.approveTranslataire = async (req, res) => {
     await translataire.save();
 
     // Email de statut
-    try { await emailFn(); } catch (e) { console.error('Erreur envoi email statut translataire:', e.message); }
+    let emailStatus = { sent: false, error: null };
+    try {
+      console.log(`[APPROVAL-EMAIL] Envoi email pour ${translataire.nomEntreprise} (${statut})`);
+      await emailFn();
+      emailStatus.sent = true;
+      console.log(`[APPROVAL-EMAIL] Email envoyé avec succès à ${translataire.email}`);
+    } catch (e) {
+      emailStatus.error = e.message;
+      console.error(`[APPROVAL-EMAIL] Erreur envoi email à ${translataire.email}:`, {
+        message: e.message,
+        code: e.code,
+        errno: e.errno,
+        syscall: e.syscall,
+        stack: e.stack
+      });
+    }
 
     // Notification in-app
     try {
@@ -508,7 +535,13 @@ exports.approveTranslataire = async (req, res) => {
       console.error('Erreur création notification statut (translataire):', e.message);
     }
 
-    res.json({ success: true, message: `Translataire ${statut}`, translataire });
+    const responseMessage = `Translataire ${statut}${emailStatus.sent ? ' - Email envoyé' : emailStatus.error ? ` - Erreur email: ${emailStatus.error}` : ' - Email non envoyé'}`;
+    res.json({ 
+      success: true, 
+      message: responseMessage, 
+      translataire,
+      emailStatus
+    });
   } catch (error) {
     res.status(500).json({
       success: false,

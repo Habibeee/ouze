@@ -88,13 +88,26 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
 }));
 
 // Routes
+const authRoutes = require('./routes/auth.routes');
+const userRoutes = require('./routes/user.routes');
+const adminRoutes = require('./routes/admin.routes');
+const devisRoutes = require('./routes/devis.routes');
+const notificationRoutes = require('./routes/notification.routes');
+const statRoutes = require('./routes/stats.routes');
+const testRoutes = require('./routes/test.routes');
+
 app.use('/', require('./routes/google.oauth.routes'));
-app.use('/api/auth', require('./routes/auth.routes'));
-app.use('/api/users', require('./routes/user.routes'));
+app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
 app.use('/api/translataires', require('./routes/translataire.routes'));
-app.use('/api/admin', require('./routes/admin.routes'));
-app.use('/api/notifications', require('./routes/notification.routes'));
+app.use('/api/admin', adminRoutes);
+app.use('/api/devis', devisRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/stats', statRoutes);
+app.use('/api/test', testRoutes);
 app.use('/api/reviews', require('./routes/review.routes'));
+// Debug routes (SMTP/connectivity checks)
+app.use('/api/debug', require('./routes/debug.routes'));
 
 // Route de test (mise à jour avec lien vers la doc)
 app.get('/', (req, res) => {

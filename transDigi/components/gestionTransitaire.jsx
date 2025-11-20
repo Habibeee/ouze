@@ -134,11 +134,23 @@ const GestionTransitaires = () => {
   const rowAction = async (id, action) => {
     try {
       setError('');
-      if (action === 'approve') await put(`/admin/translataires/${id}/approve`, { statut: 'approuve' });
-      else if (action === 'delete') await del(`/admin/translataire/${id}`);
-      else if (action === 'block') await put(`/admin/translataire/${id}/block`, { isBlocked: true });
-      else if (action === 'unblock') await put(`/admin/translataire/${id}/block`, { isBlocked: false });
-      else if (action === 'archive' || action === 'unarchive') await post(`/admin/translataire/bulk/${action}`, { ids: [id] });
+      let response;
+      if (action === 'approve') response = await put(`/admin/translataires/${id}/approve`, { statut: 'approuve' });
+      else if (action === 'delete') response = await del(`/admin/translataire/${id}`);
+      else if (action === 'block') response = await put(`/admin/translataire/${id}/block`, { isBlocked: true });
+      else if (action === 'unblock') response = await put(`/admin/translataire/${id}/block`, { isBlocked: false });
+      else if (action === 'archive' || action === 'unarchive') response = await post(`/admin/translataire/bulk/${action}`, { ids: [id] });
+      
+      // Show email status if available
+      if (response?.emailStatus) {
+        const emailMsg = response.emailStatus.sent 
+          ? '✓ Email envoyé avec succès'
+          : response.emailStatus.error 
+          ? `⚠ Email non envoyé: ${response.emailStatus.error}`
+          : '⚠ Email non envoyé';
+        setError(emailMsg);
+      }
+      
       await fetchTrans();
       try { window.dispatchEvent(new CustomEvent('admin:stats:dirty')); } catch {}
     } catch (e) {
