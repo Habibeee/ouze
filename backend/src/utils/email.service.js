@@ -10,8 +10,8 @@ const transporter = nodemailer.createTransport({
   
   // Authentification
   auth: {
-    user: process.env.BREVO_SMTP_USER || 'votre_email_brevo@votredomaine.com',
-    pass: process.env.BREVO_SMTP_PASSWORD || 'votre_mot_de_passe_smtp'
+    user: process.env.EMAIL_USER || 'votre_email_brevo@votredomaine.com',
+    pass: process.env.EMAIL_PASS || 'votre_mot_de_passe_smtp'
   },
   
   // Options de connexion
@@ -20,10 +20,10 @@ const transporter = nodemailer.createTransport({
   maxMessages: 100, // Nombre maximal de messages par connexion
   
   // Gestion des timeouts (en millisecondes)
-  connectionTimeout: 30000, // 30 secondes
-  greetingTimeout: 30000,
-  socketTimeout: 60000, // 1 minute
-  dnsTimeout: 30000,
+  connectionTimeout: 60000, // 60 secondes
+  greetingTimeout: 60000, // 60 secondes
+  socketTimeout: 120000, // 2 minutes
+  dnsTimeout: 60000, // 60 secondes
   
   // Options TLS/SSL
   tls: {
