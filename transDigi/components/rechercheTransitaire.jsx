@@ -138,7 +138,7 @@ const RechercheTransitaire = () => {
           {pageItems.map((transitaire, index) => (
             <div key={index} className="col-12 col-lg-4">
               <div className="card border-0 shadow-sm h-100" style={transitaireStyles.cardHover}>
-                <div className="card-body p-4">
+                <div className="card-body p-3">
                   {/* Header */}
                   <div className="d-flex align-items-start justify-content-between mb-3">
                     <div className="d-flex align-items-center gap-3">
