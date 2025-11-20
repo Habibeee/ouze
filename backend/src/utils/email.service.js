@@ -1,85 +1,55 @@
 // src/utils/email.service.js
 const nodemailer = require('nodemailer');
-const axios = require('axios');
-const { Resend } = require('resend');
 
-// Initialiser Resend si la clé est disponible
-const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
-
-// Créer le transporteur SMTP (fallback si Resend échoue)
-const port = Number(process.env.EMAIL_PORT) || 587;
-const secure = (String(process.env.EMAIL_SECURE || '').toLowerCase() === 'true') || port === 465;
+// Configuration du transporteur SMTP pour Brevo
 const transporter = nodemailer.createTransport({
-  host: process.env.EMAIL_HOST || 'smtp.gmail.com',
-  port,
-  secure,
+  host: process.env.BREVO_SMTP_HOST || 'smtp-relay.brevo.com',
+  port: process.env.BREVO_SMTP_PORT || 587,
+  secure: false, // true pour le port 465, false pour les autres
   auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS
+    user: process.env.BREVO_SMTP_USER,
+    pass: process.env.BREVO_SMTP_PASSWORD
+  },
+  tls: {
+    // Ne pas échouer sur les certificats auto-signés
+    rejectUnauthorized: false
   }
 });
 
-// Fonction pour envoyer via Resend
-const sendViaResend = async (mailOptions) => {
-  if (!resend) {
-    throw new Error('Resend API not configured (RESEND_API_KEY)');
+// Vérification de la connexion SMTP
+transporter.verify((error) => {
+  if (error) {
+    console.error('Erreur de connexion SMTP:', error);
+  } else {
+    console.log('Serveur SMTP Brevo prêt à envoyer des emails');
   }
+});
 
+// Fonction pour envoyer un email via SMTP
+const sendEmail = async (mailOptions) => {
   try {
-    console.log(`[RESEND] Sending email to ${mailOptions.to}`);
-    // En mode test Resend, envoyer à l'adresse de test
-    const toEmail = process.env.RESEND_TEST_EMAIL || mailOptions.to;
-    if (toEmail !== mailOptions.to) {
-      console.log(`[RESEND] NOTE: Test mode - sending to ${toEmail} instead of ${mailOptions.to}`);
-    }
+    const defaultFrom = `"${process.env.BREVO_FROM_NAME || 'TransDigi'}" <${process.env.BREVO_FROM_EMAIL || 'no-reply@votredomaine.com'}>`;
     
-    const response = await resend.emails.send({
-      from: 'TransDigiSN <onboarding@resend.dev>',
-      to: toEmail,
-      subject: mailOptions.subject,
-      html: mailOptions.html
+    const info = await transporter.sendMail({
+      from: defaultFrom,
+      ...mailOptions,
+      // Forcer l'encodage en UTF-8 pour les caractères spéciaux
+      encoding: 'UTF-8'
     });
     
-    if (response.error) {
-      throw new Error(response.error.message);
-    }
-    
-    console.log(`[RESEND] ✓ Email sent successfully, messageId:`, response.data.id);
-    return { 
-      messageId: response.data.id, 
-      response: response.data
-    };
+    console.log('Email envoyé avec succès:', info.messageId);
+    return info;
   } catch (error) {
-    console.error(`[RESEND] ✗ Error sending via Resend:`, {
-      message: error.message,
-      code: error.code
-    });
+    console.error('Erreur lors de l\'envoi de l\'email:', error);
     throw error;
   }
 };
 
-// Fonction universelle d'envoi d'email - utilise Resend ou SMTP
-const sendEmail = async (mailOptions) => {
-  // Si Resend est configuré, l'utiliser
-  if (resend) {
-    return sendViaResend(mailOptions);
-  }
-  
-  // Sinon utiliser SMTP (fallback)
-  return new Promise((resolve, reject) => {
-    transporter.sendMail(mailOptions, (err, info) => {
-      if (err) reject(err);
-      else resolve(info);
-    });
-  });
-};
-
-// Envoyer email de vérification
+// Fonction pour envoyer un email de vérification
 exports.sendVerificationEmail = async (email, token, userType) => {
   const verificationUrl = `${process.env.FRONTEND_URL}/#/verifier/${token}`;
 
   const mailOptions = {
-    from: `TransDigiSN <${process.env.EMAIL_USER}>`,
     to: email,
     subject: 'Vérification de votre compte TransDigiSN',
     html: `
@@ -122,10 +92,11 @@ exports.sendVerificationEmail = async (email, token, userType) => {
       </html>
     `
   };
-  await sendEmail(mailOptions);
+
+  return sendEmail(mailOptions);
 };
 
-// Email aux administrateurs: réponse/acceptation de devis par un transitaire
+// Envoyer email aux administrateurs: réponse/acceptation de devis par un transitaire
 exports.sendAdminDevisResponseEmail = async (email, { translataireNom, montant, devisId } = {}) => {
   const mailOptions = {
     from: `TransDigiSN <${process.env.EMAIL_USER}>`,
@@ -460,7 +431,6 @@ exports.sendUserApprovalNotification = async (email, displayName) => {
 
   await sendEmail(mailOptions);
 };
-
 
 // Envoyer email de réinitialisation de mot de passe
 exports.sendPasswordResetEmail = async (email, token) => {

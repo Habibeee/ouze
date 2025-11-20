@@ -185,10 +185,9 @@ exports.registerClient = async (req, res) => {
     });
 
     // Envoyer l'email de vérification EN ARRIÈRE-PLAN (ne pas attendre)
-    // Désactivé temporairement pour accélérer l'inscription
-    // sendVerificationEmail(email, verificationToken, 'client').catch(e => {
-    //   console.error('Erreur envoi email vérification (client):', e.message);
-    // });
+    sendVerificationEmail(email, verificationToken, 'client').catch(e => {
+      console.error('Erreur envoi email vérification (client):', e.message);
+    });
 
     // Notifier les admins EN ARRIÈRE-PLAN (ne pas attendre)
     Admin.find({}, '_id email emailNotifications topics').then(admins => {
@@ -287,10 +286,9 @@ exports.registerTranslataire = async (req, res) => {
     });
 
     // Envoyer l'email de vérification EN ARRIÈRE-PLAN (ne pas attendre)
-    // Désactivé temporairement pour accélérer l'inscription
-    // sendVerificationEmail(email, verificationToken, 'translataire').catch(e => {
-    //   console.error('Erreur envoi email vérification (translataire):', e.message);
-    // });
+    sendVerificationEmail(email, verificationToken, 'translataire').catch(e => {
+      console.error('Erreur envoi email vérification (translataire):', e.message);
+    });
 
     // Notifier les admins EN ARRIÈRE-PLAN (ne pas attendre)
     Admin.find({}, '_id email emailNotifications topics').then(admins => {
