@@ -93,7 +93,6 @@ const userRoutes = require('./routes/user.routes');
 const adminRoutes = require('./routes/admin.routes');
 const devisRoutes = require('./routes/translataire.routes');
 const notificationRoutes = require('./routes/notification.routes');
-const statRoutes = require('./routes/stats.routes');
 const testRoutes = require('./routes/test.routes');
 
 app.use('/', require('./routes/google.oauth.routes'));
@@ -103,7 +102,6 @@ app.use('/api/translataires', require('./routes/translataire.routes'));
 app.use('/api/admin', adminRoutes);
 app.use('/api/devis', devisRoutes);
 app.use('/api/notifications', notificationRoutes);
-app.use('/api/stats', statRoutes);
 app.use('/api/test', testRoutes);
 app.use('/api/reviews', require('./routes/review.routes'));
 // Debug routes (SMTP/connectivity checks)
