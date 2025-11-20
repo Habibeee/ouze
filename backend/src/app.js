@@ -91,7 +91,7 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
 const authRoutes = require('./routes/auth.routes');
 const userRoutes = require('./routes/user.routes');
 const adminRoutes = require('./routes/admin.routes');
-const devisRoutes = require('./routes/devis.routes');
+const devisRoutes = require('./routes/translataire.routes');
 const notificationRoutes = require('./routes/notification.routes');
 const statRoutes = require('./routes/stats.routes');
 const testRoutes = require('./routes/test.routes');
