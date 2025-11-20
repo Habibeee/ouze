@@ -250,7 +250,9 @@ function Connexion() {
                   <div className="form-group">
                     <label htmlFor="email">{t('login.fields.identifier.label')}</label>
                     <div className="input-wrapper">
-                      <span className="icon">✉</span>
+                      <span className="icon">
+                        <i className="fa fa-envelope"></i>
+                      </span>
                       <input
                         type="text"
                         id="email"
@@ -273,7 +275,9 @@ function Connexion() {
                   <div className="form-group">
                     <label htmlFor="password">{t('login.fields.password.label')}</label>
                     <div className="input-wrapper">
-                      <span className="icon">🔒</span>
+                      <span className="icon">
+                        <i className="fa fa-lock"></i>
+                      </span>
                       <input
                         type={showPwd ? 'text' : 'password'}
                         id="password"
@@ -289,7 +293,9 @@ function Connexion() {
                         aria-invalid={!!errors.password}
                         aria-describedby="pwdHelp pwdCriteria"
                       />
-                      <span className="toggle-password" onClick={() => setShowPwd(s => !s)} role="button" aria-label={showPwd ? t('login.password.aria.hide') : t('login.password.aria.show')}>{showPwd ? '👁️' : '👁'}</span>
+                      <span className="toggle-password" onClick={() => setShowPwd(s => !s)} role="button" aria-label={showPwd ? t('login.password.aria.hide') : t('login.password.aria.show')}>
+                        <i className="fa fa-eye"></i>
+                      </span>
                     </div>
                     {errors.password && <div id="pwdHelp" className="text-danger small mt-1">{errors.password}</div>}
                     <div id="pwdCriteria" className="password-hint">{t('login.password.hint')}</div>
