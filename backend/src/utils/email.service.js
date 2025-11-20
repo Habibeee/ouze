@@ -1,27 +1,84 @@
 // src/utils/email.service.js
 const nodemailer = require('nodemailer');
 
-// Configuration du transporteur SMTP pour Brevo
+// Configuration du transporteur SMTP pour Brevo avec des paramètres optimisés
 const transporter = nodemailer.createTransport({
-  host: process.env.BREVO_SMTP_HOST || 'smtp-relay.brevo.com',
-  port: process.env.BREVO_SMTP_PORT || 587,
+  // Paramètres de connexion
+  host: 'smtp-relay.brevo.com',
+  port: 587,
   secure: false, // true pour le port 465, false pour les autres
+  
+  // Authentification
   auth: {
-    user: process.env.BREVO_SMTP_USER,
-    pass: process.env.BREVO_SMTP_PASSWORD
+    user: process.env.BREVO_SMTP_USER || 'votre_email_brevo@votredomaine.com',
+    pass: process.env.BREVO_SMTP_PASSWORD || 'votre_mot_de_passe_smtp'
   },
+  
+  // Options de connexion
+  pool: true, // Utiliser le pool de connexions
+  maxConnections: 5, // Nombre maximal de connexions simultanées
+  maxMessages: 100, // Nombre maximal de messages par connexion
+  
+  // Gestion des timeouts (en millisecondes)
+  connectionTimeout: 30000, // 30 secondes
+  greetingTimeout: 30000,
+  socketTimeout: 60000, // 1 minute
+  dnsTimeout: 30000,
+  
+  // Options TLS/SSL
   tls: {
-    // Ne pas échouer sur les certificats auto-signés
-    rejectUnauthorized: false
-  }
+    rejectUnauthorized: false, // Accepter les certificats auto-signés
+    minVersion: 'TLSv1.2' // Forcer la version minimale de TLS
+  },
+  
+  // Options de débogage
+  logger: true, // Activer les logs
+  debug: true,  // Activer le mode debug
+  
+  // Désactiver certaines vérifications
+  disableFileAccess: true,
+  disableUrlAccess: true
 });
 
-// Vérification de la connexion SMTP
-transporter.verify((error) => {
-  if (error) {
-    console.error('Erreur de connexion SMTP:', error);
-  } else {
-    console.log('Serveur SMTP Brevo prêt à envoyer des emails');
+// Vérification de la connexion SMTP avec plus de détails
+const verifySMTP = async () => {
+  console.log('Vérification de la connexion SMTP...');
+  console.log('Configuration SMTP:', {
+    host: 'smtp-relay.brevo.com',
+    port: 587,
+    user: process.env.BREVO_SMTP_USER ? '***' : 'non défini',
+    hasPassword: !!process.env.BREVO_SMTP_PASSWORD
+  });
+  
+  try {
+    await transporter.verify();
+    console.log('✅ Serveur SMTP Brevo connecté avec succès');
+    return true;
+  } catch (error) {
+    console.error('❌ Erreur de connexion SMTP:', {
+      message: error.message,
+      code: error.code,
+      command: error.command,
+      stack: error.stack
+    });
+    
+    // Vérification DNS supplémentaire
+    const dns = require('dns');
+    try {
+      const addresses = await dns.promises.resolve('smtp-relay.brevo.com');
+      console.log('Résolution DNS réussie:', addresses);
+    } catch (dnsError) {
+      console.error('❌ Erreur de résolution DNS:', dnsError);
+    }
+    
+    return false;
+  }
+};
+
+// Exécuter la vérification au démarrage
+verifySMTP().then(success => {
+  if (!success) {
+    console.warn('⚠️ La vérification SMTP a échoué, certaines fonctionnalités d\'email pourraient ne pas fonctionner');
   }
 });
 
