@@ -10,7 +10,7 @@ function TransdigiRegister() {
     ninea: '',
     phone: '',
     email: '',
-    sector: '',
+    sectors: [],
     password: '',
     confirmPassword: '',
     photo: null
@@ -42,8 +42,8 @@ function TransdigiRegister() {
         if (!value.trim()) return "Ce champ est obligatoire";
         if (!isEmail(value)) return 'E‑mail invalide';
         return '';
-      case 'sector':
-        if (!value) return 'Sélectionnez un secteur';
+      case 'sectors':
+        if (!Array.isArray(value) || value.length === 0) return 'Sélectionnez au moins un secteur';
         return '';
       case 'password':
         if (!value) return "Ce champ est obligatoire";
@@ -67,6 +67,27 @@ function TransdigiRegister() {
     setErrors(prev => ({ ...prev, [name]: err }));
   };
 
+  const SECTOR_OPTIONS = [
+    { id: 'transport-maritime', label: 'Transport maritime', serviceCode: 'maritime' },
+    { id: 'fret-aerien', label: 'Fret aérien', serviceCode: 'aerien' },
+    { id: 'logistique-entreposage', label: "Logistique d’entreposage", serviceCode: null },
+    { id: 'dedouanement', label: 'Dédouanement', serviceCode: null },
+    { id: 'transport-aerien', label: 'Transport aérien', serviceCode: 'aerien' },
+    { id: 'transport-routier', label: 'Transport routier', serviceCode: 'routier' },
+  ];
+
+  const toggleSector = (id) => {
+    setFormData((prev) => {
+      const current = Array.isArray(prev.sectors) ? prev.sectors : [];
+      const exists = current.includes(id);
+      const next = exists ? current.filter((s) => s !== id) : [...current, id];
+      const nextForm = { ...prev, sectors: next };
+      const err = validateField('sectors', next, nextForm);
+      setErrors((prevErr) => ({ ...prevErr, sectors: err }));
+      return nextForm;
+    });
+  };
+
   const handlePhotoChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -83,7 +104,7 @@ function TransdigiRegister() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const fields = ['companyName','ninea','phone','email','sector','password','confirmPassword'];
+    const fields = ['companyName','ninea','phone','email','sectors','password','confirmPassword'];
     const newErrors = fields.reduce((acc, n) => {
       acc[n] = validateField(n, formData[n], formData);
       return acc;
@@ -98,21 +119,20 @@ function TransdigiRegister() {
       }
       return;
     }
-    // Mapping secteur -> typeServices (enum backend: maritime|aerien|routier)
-    const serviceMap = {
-      'transport-maritime': 'maritime',
-      'transport-aerien': 'aerien',
-      'transport-terrestre': 'routier'
-    };
-    const service = serviceMap[formData.sector] || 'routier';
+    const selectedIds = Array.isArray(formData.sectors) ? formData.sectors : [];
+    const selectedOptions = SECTOR_OPTIONS.filter((opt) => selectedIds.includes(opt.id));
+    const servicesLabels = selectedOptions.map((o) => o.label);
+    const typeServices = Array.from(new Set(selectedOptions.map((o) => o.serviceCode).filter(Boolean)));
+    const secteurActivite = servicesLabels.length ? servicesLabels.join(', ') : 'Aucun secteur renseigné';
     const payload = {
       nomEntreprise: formData.companyName.trim(),
       ninea: formData.ninea.trim(),
       telephoneEntreprise: formData.phone.trim(),
       email: formData.email.trim().toLowerCase(),
       motDePasse: formData.password,
-      secteurActivite: formData.sector || 'Logistique',
-      typeServices: [service]
+      secteurActivite,
+      typeServices,
+      services: servicesLabels
     };
     try {
       setSubmitting(true);
@@ -187,16 +207,24 @@ function TransdigiRegister() {
                   {errors.email && <div className="text-danger small mt-1">{errors.email}</div>}
                 </div>
                 <div>
-                  <label className="form-label fw-semibold">Secteur d'activité</label>
-                  <select className="form-select form-select-lg" name="sector" value={formData.sector} onChange={handleInputChange}>
-                    <option value="">Sélectionnez votre secteur</option>
-                    <option value="transport-maritime">Transport Maritime</option>
-                    <option value="transport-aerien">Transport Aérien</option>
-                    <option value="transport-terrestre">Transport Terrestre</option>
-                    <option value="logistique">Logistique</option>
-                    <option value="douane">Services Douaniers</option>
-                  </select>
-                  {errors.sector && <div className="text-danger small mt-1">{errors.sector}</div>}
+                  <label className="form-label fw-semibold">Secteurs d'activité</label>
+                  <div className="border rounded-3 p-3">
+                    {SECTOR_OPTIONS.map((opt) => (
+                      <div key={opt.id} className="form-check">
+                        <input
+                          className="form-check-input"
+                          type="checkbox"
+                          id={opt.id}
+                          checked={Array.isArray(formData.sectors) && formData.sectors.includes(opt.id)}
+                          onChange={() => toggleSector(opt.id)}
+                        />
+                        <label className="form-check-label" htmlFor={opt.id}>
+                          {opt.label}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                  {errors.sectors && <div className="text-danger small mt-1">{errors.sectors}</div>}
                 </div>
                 <div className="mb-2">
                   <label className="form-label fw-semibold">Mot de passe</label>

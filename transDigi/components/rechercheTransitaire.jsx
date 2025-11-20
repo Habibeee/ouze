@@ -31,6 +31,12 @@ const RechercheTransitaire = () => {
         const logoRaw = t.logo || t.photoProfil || t.profileImage || t.logoUrl || t.avatar;
         const defaultLogo = 'https://via.placeholder.com/80x80?text=Logo';
         const logoUrl = (typeof logoRaw === 'string' && logoRaw.trim()) ? logoRaw : defaultLogo;
+        const rawServices = (Array.isArray(t.services) && t.services.length)
+          ? t.services
+          : (typeof t.secteurActivite === 'string' ? t.secteurActivite.split(',') : []);
+        const services = Array.isArray(rawServices)
+          ? rawServices.map((s) => String(s).trim()).filter(Boolean)
+          : [];
         return {
           id: t._id || t.id,
           name,
@@ -38,8 +44,8 @@ const RechercheTransitaire = () => {
           verified: !!(t.isVerified && t.isApproved),
           rating: ratingForStars,
           ratingsCount,
-          description: t.secteurActivite || t.description || '',
-          services: (Array.isArray(t.typeServices) ? t.typeServices : []).map(lbl => ({ icon: Package, label: String(lbl) })),
+          description: t.description || '',
+          services,
           logoUrl,
         };
       });
@@ -68,7 +74,7 @@ const RechercheTransitaire = () => {
     return items.filter(t => {
       const byLoc = !loc || (t.location || '').toLowerCase().includes(loc);
       const byCmp = !cmp || (t.name || '').toLowerCase().includes(cmp);
-      const bySrv = !srv || (t.services || []).some(s => (s.label || '').toLowerCase().includes(srv));
+      const bySrv = !srv || (Array.isArray(t.services) && t.services.some(s => String(s).toLowerCase().includes(srv)));
       return byLoc && byCmp && bySrv;
     });
   }, [searchFilters, items]);
@@ -171,16 +177,19 @@ const RechercheTransitaire = () => {
                   {/* Rating */}
                   <div className="mb-3">{renderStars(transitaire.rating, transitaire.ratingsCount)}</div>
 
-                  {/* Services */}
-                  <div className="d-flex flex-wrap gap-2 mb-4">
-                    {transitaire.services.map((service, idx) => {
-                      const ServiceIcon = service.icon;
-                      return (
-                        <span key={idx} className="badge d-flex align-items-center gap-1 py-2 px-3" style={transitaireStyles.serviceBadge}>
-                          <ServiceIcon size={14} /> {service.label}
-                        </span>
-                      );
-                    })}
+                  {/* Secteurs d'activité */}
+                  <div className="mb-4">
+                    {Array.isArray(transitaire.services) && transitaire.services.length ? (
+                      <div className="d-flex flex-wrap gap-2">
+                        {transitaire.services.map((label, idx) => (
+                          <span key={idx} className="badge py-2 px-3" style={transitaireStyles.serviceBadge}>
+                            {label}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-muted small mb-0">Aucun secteur renseigné</p>
+                    )}
                   </div>
 
                   {/* Action Button */}

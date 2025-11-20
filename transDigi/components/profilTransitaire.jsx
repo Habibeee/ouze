@@ -34,17 +34,67 @@ const ProfilTransitaire = () => {
   const isEmail = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(v||'').trim());
   const isPhone = (v) => /^\+?\d[\d\s.-]{7,}$/.test(String(v||'').trim());
   const normalizePhone = (v) => String(v||'').replace(/[^\d+]/g, '');
+
+  const SECTOR_OPTIONS = [
+    { id: 'transport-maritime', label: 'Transport maritime', serviceCode: 'maritime' },
+    { id: 'fret-aerien', label: 'Fret aérien', serviceCode: 'aerien' },
+    { id: 'logistique-entreposage', label: 'Logistique d’entreposage', serviceCode: null },
+    { id: 'dedouanement', label: 'Dédouanement', serviceCode: null },
+    { id: 'transport-aerien', label: 'Transport aérien', serviceCode: 'aerien' },
+    { id: 'transport-routier', label: 'Transport routier', serviceCode: 'routier' },
+  ];
+
   const [formData, setFormData] = useState({
     companyName: 'Transporter Inc.',
     email: 'contact@transporter.com',
     phone: '+33 1 23 45 67 89',
     address: '123 Rue de la Logistique, 75001 Paris, France',
-    services: 'Transport maritime, fret aérien, logistique d’entreposage, dédouanement.'
+    sectors: [],
   });
 
   const onChange = (key, value) => {
     setFormData((prev) => ({ ...prev, [key]: value }));
   };
+
+  const toggleSector = (id) => {
+    setFormData((prev) => {
+      const current = Array.isArray(prev.sectors) ? prev.sectors : [];
+      const exists = current.includes(id);
+      const next = exists ? current.filter((s) => s !== id) : [...current, id];
+      return { ...prev, sectors: next };
+    });
+  };
+
+  React.useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        const res = await get('/translataires/profile').catch(async () => {
+          try { return await get('/translataires/me'); } catch { return null; }
+        });
+        if (!res) return;
+
+        const rawServices = Array.isArray(res.services) && res.services.length
+          ? res.services
+          : (typeof res.secteurActivite === 'string' ? res.secteurActivite.split(',') : []);
+        const serviceLabels = Array.isArray(rawServices)
+          ? rawServices.map((s) => String(s).trim()).filter(Boolean)
+          : [];
+        const sectorIds = SECTOR_OPTIONS
+          .filter((opt) => serviceLabels.includes(opt.label))
+          .map((opt) => opt.id);
+
+        setFormData((prev) => ({
+          ...prev,
+          companyName: res.nomEntreprise || res.companyName || prev.companyName,
+          email: res.email || prev.email,
+          phone: res.telephone || res.phone || prev.phone,
+          address: res.adresse || res.address || prev.address,
+          sectors: sectorIds.length ? sectorIds : prev.sectors,
+        }));
+      } catch {}
+    };
+    loadProfile();
+  }, []);
 
   const onUpload = (e) => {
     const file = e.target.files?.[0];
@@ -73,12 +123,20 @@ const ProfilTransitaire = () => {
         if (formData.phone && !isPhone(formData.phone)) next.phone = 'Téléphone invalide';
         if (next.email || next.phone) { setFieldErr(next); throw new Error('Validation'); }
 
+        const selectedIds = Array.isArray(formData.sectors) ? formData.sectors : [];
+        const selectedOptions = SECTOR_OPTIONS.filter((opt) => selectedIds.includes(opt.id));
+        const servicesLabels = selectedOptions.map((o) => o.label);
+        const typeServices = Array.from(new Set(selectedOptions.map((o) => o.serviceCode).filter(Boolean)));
+        const secteurActivite = servicesLabels.length ? servicesLabels.join(', ') : 'Aucun secteur renseigné';
+
         await put('/translataires/profile', {
           nomEntreprise: formData.companyName,
           email: formData.email,
           telephone: normalizePhone(formData.phone),
           adresse: formData.address,
-          services: formData.services,
+          services: servicesLabels,
+          secteurActivite,
+          typeServices,
         });
         setMsg('Informations mises à jour');
       } catch (e) {
@@ -216,8 +274,23 @@ const ProfilTransitaire = () => {
                 </div>
 
                 <div className="mb-4">
-                  <label className="form-label fw-semibold small">Services Proposés</label>
-                  <textarea className="form-control" rows={4} value={formData.services} onChange={(e) => onChange('services', e.target.value)} />
+                  <label className="form-label fw-semibold small">Secteurs d'activité</label>
+                  <div className="border rounded-3 p-3">
+                    {SECTOR_OPTIONS.map((opt) => (
+                      <div key={opt.id} className="form-check">
+                        <input
+                          className="form-check-input"
+                          type="checkbox"
+                          id={opt.id}
+                          checked={Array.isArray(formData.sectors) && formData.sectors.includes(opt.id)}
+                          onChange={() => toggleSector(opt.id)}
+                        />
+                        <label className="form-check-label" htmlFor={opt.id}>
+                          {opt.label}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
                 </div>
 
                 <div className="d-flex gap-3 justify-content-end">
