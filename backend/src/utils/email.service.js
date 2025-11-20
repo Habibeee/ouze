@@ -28,7 +28,7 @@ const sendViaResend = async (mailOptions) => {
   try {
     console.log(`[RESEND] Sending email to ${mailOptions.to}`);
     const response = await resend.emails.send({
-      from: 'TransDigiSN <noreply@transdigi.sn>',
+      from: 'TransDigiSN <onboarding@resend.dev>',
       to: mailOptions.to,
       subject: mailOptions.subject,
       html: mailOptions.html
