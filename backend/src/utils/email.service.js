@@ -27,9 +27,15 @@ const sendViaResend = async (mailOptions) => {
 
   try {
     console.log(`[RESEND] Sending email to ${mailOptions.to}`);
+    // En mode test Resend, envoyer à l'adresse de test
+    const toEmail = process.env.RESEND_TEST_EMAIL || mailOptions.to;
+    if (toEmail !== mailOptions.to) {
+      console.log(`[RESEND] NOTE: Test mode - sending to ${toEmail} instead of ${mailOptions.to}`);
+    }
+    
     const response = await resend.emails.send({
       from: 'TransDigiSN <onboarding@resend.dev>',
-      to: mailOptions.to,
+      to: toEmail,
       subject: mailOptions.subject,
       html: mailOptions.html
     });
