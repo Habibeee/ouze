@@ -204,7 +204,7 @@ import { useI18n } from '../src/i18n.jsx';
               <br />
               {t('home.hero.title.line2')}
             </h1>
-            <p className="lead mb-4">{t('home.hero.lead')}</p>
+            <p className="lead mb-4 text-white">{t('home.hero.lead')}</p>
 
             <div className="d-flex gap-3 flex-wrap justify-content-center hero-cta">
               <a href="#how-client" className="btn btn-lg px-5 py-3 fw-semibold btn-client" style={{ '--btn-color': 'var(--bs-success)', backgroundColor: 'var(--bs-success)', color: 'white', border: 'none', borderRadius: '8px' }}>
@@ -569,7 +569,7 @@ function IndexPage() {
             <h1 className="display-3 fw-bold mb-4">
               {t('home.hero.title.line1')}<br />{t('home.hero.title.line2')}
             </h1>
-            <p className="lead mb-4">{t('home.hero.lead')}</p>
+            <p className="lead mb-4 text-white">{t('home.hero.lead')}</p>
             <div className="d-flex gap-3 flex-wrap justify-content-center">
               <button
                 className="btn btn-lg px-5 py-3 fw-semibold btn-client"
