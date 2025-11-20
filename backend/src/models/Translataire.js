@@ -83,6 +83,7 @@ const translatireSchema = new mongoose.Schema({
   }],
   
   // Informations complémentaires
+  services: [String],
   photoProfil: String,
   description: String,
   anneesExperience: Number,

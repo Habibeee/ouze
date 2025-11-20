@@ -41,6 +41,7 @@ exports.updateProfile = async (req, res) => {
       ville: req.body.ville,
       region: req.body.region,
       codePostal: req.body.codePostal,
+      services: req.body.services,
       secteurActivite: req.body.secteurActivite,
       typeServices: req.body.typeServices,
       description: req.body.description,
