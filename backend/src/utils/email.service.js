@@ -1,7 +1,11 @@
 // src/utils/email.service.js
 const nodemailer = require('nodemailer');
+const axios = require('axios');
 
-// Créer le transporteur
+// Configuration: utiliser l'API Brevo REST si disponible, sinon SMTP
+const USE_BREVO_API = !!process.env.EMAIL_PASS; // Si clé API existe, utiliser l'API
+
+// Créer le transporteur SMTP (fallback si API échoue)
 const port = Number(process.env.EMAIL_PORT) || 587;
 const secure = (String(process.env.EMAIL_SECURE || '').toLowerCase() === 'true') || port === 465;
 const transporter = nodemailer.createTransport({
@@ -14,15 +18,67 @@ const transporter = nodemailer.createTransport({
   }
 });
 
-// Vérifier la configuration SMTP au démarrage (log uniquement)
-// Désactivé temporairement car l'email n'est pas configuré
-// try {
-//   transporter.verify().then(() => {
-//     console.info(`[MAIL] SMTP ready on ${process.env.EMAIL_HOST || 'smtp.gmail.com'}:${port} secure=${secure}`);
-//   }).catch((e) => {
-//     console.error('[MAIL] SMTP verify failed:', e?.message || e);
-//   });
-// } catch {}
+// Fonction pour envoyer via API Brevo
+const sendViaBrevoAPI = async (mailOptions) => {
+  if (!process.env.EMAIL_PASS) {
+    throw new Error('Brevo API key not configured (EMAIL_PASS)');
+  }
+
+  const payload = {
+    to: [{ email: mailOptions.to, name: mailOptions.toName || mailOptions.to }],
+    sender: { 
+      email: process.env.EMAIL_USER || 'noreply@transdigi.sn', 
+      name: 'TransDigiSN' 
+    },
+    subject: mailOptions.subject,
+    htmlContent: mailOptions.html,
+    replyTo: { email: 'support@transdigi.sn' }
+  };
+
+  try {
+    const response = await axios.post(
+      'https://api.brevo.com/v3/smtp/email',
+      payload,
+      {
+        headers: {
+          'api-key': process.env.EMAIL_PASS,
+          'Content-Type': 'application/json'
+        },
+        timeout: 10000
+      }
+    );
+    
+    console.log(`[BREVO-API] ✓ Email sent successfully via Brevo API, messageId:`, response.data.messageId);
+    return { 
+      messageId: response.data.messageId, 
+      response: response.status 
+    };
+  } catch (error) {
+    console.error(`[BREVO-API] ✗ Error sending via Brevo API:`, {
+      message: error.message,
+      code: error.code,
+      status: error.response?.status,
+      data: error.response?.data
+    });
+    throw error;
+  }
+};
+
+// Fonction universelle d'envoi d'email - utilise Brevo API
+const sendEmail = async (mailOptions) => {
+  // Si pas de clé API, utiliser SMTP (fallback)
+  if (!process.env.EMAIL_PASS) {
+    return new Promise((resolve, reject) => {
+      transporter.sendMail(mailOptions, (err, info) => {
+        if (err) reject(err);
+        else resolve(info);
+      });
+    });
+  }
+
+  // Utiliser Brevo API
+  return sendViaBrevoAPI(mailOptions);
+};
 
 // Envoyer email de vérification
 exports.sendVerificationEmail = async (email, token, userType) => {
@@ -72,7 +128,7 @@ exports.sendVerificationEmail = async (email, token, userType) => {
       </html>
     `
   };
-  await transporter.sendMail(mailOptions);
+  await sendEmail(mailOptions);
 };
 
 // Email aux administrateurs: réponse/acceptation de devis par un transitaire
@@ -101,7 +157,7 @@ exports.sendAdminDevisResponseEmail = async (email, { translataireNom, montant, 
       </body></html>
     `
   };
-  await transporter.sendMail(mailOptions);
+  await sendEmail(mailOptions);
 };
 
 // Email aux administrateurs: annulation d’un devis par le client
@@ -130,7 +186,7 @@ exports.sendAdminDevisCancelledEmail = async (email, { translataireNom, clientNa
       </body></html>
     `
   };
-  await transporter.sendMail(mailOptions);
+  await sendEmail(mailOptions);
 };
 
 // Email aux administrateurs: nouvelle demande de devis
@@ -161,7 +217,7 @@ exports.sendAdminNewDevisEmail = async (email, { translataireNom, clientName, cl
       </body></html>
     `
   };
-  await transporter.sendMail(mailOptions);
+  await sendEmail(mailOptions);
 };
 
 // Email aux administrateurs: nouvel avis client
@@ -192,7 +248,7 @@ exports.sendAdminNewReviewEmail = async (email, { translataireNom, rating, comme
       </body></html>
     `
   };
-  await transporter.sendMail(mailOptions);
+  await sendEmail(mailOptions);
 };
 
 // ================= Admin: Notifications par email =================
@@ -227,7 +283,7 @@ exports.sendAdminNewRegistrationEmail = async (email, { type = 'client', display
       </body></html>
     `
   };
-  await transporter.sendMail(mailOptions);
+  await sendEmail(mailOptions);
 };
 
 // Notifier un changement de statut de compte (block/unblock/archive/unarchive/reject/suspend)
@@ -266,7 +322,7 @@ exports.sendAccountStatusChange = async ({ email, displayName, userType, status,
       </body></html>
     `
   };
-  await transporter.sendMail(mailOptions);
+  await sendEmail(mailOptions);
 };
 
 // Notifier une suppression de compte
@@ -295,7 +351,7 @@ exports.sendAccountDeleted = async ({ email, displayName, userType, reason }) =>
       </body></html>
     `
   };
-  await transporter.sendMail(mailOptions);
+  await sendEmail(mailOptions);
 };
 
 // Nouvelle demande de devis -> email au translataire
@@ -329,7 +385,7 @@ exports.sendNewDevisToTranslataire = async (email, { clientName, typeService, de
       </body></html>
     `
   };
-  await transporter.sendMail(mailOptions);
+  await sendEmail(mailOptions);
 };
 
 // Devis accepté -> email au client
@@ -363,7 +419,7 @@ exports.sendDevisAcceptedToClient = async (email, { clientName, translataireNom,
       </body></html>
     `
   };
-  await transporter.sendMail(mailOptions);
+  await sendEmail(mailOptions);
 };
 
 // Envoyer notification d'approbation de compte utilisateur (client)
@@ -408,7 +464,7 @@ exports.sendUserApprovalNotification = async (email, displayName) => {
     `
   };
 
-  await transporter.sendMail(mailOptions);
+  await sendEmail(mailOptions);
 };
 
 
@@ -462,22 +518,15 @@ exports.sendPasswordResetEmail = async (email, token) => {
     `
   };
 
-  await transporter.sendMail(mailOptions);
+  await sendEmail(mailOptions);
 };
 
 // Envoyer notification d'approbation de compte translataire
 exports.sendApprovalNotification = async (email, nomEntreprise) => {
   try {
-    console.log(`[APPROVAL-EMAIL] Config check:`, {
-      EMAIL_HOST: process.env.EMAIL_HOST,
-      EMAIL_PORT: process.env.EMAIL_PORT,
-      EMAIL_USER: process.env.EMAIL_USER,
-      EMAIL_PASS: process.env.EMAIL_PASS ? '***configured***' : 'MISSING',
-      FRONTEND_URL: process.env.FRONTEND_URL
-    });
-
+    console.log(`[APPROVAL-EMAIL] Envoi email pour ${nomEntreprise} à ${email} via Brevo API`);
+    
     const mailOptions = {
-      from: `TransDigiSN <${process.env.EMAIL_USER}>`,
       to: email,
       subject: '✅ Votre compte a été approuvé !',
       html: `
@@ -523,42 +572,13 @@ exports.sendApprovalNotification = async (email, nomEntreprise) => {
       `
     };
 
-    console.log(`[APPROVAL-EMAIL] Avant sendMail:`, { to: email, subject: mailOptions.subject });
-    
-    // Use Promise with timeout to catch any hanging
-    const sendPromise = new Promise((resolve, reject) => {
-      const timeout = setTimeout(() => {
-        reject(new Error('Email send timeout (30s)'));
-      }, 30000);
-
-      transporter.sendMail(mailOptions, (err, info) => {
-        clearTimeout(timeout);
-        if (err) {
-          console.error(`[APPROVAL-EMAIL] Erreur sendMail (callback):`, {
-            message: err.message,
-            code: err.code,
-            response: err.response
-          });
-          reject(err);
-        } else {
-          console.log(`[APPROVAL-EMAIL] ✓ Email envoyé (callback):`, {
-            messageId: info.messageId,
-            response: info.response
-          });
-          resolve(info);
-        }
-      });
-    });
-
-    await sendPromise;
+    await sendViaBrevoAPI(mailOptions);
     console.log(`[APPROVAL-EMAIL] ✓ Email envoyé avec succès`);
   } catch (e) {
-    console.error(`[APPROVAL-EMAIL] ✗ Erreur lors du sendMail:`, {
+    console.error(`[APPROVAL-EMAIL] ✗ Erreur lors de l'envoi:`, {
       message: e.message,
       code: e.code,
-      command: e.command,
-      response: e.response,
-      stack: e.stack
+      status: e.response?.status
     });
     throw e;
   }
