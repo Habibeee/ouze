@@ -33,7 +33,7 @@ export const transitareCss = `
      - mode sombre : ajusté plus bas avec !important */
   .forwarder-main-title,
   .forwarder-stats-title {
-    color: #111827 !important;
+    color: #000000 !important;
     text-shadow: 0 1px 2px rgba(0,0,0,0.12);
   }
 

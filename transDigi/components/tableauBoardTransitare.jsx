@@ -115,6 +115,7 @@ const TransitaireDashboard = () => {
       const hash = window.location.hash;
       if (hash === '#/profile') setActiveSideItem('profil');
       else if (hash === '#/historique-transitaire') setActiveSideItem('historique-devis');
+      else if (hash === '#/fichiers-recus-transitaire') setActiveSideItem('files');
       else if (hash === '#/dashboard-transitaire') setActiveSideItem('dashboard');
     };
     syncFromHash();
@@ -432,6 +433,7 @@ const TransitaireDashboard = () => {
         items={[
           { id: 'dashboard', label: t('forwarder.sidebar.dashboard'), icon: LayoutGrid },
           { id: 'historique-devis', label: 'Historique des devis', icon: Clock },
+          { id: 'files', label: 'Mes fichiers reçus', icon: FileText },
           { id: 'profil', label: t('forwarder.sidebar.profile'), icon: User },
         ]}
         onNavigate={(id) => {
@@ -440,6 +442,8 @@ const TransitaireDashboard = () => {
             window.location.hash = '#/dashboard-transitaire';
           } else if (id === 'historique-devis') {
             window.location.hash = '#/historique-transitaire';
+          } else if (id === 'files') {
+            window.location.hash = '#/fichiers-recus-transitaire';
           } else if (id === 'profil') {
             window.location.hash = '#/profile';
           }

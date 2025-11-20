@@ -22,6 +22,7 @@ import ModofierProfClient from '../components/modofierProfClient.jsx';
 import DetailDevis from '../components/detailDevis.jsx';
 import DetailDevisClient from '../components/detailDevisClient.jsx';
 import NouveauDevis from '../components/nouveauDevis.jsx';
+import MesFichiersRecusTransitaire from '../components/mesFichiersRecusTransitaire.jsx';
 import { themeCss } from '../styles/themeStyle.jsx';
 import Apropos from '../components/apropos.jsx';
 import ModifierModpss from '../components/modifierModpss.jsx';
@@ -100,7 +101,8 @@ function App() {
       '#/nouveau-devis',
       '#/recherche-transitaire',
       '#/envois',
-      '#/fichiers-recus'
+      '#/fichiers-recus',
+      '#/fichiers-recus-transitaire'
     ].includes(baseRoute);
     const isAuthPages = ['#/connexion','#/signup','#/client','#/transitaire','#/oauth-callback'].includes(baseRoute) || route.startsWith('#/reinitialiser/') || route.startsWith('#/verifier/');
 
@@ -197,6 +199,8 @@ function App() {
         return <ClientDashboard />;
       case '#/fichiers-recus':
         return <ClientDashboard />;
+      case '#/fichiers-recus-transitaire':
+        return <MesFichiersRecusTransitaire />;
       case '#/detail-devis':
         return <DetailDevis />;
       case '#/detail-devis-client':
