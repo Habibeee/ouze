@@ -551,7 +551,7 @@ const TransitaireDashboard = () => {
             <div className="row g-2 g-md-3">
               {stats.map((stat, index) => (
                 <div key={index} className="col-12 col-sm-6 col-lg-3">
-                  <div className="card border-0 shadow-sm h-100">
+                  <div className="card border-0 shadow-sm h-100 forwarder-stats-card">
                     <div className="card-body p-3">
                       <div className="small mb-2" style={{ color: 'var(--bs-body-color)' }}>{stat.label}</div>
                       <div className="h3 fw-bold mb-0" style={{ color: 'var(--bs-body-color)' }}>{stat.value}</div>

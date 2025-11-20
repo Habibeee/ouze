@@ -34,6 +34,7 @@ export const transitareCss = `
   .forwarder-main-title,
   .forwarder-stats-title {
     color: #111827 !important;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.12);
   }
 
   .card h1, .card h2, .card h3, .card h4, .card h5, .card h6,
@@ -604,6 +605,15 @@ export const transitareCss = `
     color: var(--bs-card-color);
   }
 
+  /* Ombre renforcée pour les 3 cartes de stats du dashboard transitaire */
+  .forwarder-stats-card {
+    box-shadow: 0 10px 25px rgba(15, 23, 42, 0.16) !important;
+    border-radius: 1rem !important;
+  }
+  .forwarder-stats-card:hover {
+    box-shadow: 0 16px 35px rgba(15, 23, 42, 0.22) !important;
+  }
+
   /* ========================================
      🎨 DARK MODE
      ======================================== */
@@ -612,6 +622,13 @@ export const transitareCss = `
     .card {
       background-color: var(--bs-dark);
       color: var(--bs-light);
+    }
+
+    /* Garder une bonne lisibilité des titres en sombre aussi */
+    .forwarder-main-title,
+    .forwarder-stats-title {
+      color: var(--bs-light) !important;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.5);
     }
 
     .table-hover tbody tr:hover {
