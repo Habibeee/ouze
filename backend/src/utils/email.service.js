@@ -1,11 +1,12 @@
 // src/utils/email.service.js
 const nodemailer = require('nodemailer');
 const axios = require('axios');
+const { Resend } = require('resend');
 
-// Configuration: utiliser l'API Brevo REST si disponible, sinon SMTP
-const USE_BREVO_API = !!process.env.EMAIL_PASS; // Si clé API existe, utiliser l'API
+// Initialiser Resend si la clé est disponible
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
-// Créer le transporteur SMTP (fallback si API échoue)
+// Créer le transporteur SMTP (fallback si Resend échoue)
 const port = Number(process.env.EMAIL_PORT) || 587;
 const secure = (String(process.env.EMAIL_SECURE || '').toLowerCase() === 'true') || port === 465;
 const transporter = nodemailer.createTransport({
@@ -18,66 +19,53 @@ const transporter = nodemailer.createTransport({
   }
 });
 
-// Fonction pour envoyer via API Brevo
-const sendViaBrevoAPI = async (mailOptions) => {
-  if (!process.env.EMAIL_PASS) {
-    throw new Error('Brevo API key not configured (EMAIL_PASS)');
+// Fonction pour envoyer via Resend
+const sendViaResend = async (mailOptions) => {
+  if (!resend) {
+    throw new Error('Resend API not configured (RESEND_API_KEY)');
   }
 
-  const payload = {
-    to: [{ email: mailOptions.to, name: mailOptions.toName || mailOptions.to }],
-    sender: { 
-      email: process.env.EMAIL_USER || 'noreply@transdigi.sn', 
-      name: 'TransDigiSN' 
-    },
-    subject: mailOptions.subject,
-    htmlContent: mailOptions.html,
-    replyTo: { email: 'support@transdigi.sn' }
-  };
-
   try {
-    const response = await axios.post(
-      'https://api.brevo.com/v3/smtp/email',
-      payload,
-      {
-        headers: {
-          'api-key': process.env.EMAIL_PASS,
-          'Content-Type': 'application/json'
-        },
-        timeout: 10000
-      }
-    );
+    console.log(`[RESEND] Sending email to ${mailOptions.to}`);
+    const response = await resend.emails.send({
+      from: 'TransDigiSN <noreply@transdigi.sn>',
+      to: mailOptions.to,
+      subject: mailOptions.subject,
+      html: mailOptions.html
+    });
     
-    console.log(`[BREVO-API] ✓ Email sent successfully via Brevo API, messageId:`, response.data.messageId);
+    if (response.error) {
+      throw new Error(response.error.message);
+    }
+    
+    console.log(`[RESEND] ✓ Email sent successfully, messageId:`, response.data.id);
     return { 
-      messageId: response.data.messageId, 
-      response: response.status 
+      messageId: response.data.id, 
+      response: response.data
     };
   } catch (error) {
-    console.error(`[BREVO-API] ✗ Error sending via Brevo API:`, {
+    console.error(`[RESEND] ✗ Error sending via Resend:`, {
       message: error.message,
-      code: error.code,
-      status: error.response?.status,
-      data: error.response?.data
+      code: error.code
     });
     throw error;
   }
 };
 
-// Fonction universelle d'envoi d'email - utilise Brevo API
+// Fonction universelle d'envoi d'email - utilise Resend ou SMTP
 const sendEmail = async (mailOptions) => {
-  // Si pas de clé API, utiliser SMTP (fallback)
-  if (!process.env.EMAIL_PASS) {
-    return new Promise((resolve, reject) => {
-      transporter.sendMail(mailOptions, (err, info) => {
-        if (err) reject(err);
-        else resolve(info);
-      });
-    });
+  // Si Resend est configuré, l'utiliser
+  if (resend) {
+    return sendViaResend(mailOptions);
   }
-
-  // Utiliser Brevo API
-  return sendViaBrevoAPI(mailOptions);
+  
+  // Sinon utiliser SMTP (fallback)
+  return new Promise((resolve, reject) => {
+    transporter.sendMail(mailOptions, (err, info) => {
+      if (err) reject(err);
+      else resolve(info);
+    });
+  });
 };
 
 // Envoyer email de vérification
@@ -524,7 +512,7 @@ exports.sendPasswordResetEmail = async (email, token) => {
 // Envoyer notification d'approbation de compte translataire
 exports.sendApprovalNotification = async (email, nomEntreprise) => {
   try {
-    console.log(`[APPROVAL-EMAIL] Envoi email pour ${nomEntreprise} à ${email} via Brevo API`);
+    console.log(`[APPROVAL-EMAIL] Envoi email pour ${nomEntreprise} à ${email}`);
     
     const mailOptions = {
       to: email,
@@ -572,13 +560,12 @@ exports.sendApprovalNotification = async (email, nomEntreprise) => {
       `
     };
 
-    await sendViaBrevoAPI(mailOptions);
+    await sendEmail(mailOptions);
     console.log(`[APPROVAL-EMAIL] ✓ Email envoyé avec succès`);
   } catch (e) {
     console.error(`[APPROVAL-EMAIL] ✗ Erreur lors de l'envoi:`, {
       message: e.message,
-      code: e.code,
-      status: e.response?.status
+      code: e.code
     });
     throw e;
   }
