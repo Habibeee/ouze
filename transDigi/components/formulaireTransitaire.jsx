@@ -74,6 +74,7 @@ function TransdigiRegister() {
     { id: 'dedouanement', label: 'Dédouanement', serviceCode: null },
     { id: 'transport-aerien', label: 'Transport aérien', serviceCode: 'aerien' },
     { id: 'transport-routier', label: 'Transport routier', serviceCode: 'routier' },
+    { id: 'transit', label: 'Transit', serviceCode: null },
   ];
 
   const toggleSector = (id) => {
@@ -212,7 +213,7 @@ function TransdigiRegister() {
                     {SECTOR_OPTIONS.map((opt) => (
                       <div key={opt.id} className="form-check">
                         <input
-                          className="form-check-input"
+                          className="form-check-input sector-checkbox"
                           type="checkbox"
                           id={opt.id}
                           checked={Array.isArray(formData.sectors) && formData.sectors.includes(opt.id)}
@@ -273,6 +274,20 @@ function TransdigiRegister() {
       <style>{`
         .form-control:focus, .form-select:focus { border-color: #28A745; box-shadow: 0 0 0 0.2rem rgba(40,167,69,.25); }
         .btn:hover { opacity: 0.95; }
+        .sector-checkbox {
+          width: 1.25rem;
+          height: 1.25rem;
+          border-width: 2px;
+          cursor: pointer;
+        }
+        .sector-checkbox:checked {
+          background-color: #28A745;
+          border-color: #28A745;
+          box-shadow: 0 0 0 0.15rem rgba(40,167,69,.4);
+        }
+        .sector-checkbox:focus {
+          box-shadow: 0 0 0 0.2rem rgba(40,167,69,.45);
+        }
       `}</style>
     </section>
   );
