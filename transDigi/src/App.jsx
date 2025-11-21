@@ -182,7 +182,7 @@ function App() {
       case '#/transitaire':
         return <FormulaireTransitaire />;
       case '#/recherche-transitaire':
-        return <RechercheTransitaire />;
+        return <ClientDashboard />;
       case '#/dashboard-transitaire':
         return <TransitaireDashboard />;
       case '#/historique-transitaire':
@@ -194,7 +194,7 @@ function App() {
       case '#/gestion-utilisateurs':
         return <GestionUtilisateurs />;
       case '#/historique':
-        return <HistoriqueDevis />;
+        return <ClientDashboard />;
       case '#/envois':
         return <ClientDashboard />;
       case '#/fichiers-recus':
@@ -206,7 +206,7 @@ function App() {
       case '#/detail-devis-client':
         return <DetailDevisClient />;
       case '#/nouveau-devis':
-        return <NouveauDevis />;
+        return <ClientDashboard />;
       case '#/connexion':
         return <Connexion />;
       case '#/mot-de-passe-oublie':
@@ -220,7 +220,7 @@ function App() {
       case '#/profile':
         return <ProfilTransitaire />;
       case '#/profil-client':
-        return <ModofierProfClient />;
+        return <ClientDashboard />;
       case '#/apropos':
         return <Apropos />;
       case '#/':
