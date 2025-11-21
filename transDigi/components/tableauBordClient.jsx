@@ -718,7 +718,7 @@ return (
                           <div className="d-flex flex-column flex-sm-row justify-content-between align-items-start gap-2">
                             <div className="d-flex flex-column flex-grow-1" style={{ minWidth: 0 }}>
                               <div className="d-flex align-items-center gap-2 flex-wrap">
-                                <span className={`badge rounded-pill px-2 px-md-3 py-1 py-md-2 ${item.status === 'accepte' ? 'bg-success' : item.status === 'refuse' ? 'bg-danger' : item.status === 'annule' ? 'bg-secondary' : 'bg-warning text-dark' }`}>
+                                <span className={`badge rounded-pill px-2 px-md-3 py-1 py-md-2 ${item.status === 'accepte' ? 'bg-success' : item.status === 'refuse' ? 'bg-danger' : item.status === 'annule' ? 'bg-danger' : 'bg-warning text-dark' }`}>
                                   {item.status === 'accepte'
                                     ? t('client.quotes.status.accepted')
                                     : item.status === 'refuse'
