@@ -48,5 +48,51 @@ export const headerCss = `
   @media (max-width: 420px) {
     .navbar-compact img[alt="TransDigiSN"] { height: 48px !important; }
   }
+
+  /* Sidebar mobile menu */
+  @media (max-width: 991.98px) {
+    .mobile-menu-toggle {
+      border-radius: 999px;
+      border-width: 1px;
+      border-color: #d1d5db;
+      background-color: #ffffff;
+    }
+
+    .mobile-menu-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.35);
+      z-index: 1040;
+    }
+
+    .mobile-menu-panel {
+      position: fixed;
+      top: 0;
+      right: 0;
+      height: 100vh;
+      width: 78%;
+      max-width: 320px;
+      background: #ffffff;
+      z-index: 1050;
+      padding: 1.5rem 1.25rem;
+      box-shadow: -8px 0 24px rgba(15, 23, 42, 0.2);
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .mobile-menu-links .mobile-menu-link {
+      font-weight: 600;
+      font-size: 1rem;
+      color: #111827;
+      padding-left: 0;
+      padding-right: 0;
+    }
+
+    .mobile-menu-links .mobile-menu-link:hover {
+      color: #0b5f8a;
+      text-decoration: none;
+    }
+  }
 `;
 
