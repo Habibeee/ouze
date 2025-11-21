@@ -54,8 +54,21 @@ export const headerCss = `
     .mobile-menu-toggle {
       border-radius: 999px;
       border-width: 1px;
-      border-color: #d1d5db;
-      background-color: #ffffff;
+      border-color: #0b5f8a;
+      background-color: #0b5f8a;
+      color: #ffffff;
+      width: 40px;
+      height: 40px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+    }
+
+    .mobile-menu-toggle:hover {
+      background-color: #0a4a6a;
+      border-color: #0a4a6a;
+      color: #ffffff;
     }
 
     .mobile-menu-overlay {
