@@ -550,8 +550,8 @@ return (
   
     {/* Main Content */}
     <div className="flex-grow-1" style={{ marginLeft: isLgUp ? (sidebarOpen ? '240px' : '56px') : '0 !important', transition: 'margin-left .25s ease', paddingLeft: 0, minWidth: 0, width: '100%', maxWidth: '100vw', overflowX: 'hidden', position: 'relative', backgroundColor: 'var(--bg)' }}>
-      {/* Header interne : menu + notifications + profil (visible uniquement sur petites tailles d'écran) */}
-      <div className="w-100 d-flex justify-content-between align-items-center gap-2 px-2 px-md-3 py-2 d-lg-none">
+      {/* Header interne : menu + notifications + profil */}
+      <div className="w-100 d-flex justify-content-between align-items-center gap-2 px-2 px-md-3 py-2">
         {/* Hamburger menu button - visible only on mobile */}
         {!isLgUp && (
           <button 

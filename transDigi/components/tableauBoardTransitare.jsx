@@ -468,7 +468,7 @@ const TransitaireDashboard = () => {
               </svg>
             </button>
           )}
-          <div className="d-flex align-items-center gap-2 ms-auto">
+          <div className="d-flex align-items-center gap-2 ms-auto" style={{ position: 'relative' }}>
             <button
               className="btn btn-link position-relative"
               style={{ color: 'var(--bs-body-color)' }}
