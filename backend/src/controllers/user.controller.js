@@ -218,6 +218,9 @@ exports.demandeDevis = async (req, res) => {
       });
     }
     const { typeService, description, dateExpiration, translataireName, origin, destination, devisOrigin } = req.body;
+    const originFlag = (devisOrigin || '').toString();
+    const isFromNouveauDevis = originFlag === 'nouveau-devis';
+
     let translataire = null;
     if (req.params.translatireId && String(req.params.translatireId).length >= 12) {
       try { translataire = await Translataire.findById(req.params.translatireId); } catch {}
@@ -247,7 +250,12 @@ exports.demandeDevis = async (req, res) => {
       client: req.user.id,
       typeService,
       description,
-      dateExpiration: dateExpiration || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 jours par défaut
+      dateExpiration: dateExpiration || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 jours par défaut
+      // Conserver l'origine fonctionnelle du devis pour l'admin et les traitements ultérieurs
+      devisOrigin: originFlag || undefined,
+      // Pour un devis créé depuis "Nouveau devis", on ne le rend pas visible dans le dashboard transitaire
+      // (il reste néanmoins visible et exploitable côté administrateur).
+      visiblePourTranslataire: !isFromNouveauDevis
     };
     if (origin) devis.origin = origin;
     if (destination) devis.destination = destination;
@@ -329,7 +337,7 @@ exports.demandeDevis = async (req, res) => {
     // Email au translataire pour l'informer de la nouvelle demande de devis
     // Pour un devis créé depuis "Nouveau devis" (devisOrigin === 'nouveau-devis'),
     // on ne notifie pas directement le translataire: seul l'admin reçoit l'information.
-    if ((devisOrigin || '').toString() !== 'nouveau-devis') {
+    if (!isFromNouveauDevis) {
       try {
         const client = await User.findById(req.user.id).select('nom prenom email');
         await sendNewDevisToTranslataire(translataire.email, {
