@@ -22,10 +22,6 @@ const NouveauDevis = () => {
   const [formData, setFormData] = useState({
     translataireId: '',
     translataireName: '',
-    // Informations client
-    clientName: '',
-    clientAddress: '',
-    // Détails expédition
     transportType: 'maritime',
     description: '',
     weight: '',
@@ -42,9 +38,7 @@ const NouveauDevis = () => {
       temperature: false,
       fragile: false
     },
-    // Commentaire libre (optionnel)
     notes: '',
-    // Fichiers joints (obligatoires)
     uploadedFiles: []
   });
 
@@ -81,26 +75,11 @@ const NouveauDevis = () => {
     } catch {}
   }, []);
 
-  // Pré-remplir si possible le nom/adresse client depuis le stockage local
-  useEffect(() => {
-    try {
-      const storedName = localStorage.getItem('clientFullName')
-        || `${localStorage.getItem('firstName') || ''} ${localStorage.getItem('lastName') || ''}`.trim();
-      const storedAddress = localStorage.getItem('clientAddress') || '';
-      setFormData(prev => ({
-        ...prev,
-        clientName: prev.clientName || storedName || '',
-        clientAddress: prev.clientAddress || storedAddress || ''
-      }));
-    } catch {}
-  }, []);
-
   // Progress computation based on filled fields
   useEffect(() => {
     const baseFields = [
-      !!(formData.clientName && formData.clientName.trim()),
-      !!(formData.clientAddress && formData.clientAddress.trim()),
       !!(formData.transportType && String(formData.transportType).trim()),
+      !!(formData.description && formData.description.trim()),
       !!(formData.pickupAddress && formData.pickupAddress.trim()),
       !!(formData.deliveryAddress && formData.deliveryAddress.trim()),
     ];
@@ -199,13 +178,9 @@ const NouveauDevis = () => {
     // Construire le payload pour l'API backend
     (async () => {
       try {
-        // Validation côté client
-        if (!formData.clientName || !formData.clientName.trim()) {
-          toastError('Veuillez renseigner le nom complet du client.');
-          return;
-        }
-        if (!formData.clientAddress || !formData.clientAddress.trim()) {
-          toastError("Veuillez renseigner l'adresse du client.");
+        // Champs obligatoires : date d'envoi du devis et fichier (Bill)
+        if (!formData.pickupDate) {
+          toastError("Veuillez renseigner la date d’envoi du devis.");
           return;
         }
         if (!formData.uploadedFiles || !formData.uploadedFiles.length) {
@@ -240,18 +215,19 @@ const NouveauDevis = () => {
             return;
           }
         }
+        if (!formData.description && !(formData.uploadedFiles && formData.uploadedFiles.length)) {
+          toastError('Veuillez décrire votre marchandise ou joindre au moins un fichier');
+          return;
+        }
         const fd = new FormData();
         // Champs attendus par le backend
         const allowed = ['maritime','routier','aerien'];
         const tService = allowed.includes((formData.transportType||'').toLowerCase()) ? (formData.transportType||'').toLowerCase() : 'maritime';
         fd.append('typeService', tService);
         fd.append('description', formData.description || '');
-        fd.append('clientName', formData.clientName || '');
-        fd.append('clientAddress', formData.clientAddress || '');
         if (formData.pickupDate) fd.append('dateExpiration', formData.pickupDate);
         if (formData.pickupAddress) fd.append('origin', formData.pickupAddress);
         if (formData.deliveryAddress) fd.append('destination', formData.deliveryAddress);
-        if (formData.notes) fd.append('notes', formData.notes);
         // Indiquer au backend l'origine du devis (recherche transitaire vs nouveau devis direct)
         fd.append('devisOrigin', isFromSearch ? 'search' : 'nouveau-devis');
         if (formData.uploadedFiles && formData.uploadedFiles.length) {
