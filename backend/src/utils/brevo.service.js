@@ -1,14 +1,15 @@
-const brevo = require('@getbrevo/brevo');
-const defaultClient = brevo.ApiClient.instance;
+// src/utils/brevo.service.js
+const Brevo = require('@getbrevo/brevo');
+const defaultClient = Brevo.ApiClient.instance;
 
 // Configure API key authorization: api-key
 const apiKey = defaultClient.authentications['api-key'];
-apiKey.apiKey = process.env.BREVO_API_KEY || 'REMOVED';
+apiKey.apiKey = process.env.BREVO_API_KEY || '';
 
-const apiInstance = new brevo.TransactionalEmailsApi();
+const apiInstance = new Brevo.TransactionalEmailsApi();
 
 const sendEmail = async (to, subject, htmlContent, textContent = '') => {
-  const sendSmtpEmail = new brevo.SendSmtpEmail();
+  const sendSmtpEmail = new Brevo.SendSmtpEmail();
   
   sendSmtpEmail.subject = subject;
   sendSmtpEmail.htmlContent = htmlContent;
