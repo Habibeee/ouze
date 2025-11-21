@@ -43,6 +43,12 @@ function Header({ showSidebarToggle = false, onToggleSidebar, hideNavbarToggler 
     }
   };
 
+  useEffect(() => {
+    try {
+      document.body.classList.toggle('mobile-menu-open', mobileMenuOpen);
+    } catch {}
+  }, [mobileMenuOpen]);
+
   return (
     <nav className="navbar navbar-expand-lg navbar-light bg-white border-bottom shadow-sm fixed-top w-100 navbar-compact">
       <style>{headerCss}</style>
@@ -123,17 +129,33 @@ function Header({ showSidebarToggle = false, onToggleSidebar, hideNavbarToggler 
               </div>
             </div>
           </div>
-          {/* Bouton hamburger mobile à droite */}
+          {/* Bouton hamburger mobile à droite (caché sur desktop) */}
           {!hideNavbarToggler && (
             <button
               type="button"
-              className="btn btn-outline-secondary ms-1 d-lg-none mobile-menu-toggle"
-              onClick={() => setMobileMenuOpen(true)}
+              className="btn btn-outline-secondary ms-1 d-inline-flex d-lg-none mobile-menu-toggle"
+              onClick={() => {
+                try {
+                  if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
+                    navigator.vibrate(50);
+                  }
+                } catch {}
+                setMobileMenuOpen(true);
+              }}
               aria-label={t('aria.toggle.navigation')}
             >
               <Menu size={22} />
             </button>
           )}
+        </div>
+      </div>
+
+      {/* Nav inline sous le header désactivée (menu mobile géré par la sidebar) */}
+      <div className="w-100 d-none border-top bg-white">
+        <div className="container-fluid px-3 py-2 d-flex justify-content-center gap-3 small">
+          <button type="button" className="btn btn-link p-0" onClick={() => navigateHash('#/')}>{t('nav.home')}</button>
+          <button type="button" className="btn btn-link p-0" onClick={() => navigateHash('#/apropos')}>{t('nav.about')}</button>
+          <button type="button" className="btn btn-link p-0" onClick={() => navigateHash('#/contact')}>{t('nav.contact')}</button>
         </div>
       </div>
 
@@ -143,36 +165,85 @@ function Header({ showSidebarToggle = false, onToggleSidebar, hideNavbarToggler 
           <div className="mobile-menu-overlay" onClick={() => setMobileMenuOpen(false)}></div>
           <div className="mobile-menu-panel">
             <div className="d-flex align-items-center justify-content-between mb-4">
-              <a href="#/" onClick={(e) => { e.preventDefault(); navigateHash('#/'); }} className="d-flex align-items-center gap-2 text-decoration-none">
-                <img src={'/logo1.png'} alt="TransDigiSN" style={{ height: 48, width: 'auto' }} />
-              </a>
+              <span className="fw-semibold" style={{ color: '#0b5f8a' }}>Menu</span>
               <button
                 type="button"
                 className="btn btn-link p-1 text-dark"
                 onClick={() => setMobileMenuOpen(false)}
                 aria-label={t('aria.close')}
               >
-                <X size={26} />
+                <ArrowLeft size={26} />
               </button>
             </div>
             <ul className="list-unstyled mb-4 mobile-menu-links">
               <li>
-                <button type="button" className="btn btn-link w-100 text-start mobile-menu-link" onClick={() => navigateHash('#/')}>{t('nav.home')}</button>
+                <button
+                  type="button"
+                  className="btn btn-link w-100 text-start mobile-menu-link fw-semibold"
+                  onClick={() => navigateHash('#/')}
+                >
+                  {t('nav.home')}
+                </button>
               </li>
               <li>
-                <button type="button" className="btn btn-link w-100 text-start mobile-menu-link" onClick={() => navigateHash('#/apropos')}>{t('nav.about')}</button>
+                <button
+                  type="button"
+                  className="btn btn-link w-100 text-start mobile-menu-link fw-semibold"
+                  onClick={() => navigateHash('#/apropos')}
+                >
+                  {t('nav.about')}
+                </button>
               </li>
               <li>
-                <button type="button" className="btn btn-link w-100 text-start mobile-menu-link" onClick={() => navigateHash('#/contact')}>{t('nav.contact')}</button>
+                <button
+                  type="button"
+                  className="btn btn-link w-100 text-start mobile-menu-link fw-semibold"
+                  onClick={() => navigateHash('#/contact')}
+                >
+                  {t('nav.contact')}
+                </button>
               </li>
             </ul>
             <div className="d-flex flex-column gap-3 mt-auto">
+              <div className="d-flex justify-content-center align-items-center small" aria-label="Language switcher mobile">
+                <span
+                  onClick={() => setLang('fr')}
+                  style={{
+                    cursor: 'pointer',
+                    fontWeight: '600',
+                    color: lang === 'fr' ? '#0b5f8a' : '#6c757d',
+                    marginRight: '4px'
+                  }}
+                >
+                  FR
+                </span>
+                <span style={{ margin: '0 2px', color: '#6c757d' }}>/</span>
+                <span
+                  onClick={() => setLang('en')}
+                  style={{
+                    cursor: 'pointer',
+                    fontWeight: '600',
+                    color: lang === 'en' ? '#0b5f8a' : '#6c757d',
+                    marginLeft: '4px'
+                  }}
+                >
+                  EN
+                </span>
+              </div>
               <button
                 type="button"
                 className="btn btn-success w-100 fw-semibold"
                 onClick={() => navigateHash('#/connexion')}
               >
                 {t('nav.login')}
+              </button>
+              <button
+                type="button"
+                onClick={toggleTheme}
+                className={`btn w-100 fw-semibold ${theme === 'dark' ? 'btn-light' : 'btn-dark'}`}
+                aria-label={t('aria.toggle.theme')}
+              >
+                {theme === 'dark' ? <i className="bi bi-brightness-high"></i> : <i className="bi bi-moon-stars"></i>}
               </button>
             </div>
           </div>

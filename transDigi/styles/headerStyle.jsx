@@ -97,15 +97,37 @@ export const headerCss = `
     .mobile-menu-links .mobile-menu-link {
       font-weight: 600;
       font-size: 1rem;
-      color: #111827;
+      color: #0b5f8a;
       padding-left: 0;
       padding-right: 0;
+      text-decoration: none;
     }
 
     .mobile-menu-links .mobile-menu-link:hover {
-      color: #0b5f8a;
+      color: #063a55;
       text-decoration: none;
     }
+  }
+
+  body.mobile-menu-open {
+    transform: translateX(-18%);
+    transition: transform 0.3s ease;
+    overflow-x: hidden;
+  }
+
+  /* Forcer des couleurs lisibles dans le menu mobile en mode sombre */
+  [data-theme="dark"] .mobile-menu-panel {
+    background: #ffffff;
+    color: #0b5f8a;
+  }
+
+  [data-theme="dark"] .mobile-menu-panel .btn.btn-link,
+  [data-theme="dark"] .mobile-menu-panel .mobile-menu-link {
+    color: #0b5f8a !important;
+  }
+
+  [data-theme="dark"] .mobile-menu-panel .mobile-menu-link:hover {
+    color: #063a55 !important;
   }
 `;
 
