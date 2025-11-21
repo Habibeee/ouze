@@ -230,7 +230,9 @@ function App() {
   };
 
   if (isClientRoute) {
-    const hasGlobalSidebar = baseRoute !== '#/client' && baseRoute !== '#/transitaire' && baseRoute !== '#/dashboard-client' && baseRoute !== '#/detail-devis-client';
+    // Éviter la duplication : les pages client qui passent par ClientDashboard gèrent déjà leur propre sidebar.
+    const hasGlobalSidebar = baseRoute !== '#/client' && baseRoute !== '#/transitaire' && baseRoute !== '#/dashboard-client' && baseRoute !== '#/detail-devis-client'
+      && baseRoute !== '#/recherche-transitaire' && baseRoute !== '#/nouveau-devis' && baseRoute !== '#/historique' && baseRoute !== '#/envois' && baseRoute !== '#/fichiers-recus' && baseRoute !== '#/profil-client';
     return (
       <ToastProvider>
       <div className="d-flex" style={{ minHeight: '100vh' }}>
