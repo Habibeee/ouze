@@ -34,6 +34,40 @@ export const clientCss = `
     color: var(--text);
   }
 
+  /* Filtres "Tous / Acceptés / En attente" - dashboard client */
+  .default-wrap .client-filter-group {
+    gap: 0.5rem;
+  }
+
+  .default-wrap .client-filter-group .client-filter-btn {
+    border-radius: 999px;
+    font-weight: 500;
+    padding-inline: 0.9rem;
+    border-width: 1px;
+    border-style: solid;
+    color: #ffffff;
+  }
+
+  .default-wrap .client-filter-all {
+    background-color: #16a34a;
+    border-color: #15803d;
+  }
+
+  .default-wrap .client-filter-accepted {
+    background-color: #0ea5e9;
+    border-color: #0284c7;
+  }
+
+  .default-wrap .client-filter-pending {
+    background-color: #f97316;
+    border-color: #ea580c;
+  }
+
+  .default-wrap .client-filter-btn:hover,
+  .default-wrap .client-filter-btn.client-filter-active {
+    filter: brightness(0.9);
+  }
+
   .card-body {
     background-color: var(--card);
   }
@@ -48,11 +82,34 @@ export const clientCss = `
   }
 
   .btn {
-    transition: opacity 0.2s ease;
+    transition: opacity 0.2s ease, background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
   }
 
   .btn:hover { 
-    opacity: 0.9; 
+    opacity: 0.95; 
+  }
+
+  /* Boutons d'action sur les cartes de devis */
+  .default-wrap .client-quote-actions .btn {
+    min-width: 90px;
+  }
+
+  .default-wrap .btn-client-detail:hover {
+    background-color: #e5e7eb;
+    color: #111827;
+  }
+
+  .default-wrap .btn-client-edit:hover {
+    background-color: #0ea5e9;
+    color: #ffffff;
+    border-color: #0284c7;
+  }
+
+  .default-wrap .btn-client-cancel:hover,
+  .default-wrap .btn-client-cancel-confirm:hover {
+    background-color: #dc2626;
+    color: #ffffff;
+    border-color: #b91c1c;
   }
 
   .table-hover tbody tr:hover { 

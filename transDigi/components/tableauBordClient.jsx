@@ -691,10 +691,25 @@ return (
                   <div className="card-body" style={{ backgroundColor: 'var(--card)' }}>
                     <div className="d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between gap-2 mb-3">
                       <h5 className="fw-bold mb-0">{t('client.quotes.title')}</h5>
-                      <div className="btn-group btn-group-sm">
-                        <button className={`btn ${devisFilter==='tous'?'btn-primary text-white':'btn-light'}`} onClick={()=>setDevisFilter('tous')}>{t('client.quotes.filter.all')}</button>
-                        <button className={`btn ${devisFilter==='accepte'?'btn-primary text-white':'btn-light'}`} onClick={()=>setDevisFilter('accepte')}>{t('client.quotes.filter.accepted')}</button>
-                        <button className={`btn ${devisFilter==='attente'?'btn-primary text-white':'btn-light'}`} onClick={()=>setDevisFilter('attente')}>{t('client.quotes.filter.pending')}</button>
+                      <div className="btn-group btn-group-sm client-filter-group">
+                        <button
+                          className={`btn client-filter-btn client-filter-all ${devisFilter==='tous' ? 'client-filter-active' : ''}`}
+                          onClick={()=>setDevisFilter('tous')}
+                        >
+                          {t('client.quotes.filter.all')}
+                        </button>
+                        <button
+                          className={`btn client-filter-btn client-filter-accepted ${devisFilter==='accepte' ? 'client-filter-active' : ''}`}
+                          onClick={()=>setDevisFilter('accepte')}
+                        >
+                          {t('client.quotes.filter.accepted')}
+                        </button>
+                        <button
+                          className={`btn client-filter-btn client-filter-pending ${devisFilter==='attente' ? 'client-filter-active' : ''}`}
+                          onClick={()=>setDevisFilter('attente')}
+                        >
+                          {t('client.quotes.filter.pending')}
+                        </button>
                       </div>
                     </div>
                     <div className="d-flex flex-column gap-3">
@@ -719,15 +734,15 @@ return (
                               <div className="mt-2 fw-semibold" style={{ fontSize: '15px' }}>{item.routeLabel && item.routeLabel !== '-' ? item.routeLabel : t('client.quotes.route_missing')}</div>
                               <div className="text-muted small">{item.date}</div>
                             </div>
-                            <div className="d-flex flex-row flex-sm-row align-items-start gap-1 gap-sm-2 flex-shrink-0">
-                              <a className="btn btn-sm btn-outline-secondary" href={`#/detail-devis-client?id=${encodeURIComponent(item.id)}`}>{t('client.quotes.detail')}</a>
+                            <div className="d-flex flex-row flex-sm-row align-items-start gap-2 flex-shrink-0 client-quote-actions">
+                              <a className="btn btn-sm btn-outline-secondary btn-client-detail" href={`#/detail-devis-client?id=${encodeURIComponent(item.id)}`}>{t('client.quotes.detail')}</a>
                               {item.status === 'attente' && (
                                 confirmCancelId === item.id ? (
-                                  <button className="btn btn-sm btn-danger" onClick={() => cancelDevis(item.id)}>{t('client.quotes.cancel.confirm')}</button>
+                                  <button className="btn btn-sm btn-danger btn-client-cancel-confirm" onClick={() => cancelDevis(item.id)}>{t('client.quotes.cancel.confirm')}</button>
                                 ) : (
                                   <>
-                                    <button className="btn btn-sm btn-outline-secondary" onClick={() => onOpenEdit(item)}>{t('client.quotes.edit')}</button>
-                                    <button className="btn btn-sm btn-outline-danger" onClick={() => cancelDevis(item.id)}>{t('client.quotes.cancel')}</button>
+                                    <button className="btn btn-sm btn-outline-primary btn-client-edit" onClick={() => onOpenEdit(item)}>{t('client.quotes.edit')}</button>
+                                    <button className="btn btn-sm btn-outline-danger btn-client-cancel" onClick={() => cancelDevis(item.id)}>{t('client.quotes.cancel')}</button>
                                   </>
                                 )
                               )}
