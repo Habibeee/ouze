@@ -367,6 +367,31 @@ export const clientCss = `
       padding: 0.25rem 0.5rem;
       white-space: nowrap;
     }
+
+    /* Cartes "Mes devis" sur mobile */
+    .default-wrap .border.rounded-3.p-2,
+    .default-wrap .border.rounded-3.p-2.p-md-3 {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .default-wrap .client-quote-actions {
+      width: 100%;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .default-wrap .client-quote-actions .btn {
+      flex: 1 1 calc(50% - 0.5rem);
+      text-align: center;
+    }
+
+    /* Si une seule action (ex : devis accepté), le bouton prend toute la ligne */
+    .default-wrap .client-quote-actions .btn:only-child {
+      flex-basis: 100%;
+    }
   }
 
   /* ✅ Tablette (576px - 767px) */
