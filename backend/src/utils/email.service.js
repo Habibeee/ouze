@@ -1,7 +1,7 @@
 // src/utils/email.service.js
 const { 
   sendEmail: brevoSendEmail,
-  sendApprovalEmail,
+  sendApprovalEmail: brevoSendApprovalEmail,
   sendPasswordResetEmail 
 } = require('./brevo.service');
 
@@ -76,10 +76,91 @@ const verifySMTP = async () => {
   }
 };
 
+/**
+ * Envoie une notification d'approbation de compte
+ * @param {string} email - Adresse email du destinataire
+ * @param {string} displayName - Nom à afficher
+ * @returns {Promise<Object>} - Résultat de l'envoi
+ */
+const sendApprovalNotification = async (email, displayName) => {
+  return brevoSendApprovalEmail(email, displayName);
+};
+
+/**
+ * Envoie une notification de changement de statut de compte
+ * @param {Object} options - Options de la notification
+ * @param {string} options.email - Adresse email du destinataire
+ * @param {string} options.displayName - Nom à afficher
+ * @param {string} options.userType - Type d'utilisateur (client/translataire)
+ * @param {string} options.status - Statut du compte (reject/suspend/delete)
+ * @param {string} [options.reason] - Raison du changement de statut
+ * @returns {Promise<Object>} - Résultat de l'envoi
+ */
+const sendAccountStatusChange = async ({ email, displayName, userType, status, reason = '' }) => {
+  let subject, html;
+  
+  switch (status) {
+    case 'reject':
+      subject = 'Votre compte a été rejeté';
+      html = `
+        <h1>Compte rejeté</h1>
+        <p>Bonjour ${displayName},</p>
+        <p>Votre compte ${userType} a été rejeté par l'administrateur.</p>
+        ${reason ? `<p>Raison : ${reason}</p>` : ''}
+        <p>Si vous pensez qu'il s'agit d'une erreur, veuillez contacter le support.</p>
+        <p>Cordialement,<br>L'équipe TransDigi</p>
+      `;
+      break;
+      
+    case 'suspend':
+      subject = 'Votre compte a été suspendu';
+      html = `
+        <h1>Compte suspendu</h1>
+        <p>Bonjour ${displayName},</p>
+        <p>Votre compte ${userType} a été suspendu par l'administrateur.</p>
+        ${reason ? `<p>Raison : ${reason}</p>` : ''}
+        <p>Pour plus d'informations, veuillez contacter le support.</p>
+        <p>Cordialement,<br>L'équipe TransDigi</p>
+      `;
+      break;
+      
+    default:
+      throw new Error('Statut de notification non pris en charge');
+  }
+  
+  return sendEmail({ to: email, subject, html });
+};
+
+/**
+ * Envoie une notification de suppression de compte
+ * @param {Object} options - Options de la notification
+ * @param {string} options.email - Adresse email du destinataire
+ * @param {string} options.displayName - Nom à afficher
+ * @param {string} options.userType - Type d'utilisateur (client/translataire)
+ * @param {string} [options.reason] - Raison de la suppression
+ * @returns {Promise<Object>} - Résultat de l'envoi
+ */
+const sendAccountDeleted = async ({ email, displayName, userType, reason = '' }) => {
+  const subject = 'Votre compte a été supprimé';
+  const html = `
+    <h1>Compte supprimé</h1>
+    <p>Bonjour ${displayName},</p>
+    <p>Votre compte ${userType} a été supprimé par l'administrateur.</p>
+    ${reason ? `<p>Raison : ${reason}</p>` : ''}
+    <p>Si vous pensez qu'il s'agit d'une erreur, veuillez contacter le support.</p>
+    <p>Cordialement,<br>L'équipe TransDigi</p>
+  `;
+  
+  return sendEmail({ to: email, subject, html });
+};
+
 // Exporter les fonctions pour maintenir la compatibilité
 module.exports = {
   sendEmail,
-  sendApprovalEmail,
+  sendApprovalEmail: brevoSendApprovalEmail,
   sendPasswordResetEmail,
-  verifySMTP
+  verifySMTP,
+  sendApprovalNotification,
+  sendAccountStatusChange,
+  sendAccountDeleted
 };
