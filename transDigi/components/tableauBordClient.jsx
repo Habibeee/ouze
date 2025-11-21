@@ -691,21 +691,21 @@ return (
                   <div className="card-body" style={{ backgroundColor: 'var(--card)' }}>
                     <div className="d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between gap-2 mb-3">
                       <h5 className="fw-bold mb-0">{t('client.quotes.title')}</h5>
-                      <div className="btn-group btn-group-sm client-filter-group">
+                      <div className="d-flex flex-row flex-wrap align-items-center client-filter-group">
                         <button
-                          className={`btn client-filter-btn client-filter-all ${devisFilter==='tous' ? 'client-filter-active' : ''}`}
+                          className={`btn btn-sm client-filter-btn client-filter-all ${devisFilter==='tous' ? 'client-filter-active' : ''}`}
                           onClick={()=>setDevisFilter('tous')}
                         >
                           {t('client.quotes.filter.all')}
                         </button>
                         <button
-                          className={`btn client-filter-btn client-filter-accepted ${devisFilter==='accepte' ? 'client-filter-active' : ''}`}
+                          className={`btn btn-sm client-filter-btn client-filter-accepted ${devisFilter==='accepte' ? 'client-filter-active' : ''}`}
                           onClick={()=>setDevisFilter('accepte')}
                         >
                           {t('client.quotes.filter.accepted')}
                         </button>
                         <button
-                          className={`btn client-filter-btn client-filter-pending ${devisFilter==='attente' ? 'client-filter-active' : ''}`}
+                          className={`btn btn-sm client-filter-btn client-filter-pending ${devisFilter==='attente' ? 'client-filter-active' : ''}`}
                           onClick={()=>setDevisFilter('attente')}
                         >
                           {t('client.quotes.filter.pending')}

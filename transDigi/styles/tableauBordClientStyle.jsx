@@ -36,13 +36,15 @@ export const clientCss = `
 
   /* Filtres "Tous / Acceptés / En attente" - dashboard client */
   .default-wrap .client-filter-group {
-    gap: 0.5rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
   }
 
   .default-wrap .client-filter-group .client-filter-btn {
     border-radius: 999px;
     font-weight: 500;
-    padding-inline: 0.9rem;
+    padding-inline: 1.1rem;
     border-width: 1px;
     border-style: solid;
     color: #ffffff;
@@ -92,6 +94,12 @@ export const clientCss = `
   /* Boutons d'action sur les cartes de devis */
   .default-wrap .client-quote-actions .btn {
     min-width: 90px;
+  }
+
+  .default-wrap .btn-client-detail {
+    background-color: #f3f4f6;
+    border-color: #e5e7eb;
+    color: #111827;
   }
 
   .default-wrap .btn-client-detail:hover {
