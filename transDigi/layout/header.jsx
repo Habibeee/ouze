@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { headerStyles, headerCss } from '../styles/headerStyle.jsx';
-import { Menu, ArrowLeft } from 'lucide-react';
+import { Menu, ArrowLeft, X } from 'lucide-react';
 import { useI18n } from '../src/i18n.jsx';
 
 function Header({ showSidebarToggle = false, onToggleSidebar, hideNavbarToggler = false }) {
   const [theme, setTheme] = useState('light');
   const { lang, setLang, t } = useI18n();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const saved = localStorage.getItem('theme') || 'light';
@@ -34,6 +35,20 @@ function Header({ showSidebarToggle = false, onToggleSidebar, hideNavbarToggler 
       else window.location.hash = '#/'
     } catch {}
   };
+  const navigateHash = (hash) => {
+    try {
+      window.location.hash = hash;
+    } finally {
+      setMobileMenuOpen(false);
+    }
+  };
+
+  useEffect(() => {
+    try {
+      document.body.classList.toggle('mobile-menu-open', mobileMenuOpen);
+    } catch {}
+  }, [mobileMenuOpen]);
+
   return (
     <nav className="navbar navbar-expand-lg navbar-light bg-white border-bottom shadow-sm fixed-top w-100 navbar-compact">
       <style>{headerCss}</style>
@@ -49,7 +64,7 @@ function Header({ showSidebarToggle = false, onToggleSidebar, hideNavbarToggler 
         {showSidebarToggle && (
           <button
             type="button"
-            className="btn btn-link me-2"
+            className="btn btn-link me-2 d-none d-lg-inline-flex"
             onClick={() => typeof onToggleSidebar === 'function' && onToggleSidebar()}
             aria-label={t('aria.toggle.sidebar')}
           >
@@ -58,76 +73,182 @@ function Header({ showSidebarToggle = false, onToggleSidebar, hideNavbarToggler 
         )}
         <a className="navbar-brand d-flex flex-column align-items-start gap-0" href="#/">
           <img src={'/logo1.png'} alt="TransDigiSN" style={headerStyles.logo} />
-              {/* <strong style={{ color: '#28A745', lineHeight: 1 }}>TransdigiSN</strong> */}
-
         </a>
-        {!hideNavbarToggler && (
-          <button
-            className="navbar-toggler"
-            type="button"
-            data-bs-toggle="collapse"
-            data-bs-target="#mainNavbar"
-            aria-controls="mainNavbar"
-            aria-expanded="false"
-            aria-label="Toggle navigation"
-          >
-            <span className="navbar-toggler-icon" />
-          </button>
-        )}
 
-        <div className="collapse navbar-collapse" id="mainNavbar">
-          <ul className="navbar-nav ms-auto me-4 me-lg-5 me-xl-5 mb-2 mb-lg-0 nav-main gap-3">
-            <li className="nav-item">
-              <a className="nav-link fw-semibold" href="#/" style={{ color: '#0b5f8a' }}>{t('nav.home')}</a>
-            </li>
-            <li className="nav-item">
-              <a className="nav-link fw-semibold" href="#/apropos" style={{ color: '#0b5f8a' }}>{t('nav.about')}</a>
-            </li>
-            <li className="nav-item">
-              <a className="nav-link fw-semibold" href="#/contact" style={{ color: '#0b5f8a' }}>{t('nav.contact')}</a>
-            </li>
-          </ul>
+        <div className="ms-auto d-flex align-items-center gap-2">
+          {/* Nav / actions desktop */}
+          <div className="d-none d-lg-flex align-items-center gap-3">
+            <ul className="navbar-nav me-4 me-lg-5 me-xl-5 mb-0 nav-main gap-3">
+              <li className="nav-item">
+                <a className="nav-link fw-semibold" href="#/" style={{ color: '#0b5f8a' }}>{t('nav.home')}</a>
+              </li>
+              <li className="nav-item">
+                <a className="nav-link fw-semibold" href="#/apropos" style={{ color: '#0b5f8a' }}>{t('nav.about')}</a>
+              </li>
+              <li className="nav-item">
+                <a className="nav-link fw-semibold" href="#/contact" style={{ color: '#0b5f8a' }}>{t('nav.contact')}</a>
+              </li>
+            </ul>
 
-          <div className="d-flex align-items-center gap-2">
-            <a className="btn fw-semibold px-4" href="#/connexion" style={{ backgroundColor: '#28A745', color: 'white', border: 'none', borderRadius: '6px' }}>{t('nav.login')}</a>
-            <div className="ms-2 d-flex align-items-center" aria-label="Language switcher">
-              <span
-                onClick={() => setLang('fr')}
-                style={{
-                  cursor: 'pointer',
-                  fontWeight: '600',
-                  color: lang === 'fr' ? '#0b5f8a' : '#6c757d',
-                  marginRight: '4px'
-                }}
-              >
-                FR
-              </span>
-              <span style={{ margin: '0 2px', color: '#6c757d' }}>/</span>
-              <span
-                onClick={() => setLang('en')}
-                style={{
-                  cursor: 'pointer',
-                  fontWeight: '600',
-                  color: lang === 'en' ? '#0b5f8a' : '#6c757d',
-                  marginLeft: '4px'
-                }}
-              >
-                EN
-              </span>
+            <div className="d-flex align-items-center gap-2">
+              <a className="btn fw-semibold px-4" href="#/connexion" style={{ backgroundColor: '#28A745', color: 'white', border: 'none', borderRadius: '6px' }}>{t('nav.login')}</a>
+              <div className="ms-2 d-flex align-items-center" aria-label="Language switcher">
+                <span
+                  onClick={() => setLang('fr')}
+                  style={{
+                    cursor: 'pointer',
+                    fontWeight: '600',
+                    color: lang === 'fr' ? '#0b5f8a' : '#6c757d',
+                    marginRight: '4px'
+                  }}
+                >
+                  FR
+                </span>
+                <span style={{ margin: '0 2px', color: '#6c757d' }}>/</span>
+                <span
+                  onClick={() => setLang('en')}
+                  style={{
+                    cursor: 'pointer',
+                    fontWeight: '600',
+                    color: lang === 'en' ? '#0b5f8a' : '#6c757d',
+                    marginLeft: '4px'
+                  }}
+                >
+                  EN
+                </span>
+              </div>
+              <div className="d-flex align-items-center ms-2">
+                <button
+                  type="button"
+                  onClick={toggleTheme}
+                  className={`btn fw-semibold px-3 ${theme === 'dark' ? 'btn-light' : 'btn-dark'}`}
+                  aria-label={t('aria.toggle.theme')}
+                >
+                  {theme === 'dark' ? <i className="bi bi-brightness-high"></i> : <i className="bi bi-moon-stars"></i>}
+                </button>
+              </div>
             </div>
-            <div className="d-flex align-items-center ms-2">
+          </div>
+          {/* Bouton hamburger mobile à droite (caché sur desktop) */}
+          {!hideNavbarToggler && (
+            <button
+              type="button"
+              className="btn btn-outline-secondary ms-1 d-inline-flex d-lg-none mobile-menu-toggle"
+              onClick={() => {
+                try {
+                  if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
+                    navigator.vibrate(50);
+                  }
+                } catch {}
+                setMobileMenuOpen(true);
+              }}
+              aria-label={t('aria.toggle.navigation')}
+            >
+              <Menu size={22} />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Nav inline sous le header désactivée (menu mobile géré par la sidebar) */}
+      <div className="w-100 d-none border-top bg-white">
+        <div className="container-fluid px-3 py-2 d-flex justify-content-center gap-3 small">
+          <button type="button" className="btn btn-link p-0" onClick={() => navigateHash('#/')}>{t('nav.home')}</button>
+          <button type="button" className="btn btn-link p-0" onClick={() => navigateHash('#/apropos')}>{t('nav.about')}</button>
+          <button type="button" className="btn btn-link p-0" onClick={() => navigateHash('#/contact')}>{t('nav.contact')}</button>
+        </div>
+      </div>
+
+      {/* Menu mobile type sidebar */}
+      {mobileMenuOpen && (
+        <>
+          <div className="mobile-menu-overlay" onClick={() => setMobileMenuOpen(false)}></div>
+          <div className="mobile-menu-panel">
+            <div className="d-flex align-items-center justify-content-between mb-4">
+              <span className="fw-semibold" style={{ color: '#0b5f8a' }}>Menu</span>
+              <button
+                type="button"
+                className="btn btn-link p-1 text-dark"
+                onClick={() => setMobileMenuOpen(false)}
+                aria-label={t('aria.close')}
+              >
+                <ArrowLeft size={26} />
+              </button>
+            </div>
+            <ul className="list-unstyled mb-4 mobile-menu-links">
+              <li>
+                <button
+                  type="button"
+                  className="btn btn-link w-100 text-start mobile-menu-link fw-semibold"
+                  onClick={() => navigateHash('#/')}
+                >
+                  {t('nav.home')}
+                </button>
+              </li>
+              <li>
+                <button
+                  type="button"
+                  className="btn btn-link w-100 text-start mobile-menu-link fw-semibold"
+                  onClick={() => navigateHash('#/apropos')}
+                >
+                  {t('nav.about')}
+                </button>
+              </li>
+              <li>
+                <button
+                  type="button"
+                  className="btn btn-link w-100 text-start mobile-menu-link fw-semibold"
+                  onClick={() => navigateHash('#/contact')}
+                >
+                  {t('nav.contact')}
+                </button>
+              </li>
+            </ul>
+            <div className="d-flex flex-column gap-3 mt-3">
+              <div className="d-flex justify-content-center align-items-center small" aria-label="Language switcher mobile">
+                <span
+                  onClick={() => setLang('fr')}
+                  style={{
+                    cursor: 'pointer',
+                    fontWeight: '600',
+                    color: lang === 'fr' ? '#0b5f8a' : '#6c757d',
+                    marginRight: '4px'
+                  }}
+                >
+                  FR
+                </span>
+                <span style={{ margin: '0 2px', color: '#6c757d' }}>/</span>
+                <span
+                  onClick={() => setLang('en')}
+                  style={{
+                    cursor: 'pointer',
+                    fontWeight: '600',
+                    color: lang === 'en' ? '#0b5f8a' : '#6c757d',
+                    marginLeft: '4px'
+                  }}
+                >
+                  EN
+                </span>
+              </div>
+              <button
+                type="button"
+                className="btn btn-success w-100 fw-semibold"
+                onClick={() => navigateHash('#/connexion')}
+              >
+                {t('nav.login')}
+              </button>
               <button
                 type="button"
                 onClick={toggleTheme}
-                className={`btn fw-semibold px-3 ${theme === 'dark' ? 'btn-light' : 'btn-dark'}`}
+                className={`btn w-100 fw-semibold ${theme === 'dark' ? 'btn-light' : 'btn-dark'}`}
                 aria-label={t('aria.toggle.theme')}
               >
                 {theme === 'dark' ? <i className="bi bi-brightness-high"></i> : <i className="bi bi-moon-stars"></i>}
               </button>
             </div>
           </div>
-        </div>
-      </div>
+        </>
+      )}
     </nav>
   );
 }

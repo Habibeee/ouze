@@ -36,36 +36,54 @@ export const clientCss = `
 
   /* Filtres "Tous / Acceptés / En attente" - dashboard client */
   .default-wrap .client-filter-group {
-    gap: 0.5rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
   }
 
   .default-wrap .client-filter-group .client-filter-btn {
     border-radius: 999px;
     font-weight: 500;
-    padding-inline: 0.9rem;
+    padding-inline: 1.1rem;
     border-width: 1px;
     border-style: solid;
-    color: #ffffff;
+    background-color: transparent;
+    color: inherit;
   }
 
   .default-wrap .client-filter-all {
-    background-color: #16a34a;
-    border-color: #15803d;
+    border-color: #16a34a;
+    color: #16a34a;
   }
 
   .default-wrap .client-filter-accepted {
-    background-color: #0ea5e9;
-    border-color: #0284c7;
+    border-color: #0ea5e9;
+    color: #0ea5e9;
   }
 
   .default-wrap .client-filter-pending {
-    background-color: #f97316;
-    border-color: #ea580c;
+    border-color: #f97316;
+    color: #f97316;
   }
 
   .default-wrap .client-filter-btn:hover,
   .default-wrap .client-filter-btn.client-filter-active {
-    filter: brightness(0.9);
+    color: #ffffff;
+  }
+
+  .default-wrap .client-filter-all.client-filter-active,
+  .default-wrap .client-filter-all:hover {
+    background-color: #16a34a;
+  }
+
+  .default-wrap .client-filter-accepted.client-filter-active,
+  .default-wrap .client-filter-accepted:hover {
+    background-color: #0ea5e9;
+  }
+
+  .default-wrap .client-filter-pending.client-filter-active,
+  .default-wrap .client-filter-pending:hover {
+    background-color: #f97316;
   }
 
   .card-body {
@@ -94,22 +112,43 @@ export const clientCss = `
     min-width: 90px;
   }
 
+  /* Boutons d'action : fond coloré, hover blanc avec bordure + texte colorés */
+  .default-wrap .btn-client-detail {
+    background-color: #4b5563;   /* gris foncé */
+    border-color: #4b5563;
+    color: #ffffff;
+  }
+
   .default-wrap .btn-client-detail:hover {
-    background-color: #e5e7eb;
-    color: #111827;
+    background-color: #ffffff;
+    color: #4b5563;
+    border-color: #4b5563;
+  }
+
+  .default-wrap .btn-client-edit {
+    background-color: #0ea5e9;   /* bleu */
+    border-color: #0ea5e9;
+    color: #ffffff;
   }
 
   .default-wrap .btn-client-edit:hover {
-    background-color: #0ea5e9;
+    background-color: #ffffff;
+    color: #0ea5e9;
+    border-color: #0ea5e9;
+  }
+
+  .default-wrap .btn-client-cancel,
+  .default-wrap .btn-client-cancel-confirm {
+    background-color: #ef4444;   /* rouge */
+    border-color: #ef4444;
     color: #ffffff;
-    border-color: #0284c7;
   }
 
   .default-wrap .btn-client-cancel:hover,
   .default-wrap .btn-client-cancel-confirm:hover {
-    background-color: #dc2626;
-    color: #ffffff;
-    border-color: #b91c1c;
+    background-color: #ffffff;
+    color: #ef4444;
+    border-color: #ef4444;
   }
 
   .table-hover tbody tr:hover { 
@@ -327,6 +366,31 @@ export const clientCss = `
       font-size: 0.75rem;
       padding: 0.25rem 0.5rem;
       white-space: nowrap;
+    }
+
+    /* Cartes "Mes devis" sur mobile */
+    .default-wrap .border.rounded-3.p-2,
+    .default-wrap .border.rounded-3.p-2.p-md-3 {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .default-wrap .client-quote-actions {
+      width: 100%;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .default-wrap .client-quote-actions .btn {
+      flex: 1 1 calc(50% - 0.5rem);
+      text-align: center;
+    }
+
+    /* Si une seule action (ex : devis accepté), le bouton prend toute la ligne */
+    .default-wrap .client-quote-actions .btn:only-child {
+      flex-basis: 100%;
     }
   }
 

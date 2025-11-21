@@ -48,5 +48,84 @@ export const headerCss = `
   @media (max-width: 420px) {
     .navbar-compact img[alt="TransDigiSN"] { height: 48px !important; }
   }
+
+  /* Sidebar mobile menu */
+  @media (max-width: 991.98px) {
+    .mobile-menu-toggle {
+      border-radius: 999px;
+      border-width: 1px;
+      border-color: #0b5f8a;
+      background-color: #0b5f8a;
+      color: #ffffff;
+      width: 40px;
+      height: 40px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+    }
+
+    .mobile-menu-toggle:hover {
+      background-color: #0a4a6a;
+      border-color: #0a4a6a;
+      color: #ffffff;
+    }
+
+    .mobile-menu-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.35);
+      z-index: 1040;
+    }
+
+    .mobile-menu-panel {
+      position: fixed;
+      top: 0;
+      right: 0;
+      height: 100vh;
+      width: 78%;
+      max-width: 320px;
+      background: #ffffff;
+      z-index: 1050;
+      padding: 1.5rem 1.25rem;
+      box-shadow: -8px 0 24px rgba(15, 23, 42, 0.2);
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .mobile-menu-links .mobile-menu-link {
+      font-weight: 600;
+      font-size: 1rem;
+      color: #0b5f8a;
+      padding-left: 0;
+      padding-right: 0;
+      text-decoration: none;
+    }
+
+    .mobile-menu-links .mobile-menu-link:hover {
+      color: #063a55;
+      text-decoration: none;
+    }
+  }
+
+  body.mobile-menu-open {
+    overflow: hidden;
+  }
+
+  /* Forcer des couleurs lisibles dans le menu mobile en mode sombre */
+  [data-theme="dark"] .mobile-menu-panel {
+    background: #ffffff;
+    color: #0b5f8a;
+  }
+
+  [data-theme="dark"] .mobile-menu-panel .btn.btn-link,
+  [data-theme="dark"] .mobile-menu-panel .mobile-menu-link {
+    color: #0b5f8a !important;
+  }
+
+  [data-theme="dark"] .mobile-menu-panel .mobile-menu-link:hover {
+    color: #063a55 !important;
+  }
 `;
 

@@ -67,6 +67,7 @@ button:focus-visible {
   }
   .hero-cta {
     gap: 0.5rem !important;
+    margin-top: 4rem;
   }
 }
 
