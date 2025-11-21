@@ -109,7 +109,15 @@ export default function SideBare({ activeId = 'dashboard', onNavigate, onOpenCha
       {!isLgUp && open && (
         <div
           onClick={() => toggleOpen()}
-          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.35)', zIndex: 1040 }}
+          style={{
+            position: 'fixed',
+            left: 0,
+            right: 0,
+            top: topOffset,
+            bottom: 0,
+            background: 'rgba(0,0,0,0.35)',
+            zIndex: 1040,
+          }}
           aria-label="Fermer l'overlay"
         />
       )}
