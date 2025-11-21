@@ -46,8 +46,8 @@ function Footer() {
       {isDashboard ? (
         <>
           <div className="container-fluid py-4 px-0">
-            <div className="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-2 mx-0">
-              <div className="d-flex align-items-center gap-2 mb-2 brand">
+            <div className="d-flex flex-row flex-wrap align-items-center gap-2 mx-0">
+              <div className="d-flex align-items-center gap-2 brand">
                 <img src={'/logo1.png'} alt="Transdigi Sénégal" style={{ height: 36, width: 'auto' }} />
                 <strong style={{ color: '#28A745' }}>TransdigiSN</strong>
               </div>

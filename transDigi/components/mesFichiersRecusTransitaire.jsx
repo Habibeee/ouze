@@ -6,6 +6,7 @@ function MesFichiersRecusTransitaire() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState('');
+  const [search, setSearch] = useState('');
 
   const triggerDownload = (urlRaw, name) => {
     if (!urlRaw) return;
@@ -58,27 +59,58 @@ function MesFichiersRecusTransitaire() {
     })();
   }, []);
 
+  const filteredItems = (() => {
+    const q = (search || '').toLowerCase().trim();
+    if (!q) return items;
+    return items.filter((it) => {
+      const haystack = [
+        it.client,
+        it.date,
+        it.typeService,
+        it.name,
+        it.devisId,
+      ]
+        .filter(Boolean)
+        .map((v) => v.toString().toLowerCase());
+      return haystack.some((v) => v.includes(q));
+    });
+  })();
+
   return (
     <div className="container-fluid px-0 px-md-2 py-2 py-md-3">
       <div className="d-flex align-items-center justify-content-between mb-3 mb-md-4">
         <h1 className="h4 h3-md fw-bold mb-0">Mes fichiers reçus</h1>
         <button
           type="button"
-          className="btn btn-outline-secondary btn-sm"
+          className="btn btn-primary btn-sm text-white fw-semibold"
           onClick={() => { window.location.hash = '#/dashboard-transitaire'; }}
         >
           Retour au tableau de bord
         </button>
       </div>
+      <div className="mb-3 mb-md-4">
+        <div className="input-group" style={{ maxWidth: 340 }}>
+          <span className="input-group-text bg-body-secondary border-end-0">
+            <FileText size={16} />
+          </span>
+          <input
+            type="text"
+            className="form-control border-start-0"
+            placeholder="Rechercher par client, date, BL ou nom de fichier"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+      </div>
       {err && <div className="alert alert-danger" role="alert">{err}</div>}
       {loading && !items.length && <div className="text-muted">Chargement...</div>}
-      {!loading && !err && items.length === 0 && (
+      {!loading && !err && filteredItems.length === 0 && (
         <div className="border rounded-3 p-4 text-center bg-body-secondary-subtle text-muted">
           <FileText size={40} className="mb-2" />
           <div>Aucun fichier reçu pour le moment.</div>
         </div>
       )}
-      {!loading && items.length > 0 && (
+      {!loading && filteredItems.length > 0 && (
         <div className="card border-0 shadow-sm">
           <div className="card-body p-0">
             <div className="table-responsive">
@@ -93,7 +125,7 @@ function MesFichiersRecusTransitaire() {
                   </tr>
                 </thead>
                 <tbody>
-                  {items.map((it, idx) => (
+                  {filteredItems.map((it, idx) => (
                     <tr key={idx}>
                       <td className="px-3">
                         <div className="d-flex align-items-center gap-2">

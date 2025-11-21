@@ -452,8 +452,8 @@ const TransitaireDashboard = () => {
 
       {/* Main Content */}
       <div className="flex-grow-1" style={{ marginLeft: isLgUp ? (sidebarOpen ? '240px' : '56px') : '0', transition: 'margin-left .25s ease', minWidth: 0, width: '100%', maxWidth: '100vw', overflowX: 'hidden', backgroundColor: 'var(--bg)' }}>
-        {/* Header with icons */}
-        <div className="w-100 d-flex justify-content-between align-items-center gap-2 px-2 px-md-3 py-2 bg-body border-bottom" style={{ position: 'sticky', top: 0, zIndex: 100 }}>
+        {/* Header with icons (non sticky pour ne pas recouvrir le footer) */}
+        <div className="w-100 d-flex justify-content-between align-items-center gap-2 px-2 px-md-3 py-2 bg-body border-bottom">
           {/* Hamburger menu button - visible only on mobile */}
           {!isLgUp && (
             <button 
