@@ -110,9 +110,7 @@ export const headerCss = `
   }
 
   body.mobile-menu-open {
-    transform: translateX(-18%);
-    transition: transform 0.3s ease;
-    overflow-x: hidden;
+    overflow: hidden;
   }
 
   /* Forcer des couleurs lisibles dans le menu mobile en mode sombre */

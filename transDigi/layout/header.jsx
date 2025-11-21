@@ -204,7 +204,7 @@ function Header({ showSidebarToggle = false, onToggleSidebar, hideNavbarToggler 
                 </button>
               </li>
             </ul>
-            <div className="d-flex flex-column gap-3 mt-auto">
+            <div className="d-flex flex-column gap-3 mt-3">
               <div className="d-flex justify-content-center align-items-center small" aria-label="Language switcher mobile">
                 <span
                   onClick={() => setLang('fr')}
