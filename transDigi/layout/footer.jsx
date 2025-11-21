@@ -29,7 +29,7 @@ function Footer() {
   };
 
   return (
-    <footer className="bg-white border-top w-100 app-footer">
+    <footer className={`bg-white border-top w-100 app-footer ${isDashboard ? 'app-footer-dashboard' : ''}`}>
       <style>{`
         @media (max-width: 575.98px) {
           .app-footer { font-size: .9rem; }
@@ -41,6 +41,18 @@ function Footer() {
           .app-footer .brand { gap: .5rem !important; }
           .app-footer .brand img { height: 30px !important; width: auto !important; }
           .app-footer .legal { font-size: .8rem; padding: .75rem 1rem; }
+        }
+
+        /* Sur les pages de dashboard (client / transitaire / admin),
+           décaler le contenu du footer vers la droite sur desktop
+           pour qu'il ne soit plus recouvert par la sidebar fixe. */
+        @media (min-width: 992px) {
+          .app-footer-dashboard .container-fluid {
+            margin-left: 240px;
+          }
+          .app-footer-dashboard .legal {
+            margin-left: 240px;
+          }
         }
       `}</style>
       {isDashboard ? (

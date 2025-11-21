@@ -239,12 +239,12 @@ const NouveauDevis = () => {
         await createDevis(tId, fd);
         const cible = (formData.translataireName || '').trim();
         // Message de confirmation :
-        // - depuis "Trouver un transitaire" (isFromSearch) -> on peut afficher le nom
-        // - depuis "Nouveau devis" -> message neutre
+        // - depuis "Trouver un transitaire" (isFromSearch) -> transitaire choisi + suivi admin
+        // - depuis "Nouveau devis" -> envoyé à la plateforme, traité par les transitaires via l'administrateur
         if (isFromSearch && cible) {
-          success(`Votre devis a bien été envoyé à ${cible}.`);
+          success(`Votre devis a bien été envoyé à ${cible}. L'administrateur en a également été informé pour le suivi.`);
         } else {
-          success('Votre devis a bien été envoyé.');
+          success('Votre devis a été envoyé. Il sera pris en charge par la plateforme et traité par les transitaires via l’administrateur.');
         }
         window.location.hash = '#/historique';
       } catch (e) {
