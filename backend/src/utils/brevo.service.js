@@ -1,35 +1,33 @@
 // src/utils/brevo.service.js
-const brevo = require('@getbrevo/brevo');
+const Brevo = require('@getbrevo/brevo');
 
-// Configure API key authorization: api-key
-const defaultClient = brevo.ApiClient.instance;
-const apiKey = defaultClient.authentications['api-key'];
+// Configure API key
+const apiKey = Brevo.ApiClient.instance.authentications['api-key'];
 apiKey.apiKey = process.env.BREVO_API_KEY || '';
 
-// Create API instances
-const apiInstance = new brevo.TransactionalEmailsApi();
-const sendSmtpEmail = new brevo.SendSmtpEmail();
+// Create API instance
+const apiInstance = new Brevo.TransactionalEmailsApi();
 
 const sendEmail = async (to, subject, htmlContent, textContent = '') => {
-  const email = new brevo.SendSmtpEmail();
+  const sendSmtpEmail = new Brevo.SendSmtpEmail();
   
-  email.subject = subject;
-  email.htmlContent = htmlContent;
-  email.textContent = textContent || htmlContent.replace(/<[^>]*>?/gm, '');
+  sendSmtpEmail.subject = subject;
+  sendSmtpEmail.htmlContent = htmlContent;
+  sendSmtpEmail.textContent = textContent || htmlContent.replace(/<[^>]*>?/gm, '');
   
-  email.sender = {
+  sendSmtpEmail.sender = {
     name: process.env.BREVO_FROM_NAME || 'TransDigi',
     email: process.env.BREVO_FROM_EMAIL || 'no-reply@votredomaine.com'
   };
   
-  email.to = [{ email: to }];
-  email.replyTo = {
+  sendSmtpEmail.to = [{ email: to }];
+  sendSmtpEmail.replyTo = {
     email: process.env.BREVO_REPLY_TO || 'contact@votredomaine.com',
     name: process.env.BREVO_FROM_NAME || 'TransDigi Support'
   };
 
   try {
-    const data = await apiInstance.sendTransacEmail(email);
+    const data = await apiInstance.sendTransacEmail(sendSmtpEmail);
     console.log('Email envoyé avec succès:', data);
     return { success: true, messageId: data.messageId };
   } catch (error) {
