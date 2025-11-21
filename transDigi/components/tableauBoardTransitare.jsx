@@ -428,6 +428,7 @@ const TransitaireDashboard = () => {
         closeOnNavigate={false}
         defaultOpen={true}
         open={sidebarOpen}
+        disableMobileOverlay={true}
         onOpenChange={(o)=>setSidebarOpen(!!o)}
         activeId={activeSideItem}
         items={[

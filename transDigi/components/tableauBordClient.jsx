@@ -517,6 +517,7 @@ return (
       defaultOpen={true}
       open={sidebarOpen}
       hideItemsWhenCollapsed={true}
+      disableMobileOverlay={true}
       onOpenChange={(o)=>setSidebarOpen(!!o)}
       activeId={section}
       items={[
