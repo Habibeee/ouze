@@ -235,7 +235,9 @@ export const clientCss = `
       max-width: 100vw !important;
     }
 
-    .d-flex {
+    /* Ne pas toucher tous les .d-flex pour éviter de couper le header (cloche + avatar).
+       On limite l'overflow hidden aux blocs de contenu interne. */
+    .default-wrap .d-flex {
       overflow-x: hidden !important;
     }
 
