@@ -383,12 +383,18 @@ exports.getMesDevis = async (req, res) => {
       if (statutFilter) {
         devisClient = devisClient.filter(d => (d.statut || d.status || 'en_attente').toString().toLowerCase().includes(statutFilter));
       }
-      mesDevis = mesDevis.concat(devisClient.map(d => ({
-        ...d.toObject(),
-        translataire: trans.nomEntreprise,
-        origin: d.origin || d.origine || undefined,
-        destination: d.destination || d.route || undefined
-      })));
+      mesDevis = mesDevis.concat(devisClient.map(d => {
+        const dto = d.toObject();
+        const originFlag = (dto.devisOrigin || '').toString();
+        const isFromNouveau = originFlag === 'nouveau-devis';
+        return {
+          ...dto,
+          // Pour les devis issus de "Nouveau devis", ne pas afficher un transitaire réel côté client
+          translataire: isFromNouveau ? 'Plateforme (admin)' : trans.nomEntreprise,
+          origin: d.origin || d.origine || undefined,
+          destination: d.destination || d.route || undefined
+        };
+      }));
     });
 
     res.json({
@@ -419,9 +425,12 @@ exports.getMonDevisById = async (req, res) => {
     const devis = translataire.devis.id(id);
     if (!devis) return res.status(404).json({ success: false, message: 'Devis non trouvé' });
 
+    const base = devis.toObject();
+    const originFlag = (base.devisOrigin || '').toString();
+    const isFromNouveau = originFlag === 'nouveau-devis';
     const dto = {
-      ...devis.toObject(),
-      translataire: translataire.nomEntreprise,
+      ...base,
+      translataire: isFromNouveau ? 'Plateforme (admin)' : translataire.nomEntreprise,
       origin: devis.origin || devis.origine,
       destination: devis.destination || devis.route,
     };
