@@ -14,6 +14,7 @@ const {
   getAllDevis,
   getDevisById,
   updateDevisStatus,
+  assignAdminDevisToTranslataire,
   bulkAccountsAction,
   listAdmins,
   createAdmin,
@@ -514,6 +515,9 @@ router.get('/devis/:id', getDevisById);
 
 // Mettre à jour le statut d'un devis (admin)
 router.put('/devis/:id', updateDevisStatus);
+
+// Transmettre un devis admin-only à un transitaire spécifique
+router.post('/devis/:id/assign-translataire', assignAdminDevisToTranslataire);
 
 /**
  * @swagger

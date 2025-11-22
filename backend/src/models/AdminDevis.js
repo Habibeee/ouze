@@ -31,6 +31,12 @@ const adminDevisSchema = new mongoose.Schema({
     enum: ['en_attente', 'accepte', 'refuse', 'expire', 'annule', 'archive', 'traite'],
     default: 'en_attente'
   },
+  // Si le devis a été transmis par l'admin à un transitaire spécifique
+  forwardedToTranslataire: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Translataire'
+  },
+  forwardedAt: Date,
   dateExpiration: Date,
   devisOrigin: {
     type: String,

@@ -4,8 +4,9 @@ const Translataire = require('../models/Translataire');
 const Admin = require('../models/Admin');
 const AdminDevis = require('../models/AdminDevis');
 
-const { sendApprovalNotification, sendAccountStatusChange, sendAccountDeleted } = require('../utils/email.service');
+const { sendApprovalNotification, sendAccountStatusChange, sendAccountDeleted, sendNewDevisToTranslataire, sendAdminNewDevisEmail } = require('../utils/email.service');
 const { sendUserApprovalNotification } = require('../utils/email.service');
+
 const Notification = require('../models/Notification');
 const { getIO } = require('../services/socket');
 
@@ -217,67 +218,6 @@ exports.getAllUsers = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Erreur lors de la récupération',
-      error: error.message
-    });
-  }
-};
-
-// @desc    Obtenir un devis par ID (vue admin)
-// @route   GET /api/admin/devis/:id
-// @access  Private (Admin)
-exports.getDevisById = async (req, res) => {
-  try {
-    const id = String(req.params.id || '');
-    if (!id || id.length < 12) {
-      return res.status(400).json({ success: false, message: 'ID invalide' });
-    }
-
-    const translataire = await Translataire.findOne({ 'devis._id': id })
-      .populate('devis.client', 'nom prenom email telephone')
-      .select('nomEntreprise devis');
-
-    if (translataire) {
-      const devis = translataire.devis.id(id);
-      if (!devis) {
-        return res.status(404).json({ success: false, message: 'Devis non trouvé' });
-      }
-
-      const dto = {
-        ...devis.toObject(),
-        translataire: {
-          id: translataire._id,
-          nom: translataire.nomEntreprise
-        },
-        origin: devis.origin || devis.origine,
-        destination: devis.destination || devis.route
-      };
-
-      return res.json({ success: true, devis: dto });
-    }
-
-    // Fallback: devis admin-only non rattaché à un translataire
-    const adminDevis = await AdminDevis.findById(id).populate('client', 'nom prenom email telephone');
-    if (!adminDevis) {
-      return res.status(404).json({ success: false, message: 'Devis non trouvé' });
-    }
-
-    const dto = {
-      ...adminDevis.toObject(),
-      translataire: {
-        id: null,
-        nom: 'Plateforme (admin)'
-      },
-      origin: adminDevis.origin,
-      destination: adminDevis.destination
-    };
-
-    return res.json({ success: true, devis: dto });
-  } catch (error) {
-    return res.status(500).json({ success: false, message: 'Erreur récupération devis', error: error.message });
-  }
-};
-
-// @desc    Mettre à jour le statut d'un devis (admin)
 // @route   PUT /api/admin/devis/:id
 // @access  Private (Admin)
 exports.updateDevisStatus = async (req, res) => {
@@ -295,75 +235,6 @@ exports.updateDevisStatus = async (req, res) => {
     const allowedStatus = ['en_attente', 'accepte', 'refuse', 'expire', 'annule', 'archive', 'traite'];
     if (!allowedStatus.includes(statut)) {
       return res.status(400).json({ success: false, message: 'Statut invalide' });
-    }
-
-    const translataire = await Translataire.findOne({ 'devis._id': id }).select('nomEntreprise devis');
-    if (translataire) {
-      const devis = translataire.devis.id(id);
-      if (!devis) {
-        return res.status(404).json({ success: false, message: 'Devis non trouvé' });
-      }
-
-      devis.statut = statut;
-      await translataire.save();
-
-      return res.json({ success: true, message: 'Statut du devis mis à jour', devis: devis.toObject() });
-    }
-
-    // Fallback: devis admin-only non rattaché à un translataire
-    const adminDevis = await AdminDevis.findById(id);
-    if (!adminDevis) {
-      return res.status(404).json({ success: false, message: 'Devis non trouvé' });
-    }
-
-    adminDevis.statut = statut;
-    await adminDevis.save();
-
-    return res.json({ success: true, message: 'Statut du devis mis à jour', devis: adminDevis.toObject() });
-  } catch (error) {
-    return res.status(500).json({ success: false, message: 'Erreur mise à jour devis', error: error.message });
-  }
-};
-
-// @desc    Définir la note admin d'un translataire (1 à 5)
-// @route   PUT /api/admin/translataires/:id/rating
-// @access  Private (Admin)
-exports.setTranslataireRating = async (req, res) => {
-  try {
-    const { id } = req.params;
-    let { rating } = req.body || {};
-    if (rating === undefined || rating === null) {
-      return res.status(400).json({ success: false, message: 'rating requis' });
-    }
-    rating = Number(rating);
-    if (Number.isNaN(rating)) {
-      return res.status(400).json({ success: false, message: 'rating doit être un nombre' });
-    }
-    // Clamp entre 0 et 5, par pas de 0.5 max
-    if (rating < 0) rating = 0;
-    if (rating > 5) rating = 5;
-    rating = Math.round(rating * 2) / 2;
-
-    const translataire = await Translataire.findByIdAndUpdate(
-      id,
-      { adminRating: rating },
-      { new: true }
-    ).select('-motDePasse');
-
-    if (!translataire) {
-      return res.status(404).json({ success: false, message: 'Translataire non trouvé' });
-    }
-
-    res.json({ success: true, message: 'Note mise à jour', translataire });
-  } catch (error) {
-    res.status(500).json({ success: false, message: 'Erreur lors de la mise à jour de la note', error: error.message });
-  }
-};
-
-// @desc    Approuver un utilisateur (client)
-// @route   PUT /api/admin/users/:id/approve
-// @access  Private (Admin)
-exports.approveUser = async (req, res) => {
   try {
     const user = await User.findById(req.params.id);
     if (!user) {
