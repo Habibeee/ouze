@@ -2,6 +2,8 @@
 const User = require('../models/User');
 const Translataire = require('../models/Translataire');
 const Admin = require('../models/Admin');
+const AdminDevis = require('../models/AdminDevis');
+
 const { sendApprovalNotification, sendAccountStatusChange, sendAccountDeleted } = require('../utils/email.service');
 const { sendUserApprovalNotification } = require('../utils/email.service');
 const Notification = require('../models/Notification');
@@ -234,23 +236,39 @@ exports.getDevisById = async (req, res) => {
       .populate('devis.client', 'nom prenom email telephone')
       .select('nomEntreprise devis');
 
-    if (!translataire) {
-      return res.status(404).json({ success: false, message: 'Devis non trouvé' });
+    if (translataire) {
+      const devis = translataire.devis.id(id);
+      if (!devis) {
+        return res.status(404).json({ success: false, message: 'Devis non trouvé' });
+      }
+
+      const dto = {
+        ...devis.toObject(),
+        translataire: {
+          id: translataire._id,
+          nom: translataire.nomEntreprise
+        },
+        origin: devis.origin || devis.origine,
+        destination: devis.destination || devis.route
+      };
+
+      return res.json({ success: true, devis: dto });
     }
 
-    const devis = translataire.devis.id(id);
-    if (!devis) {
+    // Fallback: devis admin-only non rattaché à un translataire
+    const adminDevis = await AdminDevis.findById(id).populate('client', 'nom prenom email telephone');
+    if (!adminDevis) {
       return res.status(404).json({ success: false, message: 'Devis non trouvé' });
     }
 
     const dto = {
-      ...devis.toObject(),
+      ...adminDevis.toObject(),
       translataire: {
-        id: translataire._id,
-        nom: translataire.nomEntreprise
+        id: null,
+        nom: 'Plateforme (admin)'
       },
-      origin: devis.origin || devis.origine,
-      destination: devis.destination || devis.route
+      origin: adminDevis.origin,
+      destination: adminDevis.destination
     };
 
     return res.json({ success: true, devis: dto });
@@ -280,19 +298,28 @@ exports.updateDevisStatus = async (req, res) => {
     }
 
     const translataire = await Translataire.findOne({ 'devis._id': id }).select('nomEntreprise devis');
-    if (!translataire) {
+    if (translataire) {
+      const devis = translataire.devis.id(id);
+      if (!devis) {
+        return res.status(404).json({ success: false, message: 'Devis non trouvé' });
+      }
+
+      devis.statut = statut;
+      await translataire.save();
+
+      return res.json({ success: true, message: 'Statut du devis mis à jour', devis: devis.toObject() });
+    }
+
+    // Fallback: devis admin-only non rattaché à un translataire
+    const adminDevis = await AdminDevis.findById(id);
+    if (!adminDevis) {
       return res.status(404).json({ success: false, message: 'Devis non trouvé' });
     }
 
-    const devis = translataire.devis.id(id);
-    if (!devis) {
-      return res.status(404).json({ success: false, message: 'Devis non trouvé' });
-    }
+    adminDevis.statut = statut;
+    await adminDevis.save();
 
-    devis.statut = statut;
-    await translataire.save();
-
-    return res.json({ success: true, message: 'Statut du devis mis à jour', devis: devis.toObject() });
+    return res.json({ success: true, message: 'Statut du devis mis à jour', devis: adminDevis.toObject() });
   } catch (error) {
     return res.status(500).json({ success: false, message: 'Erreur mise à jour devis', error: error.message });
   }
@@ -819,6 +846,18 @@ exports.getAllDevis = async (req, res) => {
             nom: trans.nomEntreprise
           }
         });
+      });
+    });
+
+    // Ajouter les devis admin-only
+    const adminDevisList = await AdminDevis.find().populate('client', 'nom prenom email');
+    adminDevisList.forEach(d => {
+      allDevis.push({
+        ...d.toObject(),
+        translataire: {
+          id: null,
+          nom: 'Plateforme (admin)'
+        }
       });
     });
 

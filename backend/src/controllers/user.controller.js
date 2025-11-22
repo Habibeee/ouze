@@ -1,6 +1,8 @@
 // src/controllers/user.controller.js
 const User = require('../models/User');
 const Translataire = require('../models/Translataire');
+const AdminDevis = require('../models/AdminDevis');
+
 const { uploadToCloudinary, uploadFileToCloudinary } = require('../middleware/upload.middleware');
 const { sendNewDevisToTranslataire, sendAdminNewDevisEmail, sendAdminDevisCancelledEmail } = require('../utils/email.service');
 
@@ -221,6 +223,91 @@ exports.demandeDevis = async (req, res) => {
     const originFlag = (devisOrigin || '').toString();
     const isFromNouveauDevis = originFlag === 'nouveau-devis';
 
+    // Branche spéciale: devis issus de "Nouveau devis" (admin-only)
+    // On ne les rattache à aucun translataire, ils sont stockés dans AdminDevis
+    // et seuls les administrateurs (et le client) les voient.
+    if (isFromNouveauDevis) {
+      // Préparer les pièces jointes (même logique que plus bas)
+      const files = Array.isArray(req.files) && req.files.length ? req.files : (req.file ? [req.file] : []);
+      const adminDevisPayload = {
+        client: req.user.id,
+        typeService,
+        description,
+        dateExpiration: dateExpiration || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        devisOrigin: 'nouveau-devis'
+      };
+      if (origin) adminDevisPayload.origin = origin;
+      if (destination) adminDevisPayload.destination = destination;
+
+      if (files.length) {
+        try {
+          const urls = [];
+          for (const f of files) {
+            console.log(`[UPLOAD-ADMIN-DEVIS] Tentative d'upload fichier: ${f.originalname}, taille: ${f.size} bytes, type: ${f.mimetype}`);
+            const url = await uploadFileToCloudinary(f, 'devis/demandes-admin');
+            if (url) {
+              console.log(`[UPLOAD-ADMIN-DEVIS] Succès: ${f.originalname} -> ${url}`);
+              urls.push(url);
+            }
+          }
+          if (urls.length) {
+            adminDevisPayload.clientFichiers = urls;
+            adminDevisPayload.clientFichier = urls[0];
+          }
+        } catch (e) {
+          console.error('[UPLOAD-ADMIN-DEVIS] Erreur globale:', e.message);
+          return res.status(400).json({
+            success: false,
+            message: "Erreur lors de l'upload des pièces jointes. Veuillez vérifier les fichiers et réessayer.",
+            details: e.message
+          });
+        }
+      }
+
+      const adminDevis = await AdminDevis.create(adminDevisPayload);
+
+      // Notifier uniquement les admins (pas de notification transitaire)
+      try {
+        const client = await User.findById(req.user.id).select('nom prenom email');
+        const clientName = `${client?.prenom || ''} ${client?.nom || ''}`.trim() || 'Client';
+        const admins = await Admin.find({}, '_id email');
+        const notifs = await Notification.insertMany(admins.map(a => ({
+          recipientId: a._id,
+          recipientType: 'admin',
+          type: 'devis_new',
+          title: 'Nouvelle demande de devis (plateforme)',
+          message: `${clientName} a envoyé une demande de devis via la plateforme (admin-only).`,
+          data: {
+            adminDevisId: adminDevis._id,
+            clientId: req.user.id,
+            typeService,
+            devisDescription: description,
+            actorName: clientName,
+            actorEmail: client?.email || ''
+          }
+        })));
+        try { notifs.forEach(n => getIO().to(`admin:${n.recipientId}`).emit('notification:new', n)); } catch {}
+        try {
+          await Promise.all((admins || []).map(a => a?.email ? sendAdminNewDevisEmail(a.email, {
+            translataireNom: 'Plateforme (admin)',
+            clientName,
+            clientEmail: client?.email || '',
+            typeService,
+            description
+          }) : Promise.resolve()));
+        } catch {}
+      } catch (e) {
+        console.error('Erreur notification admin (nouvelle demande devis admin-only):', e.message);
+      }
+
+      return res.status(201).json({
+        success: true,
+        message: 'Demande de devis envoyée à la plateforme',
+        devis: adminDevis
+      });
+    }
+
+    // Branche standard: devis adressés à un transitaire via la recherche ou sélection directe
     let translataire = null;
     if (req.params.translatireId && String(req.params.translatireId).length >= 12) {
       try { translataire = await Translataire.findById(req.params.translatireId); } catch {}
@@ -253,9 +340,7 @@ exports.demandeDevis = async (req, res) => {
       dateExpiration: dateExpiration || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 jours par défaut
       // Conserver l'origine fonctionnelle du devis pour l'admin et les traitements ultérieurs
       devisOrigin: originFlag || undefined,
-      // Pour un devis créé depuis "Nouveau devis", on ne le rend pas visible dans le dashboard transitaire
-      // (il reste néanmoins visible et exploitable côté administrateur).
-      visiblePourTranslataire: !isFromNouveauDevis
+      visiblePourTranslataire: true
     };
     if (origin) devis.origin = origin;
     if (destination) devis.destination = destination;
@@ -397,6 +482,24 @@ exports.getMesDevis = async (req, res) => {
       }));
     });
 
+    // Ajouter les devis admin-only (AdminDevis)
+    const adminDevisList = await AdminDevis.find({ client: req.user.id });
+    adminDevisList.forEach(d => {
+      const base = d.toObject();
+      if (statutFilter && !(base.statut || 'en_attente').toString().toLowerCase().includes(statutFilter)) {
+        return;
+      }
+      mesDevis.push({
+        ...base,
+        translataire: 'Plateforme (admin)',
+        origin: d.origin,
+        destination: d.destination
+      });
+    });
+
+    // Optionnel: trier par date de création décroissante
+    mesDevis.sort((a, b) => new Date(b.createdAt || b.date || 0) - new Date(a.createdAt || a.date || 0));
+
     res.json({
       success: true,
       count: mesDevis.length,
@@ -420,19 +523,33 @@ exports.getMonDevisById = async (req, res) => {
     if (!id || id.length < 12) return res.status(400).json({ success: false, message: 'ID invalide' });
 
     const translataire = await Translataire.findOne({ 'devis._id': id, 'devis.client': req.user.id }).select('nomEntreprise devis');
-    if (!translataire) return res.status(404).json({ success: false, message: 'Devis non trouvé' });
+    if (translataire) {
+      const devis = translataire.devis.id(id);
+      if (!devis) return res.status(404).json({ success: false, message: 'Devis non trouvé' });
 
-    const devis = translataire.devis.id(id);
-    if (!devis) return res.status(404).json({ success: false, message: 'Devis non trouvé' });
+      const base = devis.toObject();
+      const originFlag = (base.devisOrigin || '').toString();
+      const isFromNouveau = originFlag === 'nouveau-devis';
+      const dto = {
+        ...base,
+        translataire: isFromNouveau ? 'Plateforme (admin)' : translataire.nomEntreprise,
+        origin: devis.origin || devis.origine,
+        destination: devis.destination || devis.route,
+      };
 
-    const base = devis.toObject();
-    const originFlag = (base.devisOrigin || '').toString();
-    const isFromNouveau = originFlag === 'nouveau-devis';
+      return res.json({ success: true, devis: dto });
+    }
+
+    // Fallback: devis admin-only côté client
+    const adminDevis = await AdminDevis.findOne({ _id: id, client: req.user.id });
+    if (!adminDevis) return res.status(404).json({ success: false, message: 'Devis non trouvé' });
+
+    const base = adminDevis.toObject();
     const dto = {
       ...base,
-      translataire: isFromNouveau ? 'Plateforme (admin)' : translataire.nomEntreprise,
-      origin: devis.origin || devis.origine,
-      destination: devis.destination || devis.route,
+      translataire: 'Plateforme (admin)',
+      origin: adminDevis.origin,
+      destination: adminDevis.destination
     };
 
     return res.json({ success: true, devis: dto });
