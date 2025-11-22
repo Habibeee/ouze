@@ -7,6 +7,7 @@ import { clientStyles, clientCss } from '../styles/tableauBordClientStyle.jsx';
 import SideBare from './sideBare.jsx';
 import RechercheTransitaire from './rechercheTransitaire.jsx';
 import NouveauDevis from './nouveauDevis.jsx';
+import NouveauDevisAdmin from './nouveauDevisAdmin.jsx';
 import TrackingApp from './suiviEnvoi.jsx';
 import ModofierProfClient from './modofierProfClient.jsx';
 import HistoriqueDevis from './historiqueDevis.jsx';
@@ -34,6 +35,7 @@ const ClientDashboard = () => {
     switch (h) {
       case '#/recherche-transitaire': return 'recherche';
       case '#/nouveau-devis': return 'devis';
+      case '#/nouveau-devis-admin': return 'devis-admin';
       case '#/historique': return 'historique';
       case '#/profil-client': return 'profil';
       case '#/envois': return 'envois';
@@ -48,7 +50,7 @@ const ClientDashboard = () => {
   const [chartFilter, setChartFilter] = useState('tous'); // tous|accepte|annule|attente|refuse
   const isGotoDevis = (typeof window !== 'undefined') && (() => {
     const h = (window.location.hash || '');
-    return h.includes('goto=nouveau-devis') || h.startsWith('#/nouveau-devis') || h.includes('translataireName=');
+    return h.includes('goto=nouveau-devis') || h.startsWith('#/nouveau-devis?') || h.includes('translataireName=');
   })();
   const [avatarUrl, setAvatarUrl] = useState(() => {
     try { return localStorage.getItem('avatarUrl') || ''; } catch { return ''; }
@@ -168,7 +170,7 @@ const ClientDashboard = () => {
       if (p.length > 1) {
         const params = new URLSearchParams(p[1]);
         const goto = params.get('goto');
-        if (goto === 'nouveau-devis') return setSection('devis');
+        if (goto === 'nouveau-devis') return setSection('devis-admin');
         if (goto === 'recherche-transitaire') return setSection('recherche');
         if (goto === 'historique') return setSection('historique');
         if (goto === 'envois') return setSection('envois');
@@ -177,6 +179,7 @@ const ClientDashboard = () => {
       }
       if (hash.startsWith('#/historique')) setSection('historique');
       else if (hash.startsWith('#/dashboard-client')) setSection('dashboard');
+      else if (hash.startsWith('#/nouveau-devis-admin')) setSection('devis-admin');
       else if (hash.startsWith('#/nouveau-devis')) setSection('devis');
       else if (hash.startsWith('#/recherche-transitaire')) setSection('recherche');
       else if (hash.startsWith('#/envois')) setSection('envois');
@@ -523,7 +526,7 @@ return (
       items={[
         { id: 'dashboard', label: t('client.sidebar.dashboard'), icon: LayoutGrid },
         { id: 'recherche', label: t('client.sidebar.search_forwarder'), icon: Search },
-        { id: 'devis', label: t('client.sidebar.new_quote'), icon: FileText },
+        { id: 'devis-admin', label: t('client.sidebar.new_quote'), icon: FileText },
         { id: 'historique', label: t('client.sidebar.history'), icon: Clock },
         { id: 'envois', label: t('client.sidebar.shipments'), icon: Truck },
         { id: 'fichiers', label: 'Mes fichiers reçus', icon: FileText },
@@ -535,8 +538,8 @@ return (
           window.location.hash = '#/dashboard-client';
         } else if (id === 'recherche') {
           window.location.hash = '#/recherche-transitaire';
-        } else if (id === 'devis') {
-          window.location.hash = '#/nouveau-devis';
+        } else if (id === 'devis-admin') {
+          window.location.hash = '#/nouveau-devis-admin';
         } else if (id === 'historique') {
           window.location.hash = '#/historique';
         } else if (id === 'envois') {
@@ -667,6 +670,8 @@ return (
           <RechercheTransitaire />
         ) : section === 'devis' ? (
           <NouveauDevis />
+        ) : section === 'devis-admin' ? (
+          <NouveauDevisAdmin />
         ) : (
           <div className="default-wrap">
             {/* Welcome Section */}
@@ -679,7 +684,8 @@ return (
               <p className="text-muted">{t('client.welcome.subtitle')}</p>
               <div className="small mt-2 p-2 p-md-3 rounded-3" style={{ backgroundColor: '#E0F2FE', color: '#0F172A' }}>
                 <strong>Information :</strong>{' '}
-                En cliquant sur <strong>Nouveau devis</strong>, votre demande est envoyée à la plateforme (admin) uniquement, qui se charge de la traiter avec les transitaires.<br />
+                En cliquant sur <strong>Nouveau devis</strong>, votre demande est envoyée uniquement à la plateforme (admin),<br />
+                et sera ensuite distribuée aux transitaires partenaires.
                 En cliquant sur <strong>Rechercher un transitaire</strong>, vous choisissez vous‑même un transitaire et le devis lui est adressé directement, tout en restant visible par l'administrateur.
               </div>
             </div>
