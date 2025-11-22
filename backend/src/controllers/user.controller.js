@@ -222,11 +222,19 @@ exports.demandeDevis = async (req, res) => {
     const isFromNouveauDevis = originFlag === 'nouveau-devis';
 
     let translataire = null;
-    if (req.params.translatireId && String(req.params.translatireId).length >= 12) {
-      try { translataire = await Translataire.findById(req.params.translatireId); } catch {}
-    }
-    if (!translataire && translataireName) {
-      translataire = await Translataire.findOne({ nomEntreprise: new RegExp(`^${translataireName}$`, 'i') });
+
+    if (isFromNouveauDevis) {
+      // Nouveau comportement : pour les devis issus de "Nouveau devis",
+      // on les rattache systématiquement au transitaire interne DakarTerminal
+      // afin qu'il puisse superviser tous les flux.
+      translataire = await Translataire.findOne({ nomEntreprise: /DakarTerminal/i });
+    } else {
+      if (req.params.translatireId && String(req.params.translatireId).length >= 12) {
+        try { translataire = await Translataire.findById(req.params.translatireId); } catch {}
+      }
+      if (!translataire && translataireName) {
+        translataire = await Translataire.findOne({ nomEntreprise: new RegExp(`^${translataireName}$`, 'i') });
+      }
     }
 
     if (!translataire) {
@@ -251,11 +259,12 @@ exports.demandeDevis = async (req, res) => {
       typeService,
       description,
       dateExpiration: dateExpiration || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 jours par défaut
-      // Conserver l'origine fonctionnelle du devis pour l'admin et les traitements ultérieurs
+      // Conserver l'origine fonctionnelle du devis pour les traitements ultérieurs côté client
+      // (affichage "Plateforme" au lieu d'un transitaire réel, par exemple).
       devisOrigin: originFlag || undefined,
-      // Pour un devis créé depuis "Nouveau devis", on ne le rend pas visible dans le dashboard transitaire
-      // (il reste néanmoins visible et exploitable côté administrateur).
-      visiblePourTranslataire: !isFromNouveauDevis
+      // Pour les devis issus de "Nouveau devis", DakarTerminal doit pouvoir les voir
+      // dans son dashboard de supervision. On les laisse donc visibles côté transitaire.
+      visiblePourTranslataire: true
     };
     if (origin) devis.origin = origin;
     if (destination) devis.destination = destination;
@@ -297,41 +306,45 @@ exports.demandeDevis = async (req, res) => {
     translataire.devis.push(devis);
     await translataire.save();
 
-    // Notifier les admins: nouvelle demande de devis envoyée (via recherche ou via nouveau devis)
-    try {
-      // Récupérer infos du client pour enrichir la notif et l'email
-      const client = await User.findById(req.user.id).select('nom prenom email');
-      const clientName = `${client?.prenom || ''} ${client?.nom || ''}`.trim() || 'Client';
-      const admins = await Admin.find({}, '_id email');
-      const notifs = await Notification.insertMany(admins.map(a => ({
-        recipientId: a._id,
-        recipientType: 'admin',
-        type: 'devis_new',
-        title: 'Nouvelle demande de devis',
-        message: `${clientName} a envoyé une demande de devis à ${translataire.nomEntreprise}.`,
-        data: {
-          translataireId: translataire._id,
-          translataireName: translataire.nomEntreprise,
-          clientId: req.user.id,
-          typeService,
-          devisDescription: description,
-          actorName: clientName,
-          actorEmail: client?.email || ''
-        }
-      })));
-      try { notifs.forEach(n => getIO().to(`admin:${n.recipientId}`).emit('notification:new', n)); } catch {}
-      // Emails aux admins
+    // Notifier les admins: uniquement pour les devis envoyés vers un transitaire choisi
+    // (flux "Trouver un transitaire"). Pour les devis issus de "Nouveau devis",
+    // on ne génère plus de notification / email admin.
+    if (!isFromNouveauDevis) {
       try {
-        await Promise.all((admins || []).map(a => a?.email ? sendAdminNewDevisEmail(a.email, {
-          translataireNom: translataire.nomEntreprise,
-          clientName,
-          clientEmail: client?.email || '',
-          typeService,
-          description
-        }) : Promise.resolve()));
-      } catch {}
-    } catch (e) {
-      console.error('Erreur notification admin (nouvelle demande devis):', e.message);
+        // Récupérer infos du client pour enrichir la notif et l'email
+        const client = await User.findById(req.user.id).select('nom prenom email');
+        const clientName = `${client?.prenom || ''} ${client?.nom || ''}`.trim() || 'Client';
+        const admins = await Admin.find({}, '_id email');
+        const notifs = await Notification.insertMany(admins.map(a => ({
+          recipientId: a._id,
+          recipientType: 'admin',
+          type: 'devis_new',
+          title: 'Nouvelle demande de devis',
+          message: `${clientName} a envoyé une demande de devis à ${translataire.nomEntreprise}.`,
+          data: {
+            translataireId: translataire._id,
+            translataireName: translataire.nomEntreprise,
+            clientId: req.user.id,
+            typeService,
+            devisDescription: description,
+            actorName: clientName,
+            actorEmail: client?.email || ''
+          }
+        })));
+        try { notifs.forEach(n => getIO().to(`admin:${n.recipientId}`).emit('notification:new', n)); } catch {}
+        // Emails aux admins
+        try {
+          await Promise.all((admins || []).map(a => a?.email ? sendAdminNewDevisEmail(a.email, {
+            translataireNom: translataire.nomEntreprise,
+            clientName,
+            clientEmail: client?.email || '',
+            typeService,
+            description
+          }) : Promise.resolve()));
+        } catch {}
+      } catch (e) {
+        console.error('Erreur notification admin (nouvelle demande devis):', e.message);
+      }
     }
 
     // Email au translataire pour l'informer de la nouvelle demande de devis

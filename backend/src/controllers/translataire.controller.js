@@ -115,9 +115,9 @@ exports.getDevis = async (req, res) => {
 
     const rawStatut = (req.query.statut || '').toString().toLowerCase().trim();
 
-    // Côté dashboard transitaire, ne pas afficher les devis créés depuis "Nouveau devis"
-    // marqués visiblePourTranslataire === false. Les admins continuent, eux, à voir
-    // l'intégralité des devis via les routes /admin.
+    // Côté dashboard transitaire, on n'affiche pas les devis explicitement masqués
+    // (visiblePourTranslataire === false). Les devis issus de "Nouveau devis" sont
+    // désormais rattachés à DakarTerminal et restent visibles pour sa supervision.
     let devis = (translataire.devis || []).filter(d => d.visiblePourTranslataire !== false);
     if (rawStatut) {
       devis = devis.filter(d => {
