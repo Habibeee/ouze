@@ -196,6 +196,28 @@ export async function getAdminDevisById(id) {
   return get(`/admin/devis/${encodeURIComponent(id)}`);
 }
 
+// Admin - Lister les transitaires (pour assignation de devis)
+export async function listAdminTranslataires(params = {}) {
+  const search = new URLSearchParams();
+  if (params.search) search.set('search', String(params.search));
+  if (typeof params.page !== 'undefined') search.set('page', String(params.page));
+  if (typeof params.limit !== 'undefined') search.set('limit', String(params.limit));
+  if (typeof params.isApproved !== 'undefined') search.set('isApproved', String(params.isApproved));
+  if (typeof params.isVerified !== 'undefined') search.set('isVerified', String(params.isVerified));
+  const q = search.toString() ? `?${search.toString()}` : '';
+  return get(`/admin/translataires${q}`);
+}
+
+// Admin - Assigner un devis admin-only à un transitaire
+export async function assignAdminDevisToTranslataire(devisId, translataireId) {
+  if (!devisId) throw new Error('devisId requis');
+  if (!translataireId) throw new Error('translataireId requis');
+  return apiFetch(`/admin/devis/${encodeURIComponent(devisId)}/assign-translataire`, {
+    method: 'POST',
+    body: { translataireId },
+  });
+}
+
 // Client - Devis
 export async function createDevis(translataireId, body) {
   if (!translataireId) throw new Error('translataireId requis');

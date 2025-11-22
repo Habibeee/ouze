@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
-import { listAdminDevis, archiveAdminDevis } from '../services/apiClient.js';
+import { listAdminDevis, archiveAdminDevis, listAdminTranslataires, assignAdminDevisToTranslataire } from '../services/apiClient.js';
 
 // Force le téléchargement pour les URLs Cloudinary (fl_attachment)
 const toDownloadUrl = (url, name) => {
@@ -76,6 +76,9 @@ const AdminDevis = () => {
   const [limit, setLimit] = useState(10);
   const [total, setTotal] = useState(0);
   const [detail, setDetail] = useState(null);
+  const [translataires, setTranslataires] = useState([]);
+  const [assignLoading, setAssignLoading] = useState(false);
+  const [selectedTranslataireId, setSelectedTranslataireId] = useState('');
 
   useEffect(() => {
     const load = async () => {
@@ -103,6 +106,19 @@ const AdminDevis = () => {
     };
     load();
   }, [page, limit]);
+
+  useEffect(() => {
+    const loadTranslataires = async () => {
+      try {
+        const res = await listAdminTranslataires({ page: 1, limit: 100, isApproved: true });
+        const list = res?.translataires || res?.items || [];
+        setTranslataires(list);
+      } catch (e) {
+        console.error('Erreur chargement transitaires pour assignation devis:', e?.message);
+      }
+    };
+    loadTranslataires();
+  }, []);
 
   const handleArchive = async (id) => {
     if (!id) return;
@@ -148,6 +164,40 @@ const AdminDevis = () => {
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / limit));
   const pageRows = filtered.slice((page - 1) * limit, page * limit);
+
+  const handleAssignToTranslataire = async () => {
+    if (!detail || !detail.id) return;
+    if (!selectedTranslataireId) {
+      alert('Veuillez choisir un transitaire.');
+      return;
+    }
+    if (!window.confirm('Envoyer ce devis à ce transitaire ?')) return;
+    try {
+      setAssignLoading(true);
+      await assignAdminDevisToTranslataire(detail.id, selectedTranslataireId);
+      // Rechargement des devis admin pour mettre à jour le statut
+      const res = await listAdminDevis({ page, limit });
+      const list = res?.items || res?.devis || res || [];
+      const mapped = list.map((d) => {
+        const cid = d._id || d.id || '';
+        const client = extractClient(d);
+        const route = extractRoute(d);
+        const det = extractDetails(d);
+        const created = d.createdAt ? new Date(d.createdAt).toISOString().slice(0, 10) : '';
+        const statut = normalizeStatus(d.statut || d.status);
+        return { id: cid, client, route, created, statut, details: det, raw: d };
+      });
+      setRows(mapped);
+      setTotal(Number(res?.total || res?.count || list.length) || list.length);
+      // Fermer le panneau de détail après assignation
+      setDetail(null);
+      setSelectedTranslataireId('');
+    } catch (e) {
+      alert(e?.message || "Erreur lors de l'envoi du devis au transitaire");
+    } finally {
+      setAssignLoading(false);
+    }
+  };
 
   return (
     <div className="card border-0 shadow-sm mt-3">
@@ -280,6 +330,7 @@ const AdminDevis = () => {
                 : (raw.clientFichiers ? [raw.clientFichiers] : (raw.clientFichier ? [raw.clientFichier] : []));
               const hasClientFiles = clientFiles && clientFiles.length;
               const statutNorm = normalizeStatus(raw.statut || raw.status || detail.statut);
+              const alreadyForwarded = !!raw.forwardedToTranslataire;
 
               const asStatusBadge = (s) => {
                 const v = (s || '').toString().toLowerCase();
@@ -358,6 +409,39 @@ const AdminDevis = () => {
                     <span className="badge px-3 py-2" style={{ backgroundColor: badge.bg, color: badge.fg, fontWeight: 500 }}>
                       {badge.label}
                     </span>
+                  </div>
+
+                  {/* Assignation à un transitaire */}
+                  <div className="mb-4">
+                    <div className="text-muted small mb-1">Envoyer ce devis à un transitaire</div>
+                    {alreadyForwarded ? (
+                      <p className="small text-muted mb-0">
+                        Ce devis a déjà été transmis à un transitaire.
+                      </p>
+                    ) : (
+                      <>
+                        <select
+                          className="form-select mb-2"
+                          value={selectedTranslataireId}
+                          onChange={(e) => setSelectedTranslataireId(e.target.value)}
+                        >
+                          <option value="">Choisir un transitaire...</option>
+                          {translataires.map((t) => (
+                            <option key={t._id || t.id} value={t._id || t.id}>
+                              {t.nomEntreprise || t.name || 'Transitaire'}
+                            </option>
+                          ))}
+                        </select>
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-primary w-100"
+                          onClick={handleAssignToTranslataire}
+                          disabled={assignLoading || !translataires.length}
+                        >
+                          {assignLoading ? 'Envoi en cours...' : 'Envoyer au transitaire'}
+                        </button>
+                      </>
+                    )}
                   </div>
 
                   <hr className="my-3" />
