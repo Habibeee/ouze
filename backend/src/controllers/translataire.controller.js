@@ -116,9 +116,14 @@ exports.getDevis = async (req, res) => {
     const rawStatut = (req.query.statut || '').toString().toLowerCase().trim();
 
     // Côté dashboard transitaire, ne pas afficher les devis créés depuis "Nouveau devis"
-    // marqués visiblePourTranslataire === false. Les admins continuent, eux, à voir
+    // (devisOrigin === 'nouveau-devis'), ni ceux explicitement masqués
+    // (visiblePourTranslataire === false). Les admins continuent, eux, à voir
     // l'intégralité des devis via les routes /admin.
-    let devis = (translataire.devis || []).filter(d => d.visiblePourTranslataire !== false);
+    let devis = (translataire.devis || []).filter(d => {
+      const originFlag = (d.devisOrigin || '').toString();
+      if (originFlag === 'nouveau-devis') return false;
+      return d.visiblePourTranslataire !== false;
+    });
     if (rawStatut) {
       devis = devis.filter(d => {
         const s = (d.statut || d.status || 'en_attente').toString().toLowerCase();
@@ -315,7 +320,12 @@ exports.getStatistiques = async (req, res) => {
     const translataire = await Translataire.findById(req.user.id);
 
     // Ne compter dans les statistiques que les devis effectivement visibles pour le translataire
-    const devisVisibles = (translataire.devis || []).filter(d => d.visiblePourTranslataire !== false);
+    // et qui ne proviennent pas du flux "Nouveau devis" admin-only.
+    const devisVisibles = (translataire.devis || []).filter(d => {
+      const originFlag = (d.devisOrigin || '').toString();
+      if (originFlag === 'nouveau-devis') return false;
+      return d.visiblePourTranslataire !== false;
+    });
 
     const stats = {
       nombreDevisTotal: devisVisibles.length,
