@@ -99,6 +99,7 @@ function App() {
       '#/historique',
       '#/historique-transitaire',
       '#/nouveau-devis',
+      '#/nouveau-devis-admin',
       '#/recherche-transitaire',
       '#/envois',
       '#/fichiers-recus',
@@ -144,6 +145,7 @@ function App() {
     '#/dashboard-client',
     '#/recherche-transitaire',
     '#/nouveau-devis',
+    '#/nouveau-devis-admin',
     '#/historique',
     '#/profil-client',
     '#/envois',
@@ -158,6 +160,7 @@ function App() {
       case '#/dashboard-client': return 'dashboard';
       case '#/recherche-transitaire': return 'recherche';
       case '#/nouveau-devis': return 'devis';
+      case '#/nouveau-devis-admin': return 'devis-admin';
       case '#/historique': return 'historique';
       case '#/envois': return 'envois';
       case '#/profil-client': return 'profile';
@@ -206,6 +209,8 @@ function App() {
       case '#/detail-devis-client':
         return <DetailDevisClient />;
       case '#/nouveau-devis':
+        return <ClientDashboard />;
+      case '#/nouveau-devis-admin':
         return <ClientDashboard />;
       case '#/connexion':
         return <Connexion />;
