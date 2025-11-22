@@ -215,6 +215,12 @@ exports.getAllUsers = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Erreur lors de la récupération',
+      error: error.message
+    });
+  }
+};
+
+// @desc    Obtenir un devis par ID (vue admin)
 // @route   GET /api/admin/devis/:id
 // @access  Private (Admin)
 exports.getDevisById = async (req, res) => {
@@ -237,12 +243,6 @@ exports.getDevisById = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Devis non trouvé' });
     }
 
-    // Masquer côté admin les devis issus de "Nouveau devis"
-    const originFlag = (devis.devisOrigin || '').toString();
-    if (originFlag === 'nouveau-devis') {
-      return res.status(404).json({ success: false, message: 'Devis non trouvé' });
-    }
-
     const dto = {
       ...devis.toObject(),
       translataire: {
@@ -259,6 +259,546 @@ exports.getDevisById = async (req, res) => {
   }
 };
 
+// @desc    Mettre à jour le statut d'un devis (admin)
+// @route   PUT /api/admin/devis/:id
+// @access  Private (Admin)
+exports.updateDevisStatus = async (req, res) => {
+  try {
+    const id = String(req.params.id || '');
+    if (!id || id.length < 12) {
+      return res.status(400).json({ success: false, message: 'ID invalide' });
+    }
+
+    const { statut } = req.body || {};
+    if (!statut) {
+      return res.status(400).json({ success: false, message: 'statut requis' });
+    }
+
+    const allowedStatus = ['en_attente', 'accepte', 'refuse', 'expire', 'annule', 'archive', 'traite'];
+    if (!allowedStatus.includes(statut)) {
+      return res.status(400).json({ success: false, message: 'Statut invalide' });
+    }
+
+    const translataire = await Translataire.findOne({ 'devis._id': id }).select('nomEntreprise devis');
+    if (!translataire) {
+      return res.status(404).json({ success: false, message: 'Devis non trouvé' });
+    }
+
+    const devis = translataire.devis.id(id);
+    if (!devis) {
+      return res.status(404).json({ success: false, message: 'Devis non trouvé' });
+    }
+
+    devis.statut = statut;
+    await translataire.save();
+
+    return res.json({ success: true, message: 'Statut du devis mis à jour', devis: devis.toObject() });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: 'Erreur mise à jour devis', error: error.message });
+  }
+};
+
+// @desc    Définir la note admin d'un translataire (1 à 5)
+// @route   PUT /api/admin/translataires/:id/rating
+// @access  Private (Admin)
+exports.setTranslataireRating = async (req, res) => {
+  try {
+    const { id } = req.params;
+    let { rating } = req.body || {};
+    if (rating === undefined || rating === null) {
+      return res.status(400).json({ success: false, message: 'rating requis' });
+    }
+    rating = Number(rating);
+    if (Number.isNaN(rating)) {
+      return res.status(400).json({ success: false, message: 'rating doit être un nombre' });
+    }
+    // Clamp entre 0 et 5, par pas de 0.5 max
+    if (rating < 0) rating = 0;
+    if (rating > 5) rating = 5;
+    rating = Math.round(rating * 2) / 2;
+
+    const translataire = await Translataire.findByIdAndUpdate(
+      id,
+      { adminRating: rating },
+      { new: true }
+    ).select('-motDePasse');
+
+    if (!translataire) {
+      return res.status(404).json({ success: false, message: 'Translataire non trouvé' });
+    }
+
+    res.json({ success: true, message: 'Note mise à jour', translataire });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Erreur lors de la mise à jour de la note', error: error.message });
+  }
+};
+
+// @desc    Approuver un utilisateur (client)
+// @route   PUT /api/admin/users/:id/approve
+// @access  Private (Admin)
+exports.approveUser = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'Utilisateur non trouvé' });
+    }
+
+    user.isApproved = true;
+    await user.save();
+
+    // Email de notification d'approbation
+    let emailStatus = { sent: false, error: null };
+    try {
+      const displayName = `${user.prenom || ''} ${user.nom || ''}`.trim();
+      console.log(`[APPROVAL-EMAIL] Envoi email approbation user: ${user.email}`);
+      await sendUserApprovalNotification(user.email, displayName);
+      emailStatus.sent = true;
+      console.log(`[APPROVAL-EMAIL] Email approbation envoyé avec succès à ${user.email}`);
+    } catch (e) {
+      emailStatus.error = e.message;
+      console.error(`[APPROVAL-EMAIL] Erreur envoi email approbation user ${user.email}:`, {
+        message: e.message,
+        code: e.code,
+        errno: e.errno,
+        syscall: e.syscall,
+        stack: e.stack
+      });
+    }
+
+    // Créer une notification in-app
+    try {
+      const notif = await Notification.create({
+        recipientId: user._id,
+        recipientType: 'user',
+        type: 'approval',
+        title: 'Compte approuvé',
+        message: 'Votre compte a été approuvé. Vous pouvez vous connecter.',
+        data: { approvedBy: req.user._id, at: new Date() }
+      });
+      try { getIO().to(`user:${user._id}`).emit('notification:new', notif); } catch {}
+    } catch (e) {
+      console.error('Erreur création notification approval (user):', e.message);
+    }
+
+    const responseMessage = `Utilisateur approuvé${emailStatus.sent ? ' - Email envoyé' : emailStatus.error ? ` - Erreur email: ${emailStatus.error}` : ' - Email non envoyé'}`;
+    return res.json({ success: true, message: responseMessage, user, emailStatus });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: 'Erreur lors de l\'approbation', error: error.message });
+  }
+};
+
+// @desc    Obtenir tous les translataires
+// @route   GET /api/admin/translataires
+// @access  Private (Admin)
+exports.getAllTranslataires = async (req, res) => {
+  try {
+    const { page = 1, limit = 10, search, isApproved, isVerified } = req.query;
+
+    let query = {};
+    if (search) {
+      query.$or = [
+        { nomEntreprise: new RegExp(search, 'i') },
+        { email: new RegExp(search, 'i') },
+        { ninea: new RegExp(search, 'i') }
+      ];
+    }
+    if (isApproved !== undefined) {
+      query.isApproved = isApproved === 'true';
+    }
+    if (isVerified !== undefined) {
+      query.isVerified = isVerified === 'true';
+    }
+
+    const translataires = await Translataire.find(query)
+      .select('-motDePasse')
+      .limit(limit * 1)
+      .skip((page - 1) * limit)
+      .sort({ createdAt: -1 });
+
+    const count = await Translataire.countDocuments(query);
+
+    res.json({
+      success: true,
+      translataires,
+      totalPages: Math.ceil(count / limit),
+      currentPage: page,
+      totalTranslataires: count
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Erreur lors de la récupération',
+      error: error.message
+    });
+  }
+};
+
+// @desc    Approuver/Rejeter/Suspendre un translataire
+// @route   PUT /api/admin/translataires/:id/approve
+// @access  Private (Admin)
+exports.approveTranslataire = async (req, res) => {
+  try {
+    const translataire = await Translataire.findById(req.params.id);
+
+    if (!translataire) {
+      return res.status(404).json({
+        success: false,
+        message: 'Translataire non trouvé'
+      });
+    }
+
+    const { statut, commentaire } = req.body;
+
+    if (!['approuve', 'rejete', 'suspendu'].includes(statut)) {
+      return res.status(400).json({ success: false, message: 'Statut invalide. Utiliser approuve, rejete ou suspendu.' });
+    }
+
+    let emailFn = null;
+    let notifPayload = { type: '', title: '', message: '' };
+
+    if (statut === 'approuve') {
+      translataire.isApproved = true;
+      translataire.isBlocked = false;
+      translataire.isArchived = false;
+      translataire.approvedBy = req.user.id;
+      translataire.approvedAt = Date.now();
+      emailFn = () => sendApprovalNotification(translataire.email, translataire.nomEntreprise);
+      notifPayload = {
+        type: 'approval',
+        title: 'Compte approuvé',
+        message: 'Votre compte a été approuvé. Vous pouvez vous connecter.'
+      };
+    } else if (statut === 'rejete') {
+      translataire.isApproved = false;
+      translataire.isBlocked = true; // empêcher l’accès
+      emailFn = () => sendAccountStatusChange({
+        email: translataire.email,
+        displayName: translataire.nomEntreprise,
+        userType: 'translataire',
+        status: 'reject',
+        reason: commentaire
+      });
+      notifPayload = {
+        type: 'reject',
+        title: 'Compte rejeté',
+        message: `Votre compte a été rejeté.${commentaire ? ' Raison: ' + commentaire : ''}`
+      };
+    } else if (statut === 'suspendu') {
+      translataire.isApproved = true;
+      translataire.isBlocked = true;
+      emailFn = () => sendAccountStatusChange({
+        email: translataire.email,
+        displayName: translataire.nomEntreprise,
+        userType: 'translataire',
+        status: 'suspend',
+        reason: commentaire
+      });
+      notifPayload = {
+        type: 'suspend',
+        title: 'Compte suspendu',
+        message: `Votre compte a été suspendu.${commentaire ? ' Raison: ' + commentaire : ''}`
+      };
+    }
+
+    await translataire.save();
+
+    // Email de statut
+    let emailStatus = { sent: false, error: null };
+    try {
+      console.log(`[APPROVAL-EMAIL] Envoi email pour ${translataire.nomEntreprise} (${statut})`);
+      await emailFn();
+      emailStatus.sent = true;
+      console.log(`[APPROVAL-EMAIL] Email envoyé avec succès à ${translataire.email}`);
+    } catch (e) {
+      emailStatus.error = e.message;
+      console.error(`[APPROVAL-EMAIL] Erreur envoi email à ${translataire.email}:`, {
+        message: e.message,
+        code: e.code,
+        errno: e.errno,
+        syscall: e.syscall,
+        stack: e.stack
+      });
+    }
+
+    // Notification in-app
+    try {
+      const notif = await Notification.create({
+        recipientId: translataire._id,
+        recipientType: 'translataire',
+        type: notifPayload.type,
+        title: notifPayload.title,
+        message: notifPayload.message,
+        data: { by: req.user._id, reason: commentaire || null, at: new Date() }
+      });
+      try { getIO().to(`translataire:${translataire._id}`).emit('notification:new', notif); } catch {}
+    } catch (e) {
+      console.error('Erreur création notification statut (translataire):', e.message);
+    }
+
+    const responseMessage = `Translataire ${statut}${emailStatus.sent ? ' - Email envoyé' : emailStatus.error ? ` - Erreur email: ${emailStatus.error}` : ' - Email non envoyé'}`;
+    res.json({ 
+      success: true, 
+      message: responseMessage, 
+      translataire,
+      emailStatus
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Erreur lors de l\'approbation',
+      error: error.message
+    });
+  }
+};
+
+// @desc    Bloquer/Débloquer un compte
+// @route   PUT /api/admin/:userType/:id/block
+// @access  Private (Admin)
+exports.toggleBlockAccount = async (req, res) => {
+  try {
+    const { userType, id } = req.params;
+    const { isBlocked } = req.body;
+
+    let account;
+    if (userType === 'user') {
+      account = await User.findByIdAndUpdate(
+        id,
+        { isBlocked },
+        { new: true }
+      );
+    } else if (userType === 'translataire') {
+      account = await Translataire.findByIdAndUpdate(
+        id,
+        { isBlocked },
+        { new: true }
+      );
+    }
+
+    if (!account) {
+      return res.status(404).json({
+        success: false,
+        message: 'Compte non trouvé'
+      });
+    }
+
+    // Envoyer email de notification de statut
+    try {
+      const displayName = userType === 'user' ? `${account.prenom || ''} ${account.nom || ''}`.trim() : account.nomEntreprise;
+      await sendAccountStatusChange({
+        email: account.email,
+        displayName,
+        userType,
+        status: isBlocked ? 'block' : 'unblock',
+        reason: req.body.raison
+      });
+    } catch (e) {
+      console.error('Erreur envoi email statut (block/unblock):', e.message);
+    }
+
+    // Notification in-app
+    try {
+      const notif = await Notification.create({
+        recipientId: account._id,
+        recipientType: userType,
+        type: isBlocked ? 'block' : 'unblock',
+        title: isBlocked ? 'Compte bloqué' : 'Compte débloqué',
+        message: isBlocked ? 'Votre compte a été bloqué par l\'administrateur.' : 'Votre compte a été débloqué par l\'administrateur.',
+        data: { by: req.user._id, reason: req.body.raison || null, at: new Date() }
+      });
+      try { getIO().to(`${userType}:${account._id}`).emit('notification:new', notif); } catch {}
+    } catch (e) {
+      console.error('Erreur création notification (block/unblock):', e.message);
+    }
+
+    res.json({
+      success: true,
+      message: isBlocked ? 'Compte bloqué' : 'Compte débloqué',
+      account
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Erreur lors de l\'opération',
+      error: error.message
+    });
+  }
+};
+
+// @desc    Supprimer un compte
+// @route   DELETE /api/admin/:userType/:id
+// @access  Private (Admin)
+exports.deleteAccount = async (req, res) => {
+  try {
+    const { userType, id } = req.params;
+    const Model = userType === 'user' ? User : userType === 'translataire' ? Translataire : null;
+    if (!Model) {
+      return res.status(400).json({ success: false, message: 'Type d\'utilisateur invalide' });
+    }
+
+    const account = await Model.findById(id);
+    if (!account) {
+      return res.status(404).json({
+        success: false,
+        message: 'Compte non trouvé'
+      });
+    }
+
+    // Créer une notification avant suppression (si on veut notifier par email, déjà fait)
+    try {
+      const notif = await Notification.create({
+        recipientId: account._id,
+        recipientType: userType,
+        type: 'delete',
+        title: 'Compte supprimé',
+        message: 'Votre compte a été supprimé par l\'administrateur.',
+        data: { by: req.user._id, reason: req.body.raison || null, at: new Date() }
+      });
+      try { getIO().to(`${userType}:${account._id}`).emit('notification:new', notif); } catch {}
+    } catch (e) {
+      console.error('Erreur création notification (delete):', e.message);
+    }
+
+    await Model.findByIdAndDelete(id);
+
+    // Email de suppression de compte
+    try {
+      const displayName = userType === 'user' ? `${account.prenom || ''} ${account.nom || ''}`.trim() : account.nomEntreprise;
+      await sendAccountDeleted({
+        email: account.email,
+        displayName,
+        userType,
+        reason: req.body.raison
+      });
+    } catch (e) {
+      console.error('Erreur envoi email suppression:', e.message);
+    }
+
+    res.json({
+      success: true,
+      message: 'Compte supprimé'
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Erreur lors de la suppression',
+      error: error.message
+    });
+  }
+};
+
+// @desc    Obtenir les statistiques globales
+// @route   GET /api/admin/statistiques
+// @access  Private (Admin)
+exports.getStatistiques = async (req, res) => {
+  try {
+    const totalUsers = await User.countDocuments();
+    const usersBlocked = await User.countDocuments({ isBlocked: true });
+    const usersPending = await User.countDocuments({ isApproved: false });
+
+    const totalTranslataires = await Translataire.countDocuments();
+    const translatairesPendants = await Translataire.countDocuments({ isApproved: false });
+    const translatairesApprouves = await Translataire.countDocuments({ isApproved: true });
+    const translatairesBlocked = await Translataire.countDocuments({ isBlocked: true });
+
+    // Statistiques par type de service
+    const serviceStats = await Translataire.aggregate([
+      { $unwind: '$typeServices' },
+      { $group: { _id: '$typeServices', count: { $sum: 1 } } }
+    ]);
+
+    // Utilisateurs récents (7 derniers jours)
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const newUsersLastWeek = await User.countDocuments({
+      createdAt: { $gte: sevenDaysAgo }
+    });
+    const newTranslatairesLastWeek = await Translataire.countDocuments({
+      createdAt: { $gte: sevenDaysAgo }
+    });
+
+    // Total des devis
+    const allTranslataires = await Translataire.find();
+    const totalDevis = allTranslataires.reduce((acc, t) => acc + t.devis.length, 0);
+    const devisEnAttente = allTranslataires.reduce(
+      (acc, t) => acc + t.devis.filter(d => d.statut === 'en_attente').length, 0
+    );
+
+    res.json({
+      success: true,
+      stats: {
+        utilisateurs: {
+          total: totalUsers,
+          bloques: usersBlocked,
+          enAttente: usersPending,
+          nouveauxCetteSemaine: newUsersLastWeek
+        },
+        translataires: {
+          total: totalTranslataires,
+          approuves: translatairesApprouves,
+          enAttente: translatairesPendants,
+          bloques: translatairesBlocked,
+          nouveauxCetteSemaine: newTranslatairesLastWeek
+        },
+        services: serviceStats,
+        devis: {
+          total: totalDevis,
+          enAttente: devisEnAttente
+        }
+      }
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Erreur lors de la récupération',
+      error: error.message
+    });
+  }
+};
+
+// @desc    Obtenir la liste des utilisateurs (pour tableau de bord)
+// @route   GET /api/admin/dashboard/users
+// @access  Private (Admin)
+exports.getDashboardUsers = async (req, res) => {
+  try {
+    const users = await User.find()
+      .select('nom prenom email telephone isVerified createdAt')
+      .sort({ createdAt: -1 })
+      .limit(10);
+
+    res.json({
+      success: true,
+      users
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Erreur lors de la récupération',
+      error: error.message
+    });
+  }
+};
+
+// @desc    Obtenir la liste des translataires (pour tableau de bord)
+// @route   GET /api/admin/dashboard/translataires
+// @access  Private (Admin)
+exports.getDashboardTranslataires = async (req, res) => {
+  try {
+    const translataires = await Translataire.find()
+      .select('nomEntreprise email ninea isApproved isVerified typeServices createdAt')
+      .sort({ createdAt: -1 })
+      .limit(10);
+
+    res.json({
+      success: true,
+      translataires
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Erreur lors de la récupération',
+      error: error.message
+    });
+  }
+};
 
 // @desc    Obtenir les devis traités
 // @route   GET /api/admin/devis
@@ -272,9 +812,6 @@ exports.getAllDevis = async (req, res) => {
     let allDevis = [];
     translataires.forEach(trans => {
       trans.devis.forEach(devis => {
-        const originFlag = (devis.devisOrigin || '').toString();
-        // Masquer côté admin les devis issus de "Nouveau devis" (réservés à DakarTerminal)
-        if (originFlag === 'nouveau-devis') return;
         allDevis.push({
           ...devis.toObject(),
           translataire: {
@@ -300,6 +837,13 @@ exports.getAllDevis = async (req, res) => {
       error: error.message
     });
   }
+};
+
+// @desc    Opérations en masse: block/unblock/archive/unarchive/delete
+// @route   POST /api/admin/:userType/bulk/:action
+// @access  Private (Admin)
+exports.bulkAccountsAction = async (req, res) => {
+  try {
     const { userType, action } = req.params;
     const { ids } = req.body;
 
