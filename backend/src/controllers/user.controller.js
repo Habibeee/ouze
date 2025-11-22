@@ -402,8 +402,10 @@ exports.getMesDevis = async (req, res) => {
         const isFromNouveau = originFlag === 'nouveau-devis';
         return {
           ...dto,
-          // Pour les devis issus de "Nouveau devis", ne pas afficher un transitaire réel côté client
-          translataire: isFromNouveau ? 'Plateforme (admin)' : trans.nomEntreprise,
+          // Pour les devis issus de "Nouveau devis", ne pas afficher un transitaire réel côté client.
+          // On utilise un libellé générique indiquant que la plateforme et ses transitaires partenaires
+          // traitent la demande, sans dévoiler DakarTerminal.
+          translataire: isFromNouveau ? 'Transitaires partenaires (plateforme)' : trans.nomEntreprise,
           origin: d.origin || d.origine || undefined,
           destination: d.destination || d.route || undefined
         };
