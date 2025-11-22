@@ -684,126 +684,119 @@ return (
               <p className="text-muted">{t('client.welcome.subtitle')}</p>
               <div className="small mt-2 p-2 p-md-3 rounded-3" style={{ backgroundColor: '#E0F2FE', color: '#0F172A' }}>
                 <strong>Information :</strong>{' '}
-                En cliquant sur <strong>Nouveau devis</strong>, votre demande est envoyée uniquement à la plateforme (admin),<br />
-                et sera ensuite distribuée aux transitaires partenaires.
+                En cliquant sur <strong>Nouveau devis</strong>, votre demande est envoyée à tous les transitaires.<br />
                 En cliquant sur <strong>Rechercher un transitaire</strong>, vous choisissez vous‑même un transitaire et le devis lui est adressé directement, tout en restant visible par l'administrateur.
               </div>
             </div>
 
-            <div className="row g-2 g-md-3 g-lg-4">
-              {/* Left Column */}
-              <div className="col-12 col-lg-8">
-                {/* Mes Devis Section */}
-                <div className="card border-0 shadow-sm mb-4" style={{ backgroundColor: 'var(--card)' }}>
-                  <div className="card-body" style={{ backgroundColor: 'var(--card)' }}>
-                    <div className="d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between gap-2 mb-3">
-                      <h5 className="fw-bold mb-0">{t('client.quotes.title')}</h5>
-                      <div className="d-flex flex-row flex-wrap align-items-center client-filter-group mt-1 mt-sm-0 gap-2">
-                        <button
-                          className={`btn btn-sm client-filter-btn client-filter-all ${devisFilter==='tous' ? 'client-filter-active' : ''}`}
-                          onClick={()=>setDevisFilter('tous')}
-                        >
-                          {t('client.quotes.filter.all')}
-                        </button>
-                        <button
-                          className={`btn btn-sm client-filter-btn client-filter-accepted ${devisFilter==='accepte' ? 'client-filter-active' : ''}`}
-                          onClick={()=>setDevisFilter('accepte')}
-                        >
-                          {t('client.quotes.filter.accepted')}
-                        </button>
-                        <button
-                          className={`btn btn-sm client-filter-btn client-filter-pending ${devisFilter==='attente' ? 'client-filter-active' : ''}`}
-                          onClick={()=>setDevisFilter('attente')}
-                        >
-                          {t('client.quotes.filter.pending')}
-                        </button>
-                      </div>
-                    </div>
-                    <div className="d-flex flex-column gap-3">
-                      {devis.filter(item => devisFilter==='tous' ? true : item.status===devisFilter).map((item) => (
-                        <div key={item.id} className="border rounded-3 p-2 p-md-3 shadow-sm" style={{ background:'var(--card)' }}>
-                          <div className="d-flex flex-column flex-sm-row justify-content-between align-items-start gap-2">
-                            <div className="d-flex flex-column flex-grow-1" style={{ minWidth: 0 }}>
-                              <div className="d-flex align-items-center gap-2 flex-wrap">
-                                <span className={`badge rounded-pill px-2 px-md-3 py-1 py-md-2 ${item.status === 'accepte' ? 'bg-success' : item.status === 'refuse' ? 'bg-danger' : item.status === 'annule' ? 'bg-danger' : 'bg-warning text-dark' }`}>
-                                  {item.status === 'accepte'
-                                    ? t('client.quotes.status.accepted')
-                                    : item.status === 'refuse'
-                                      ? t('client.quotes.status.refused')
-                                      : item.status === 'annule'
-                                        ? t('client.quotes.status.canceled')
-                                        : item.status === 'attente'
-                                          ? t('client.quotes.status.waiting')
-                                          : item.statusLabel}
-                                </span>
-                                <span className="text-muted small text-truncate" title={item.id} style={{ fontFamily:'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace', maxWidth: '150px' }}>#{String(item.id).slice(0,10)}…</span>
-                              </div>
-                              <div className="mt-2 fw-semibold" style={{ fontSize: '15px' }}>{item.routeLabel && item.routeLabel !== '-' ? item.routeLabel : t('client.quotes.route_missing')}</div>
-                              <div className="text-muted small">{item.date}</div>
-                            </div>
-                            <div className="d-flex flex-column flex-sm-row align-items-stretch align-items-sm-start gap-2 flex-shrink-0 client-quote-actions text-end text-sm-start">
-                              <a
-                                className="btn btn-sm btn-outline-secondary btn-client-detail align-self-end align-self-sm-start"
-                                style={{ minWidth: '120px' }}
-                                href={`#/detail-devis-client?id=${encodeURIComponent(item.id)}`}
-                              >
-                                {t('client.quotes.detail')}
-                              </a>
-                              {item.status === 'attente' && (
-                                confirmCancelId === item.id ? (
-                                  <button
-                                    className="btn btn-sm btn-danger btn-client-cancel-confirm align-self-end align-self-sm-start"
-                                    style={{ minWidth: '120px' }}
-                                    onClick={() => cancelDevis(item.id)}
-                                  >
-                                    {t('client.quotes.cancel.confirm')}
-                                  </button>
-                                ) : (
-                                  <>
-                                    <button
-                                      className="btn btn-sm btn-outline-primary btn-client-edit align-self-end align-self-sm-start"
-                                      style={{ minWidth: '120px' }}
-                                      onClick={() => onOpenEdit(item)}
-                                    >
-                                      {t('client.quotes.edit')}
-                                    </button>
-                                    <button
-                                      className="btn btn-sm btn-outline-danger btn-client-cancel align-self-end align-self-sm-start"
-                                      style={{ minWidth: '120px' }}
-                                      onClick={() => cancelDevis(item.id)}
-                                    >
-                                      {t('client.quotes.cancel')}
-                                    </button>
-                                  </>
-                                )
-                              )}
-                            </div>
+            {/* Mes Devis Section */}
+            <div className="card border-0 shadow-sm mb-4" style={{ backgroundColor: 'var(--card)' }}>
+              <div className="card-body" style={{ backgroundColor: 'var(--card)' }}>
+                <div className="d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between gap-2 mb-3">
+                  <h5 className="fw-bold mb-0">{t('client.quotes.title')}</h5>
+                  <div className="d-flex flex-row flex-wrap align-items-center client-filter-group mt-1 mt-sm-0 gap-2">
+                    <button
+                      className={`btn btn-sm client-filter-btn client-filter-all ${devisFilter==='tous' ? 'client-filter-active' : ''}`}
+                      onClick={()=>setDevisFilter('tous')}
+                    >
+                      {t('client.quotes.filter.all')}
+                    </button>
+                    <button
+                      className={`btn btn-sm client-filter-btn client-filter-accepted ${devisFilter==='accepte' ? 'client-filter-active' : ''}`}
+                      onClick={()=>setDevisFilter('accepte')}
+                    >
+                      {t('client.quotes.filter.accepted')}
+                    </button>
+                    <button
+                      className={`btn btn-sm client-filter-btn client-filter-pending ${devisFilter==='attente' ? 'client-filter-active' : ''}`}
+                      onClick={()=>setDevisFilter('attente')}
+                    >
+                      {t('client.quotes.filter.pending')}
+                    </button>
+                  </div>
+                </div>
+                <div className="d-flex flex-column gap-3">
+                  {devis.filter(item => devisFilter==='tous' ? true : item.status===devisFilter).map((item) => (
+                    <div key={item.id} className="border rounded-3 p-2 p-md-3 shadow-sm" style={{ background:'var(--card)' }}>
+                      <div className="d-flex flex-column flex-sm-row justify-content-between align-items-start gap-2">
+                        <div className="d-flex flex-column flex-grow-1" style={{ minWidth: 0 }}>
+                          <div className="d-flex align-items-center gap-2 flex-wrap">
+                            <span className={`badge rounded-pill px-2 px-md-3 py-1 py-md-2 ${item.status === 'accepte' ? 'bg-success' : item.status === 'refuse' ? 'bg-danger' : item.status === 'annule' ? 'bg-danger' : 'bg-warning text-dark' }`}>
+                              {item.status === 'accepte'
+                                ? t('client.quotes.status.accepted')
+                                : item.status === 'refuse'
+                                  ? t('client.quotes.status.refused')
+                                  : item.status === 'annule'
+                                    ? t('client.quotes.status.canceled')
+                                    : item.status === 'attente'
+                                      ? t('client.quotes.status.waiting')
+                                      : item.statusLabel}
+                            </span>
+                            <span className="text-muted small text-truncate" title={item.id} style={{ fontFamily:'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace', maxWidth: '150px' }}>#{String(item.id).slice(0,10)}…</span>
                           </div>
+                          <div className="mt-2 fw-semibold" style={{ fontSize: '15px' }}>{item.routeLabel && item.routeLabel !== '-' ? item.routeLabel : t('client.quotes.route_missing')}</div>
+                          <div className="text-muted small">{item.date}</div>
                         </div>
-                      ))}
-                    </div>
-                    <div className="d-flex flex-column flex-sm-row justify-content-between align-items-center gap-2 p-2 p-md-3 border-top">
-                      <p className="text-muted small mb-0 text-center text-sm-start">{t('client.quotes.pagination.label')} {page} {total ? ` / ${Math.max(1, Math.ceil(total / limit))}` : ''}</p>
-                      <div className="d-flex align-items-center gap-2 flex-wrap">
-                        <select className="form-select form-select-sm" style={{ width: 80 }} value={limit} onChange={(e) => { const l = Number(e.target.value)||10; setLimit(l); setPage(1); fetchDevis({ page: 1, limit: l }); }}>
-                          {[5,10,20,50].map(n => <option key={n} value={n}>{n}/p</option>)}
-                        </select>
-                        <nav>
-                          <ul className="pagination pagination-sm mb-0">
-                            <li className={`page-item ${page <= 1 ? 'disabled' : ''}`}>
-                              <button className="page-link" onClick={() => { if (page>1) { const p=page-1; setPage(p); fetchDevis({ page: p, limit }); window.scrollTo({ top: 0, behavior: 'smooth' }); } }}>{t('client.quotes.pagination.prev')}</button>
-                            </li>
-                            <li className={`page-item ${total && page >= Math.ceil(total/limit) ? 'disabled' : ''}`}>
-                              <button className="page-link" onClick={() => { const max = total ? Math.ceil(total/limit) : page+1; if (!total || page < max) { const p=page+1; setPage(p); fetchDevis({ page: p, limit }); window.scrollTo({ top: 0, behavior: 'smooth' }); } }}>{t('client.quotes.pagination.next')}</button>
-                            </li>
-                          </ul>
-                        </nav>
+                        <div className="d-flex flex-column flex-sm-row align-items-stretch align-items-sm-start gap-2 flex-shrink-0 client-quote-actions text-end text-sm-start">
+                          <a
+                            className="btn btn-sm btn-outline-secondary btn-client-detail align-self-end align-self-sm-start"
+                            style={{ minWidth: '120px' }}
+                            href={`#/detail-devis-client?id=${encodeURIComponent(item.id)}`}
+                          >
+                            {t('client.quotes.detail')}
+                          </a>
+                          {item.status === 'attente' && (
+                            confirmCancelId === item.id ? (
+                              <button
+                                className="btn btn-sm btn-danger btn-client-cancel-confirm align-self-end align-self-sm-start"
+                                style={{ minWidth: '120px' }}
+                                onClick={() => cancelDevis(item.id)}
+                              >
+                                {t('client.quotes.cancel.confirm')}
+                              </button>
+                            ) : (
+                              <>
+                                <button
+                                  className="btn btn-sm btn-outline-primary btn-client-edit align-self-end align-self-sm-start"
+                                  style={{ minWidth: '120px' }}
+                                  onClick={() => onOpenEdit(item)}
+                                >
+                                  {t('client.quotes.edit')}
+                                </button>
+                                <button
+                                  className="btn btn-sm btn-outline-danger btn-client-cancel align-self-end align-self-sm-start"
+                                  style={{ minWidth: '120px' }}
+                                  onClick={() => cancelDevis(item.id)}
+                                >
+                                  {t('client.quotes.cancel')}
+                                </button>
+                              </>
+                            )
+                          )}
+                        </div>
                       </div>
                     </div>
+                  ))}
+                </div>
+                <div className="d-flex flex-column flex-sm-row justify-content-between align-items-center gap-2 p-2 p-md-3 border-top">
+                  <p className="text-muted small mb-0 text-center text-sm-start">{t('client.quotes.pagination.label')} {page} {total ? ` / ${Math.max(1, Math.ceil(total / limit))}` : ''}</p>
+                  <div className="d-flex align-items-center gap-2 flex-wrap">
+                    <select className="form-select form-select-sm" style={{ width: 80 }} value={limit} onChange={(e) => { const l = Number(e.target.value)||10; setLimit(l); setPage(1); fetchDevis({ page: 1, limit: l }); }}>
+                      {[5,10,20,50].map(n => <option key={n} value={n}>{n}/p</option>)}
+                    </select>
+                    <nav>
+                      <ul className="pagination pagination-sm mb-0">
+                        <li className={`page-item ${page <= 1 ? 'disabled' : ''}`}>
+                          <button className="page-link" onClick={() => { if (page>1) { const p=page-1; setPage(p); fetchDevis({ page: p, limit }); window.scrollTo({ top: 0, behavior: 'smooth' }); } }}>{t('client.quotes.pagination.prev')}</button>
+                        </li>
+                        <li className={`page-item ${total && page >= Math.ceil(total/limit) ? 'disabled' : ''}`}>
+                          <button className="page-link" onClick={() => { const max = total ? Math.ceil(total/limit) : page+1; if (!total || page < max) { const p=page+1; setPage(p); fetchDevis({ page: p, limit }); window.scrollTo({ top: 0, behavior: 'smooth' }); } }}>{t('client.quotes.pagination.next')}</button>
+                        </li>
+                      </ul>
+                    </nav>
                   </div>
                 </div>
 
-                
               </div>
 
               {/* Right Column */}
