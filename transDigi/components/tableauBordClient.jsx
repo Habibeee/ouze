@@ -679,8 +679,8 @@ return (
               <p className="text-muted">{t('client.welcome.subtitle')}</p>
               <div className="small mt-2 p-2 p-md-3 rounded-3" style={{ backgroundColor: '#E0F2FE', color: '#0F172A' }}>
                 <strong>Information :</strong>{' '}
-                Votre devis peut être envoyé à tous les transitaires via la page <strong>Nouveau devis</strong>,<br />
-                ou vous pouvez choisir un transitaire spécifique depuis la page <strong>Rechercher un transitaire</strong>.
+                En cliquant sur <strong>Nouveau devis</strong>, votre demande est envoyée à la plateforme (admin) uniquement, qui se charge de la traiter avec les transitaires.<br />
+                En cliquant sur <strong>Rechercher un transitaire</strong>, vous choisissez vous‑même un transitaire et le devis lui est adressé directement, tout en restant visible par l'administrateur.
               </div>
             </div>
 
