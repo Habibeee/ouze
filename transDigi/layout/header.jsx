@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { headerStyles, headerCss } from '../styles/headerStyle.jsx';
-import { Menu, ArrowLeft, X } from 'lucide-react';
+import { Menu, ArrowLeft, X, MoreVertical } from 'lucide-react';
 import { useI18n } from '../src/i18n.jsx';
 
 function Header({ showSidebarToggle = false, onToggleSidebar, hideNavbarToggler = false }) {
@@ -144,7 +144,7 @@ function Header({ showSidebarToggle = false, onToggleSidebar, hideNavbarToggler 
               }}
               aria-label={t('aria.toggle.navigation')}
             >
-              <Menu size={22} />
+              <MoreVertical size={22} />
             </button>
           )}
         </div>

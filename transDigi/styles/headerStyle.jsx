@@ -41,6 +41,11 @@ export const headerCss = `
   @media (max-width: 575.98px) {
     .navbar-compact .container-fluid { padding-left: .5rem !important; padding-right: .5rem !important; }
     .navbar-compact .btn.px-4 { padding-left: .75rem !important; padding-right: .75rem !important; }
+    /* Forcer le bouton menu mobile (trois traits) à se coller à gauche */
+    .navbar-compact .mobile-menu-toggle {
+      margin-left: 0 !important;
+      margin-right: auto !important;
+    }
   }
   @media (max-width: 575.98px) {
     .navbar-compact img[alt="TransDigiSN"] { height: 56px !important; }
