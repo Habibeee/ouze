@@ -235,7 +235,9 @@ export const clientCss = `
       max-width: 100vw !important;
     }
 
-    .d-flex {
+    /* Ne pas toucher tous les .d-flex pour éviter de couper le header (cloche + avatar).
+       On limite l'overflow hidden aux blocs de contenu interne. */
+    .default-wrap .d-flex {
       overflow-x: hidden !important;
     }
 
@@ -361,10 +363,10 @@ export const clientCss = `
       padding: 0.25rem 0.5rem !important;
     }
 
-    /* Buttons in devis cards */
+    /* Buttons in devis cards - smaller on mobile */
     .default-wrap .btn-sm {
-      font-size: 0.75rem;
-      padding: 0.25rem 0.5rem;
+      font-size: 0.72rem;
+      padding: 0.22rem 0.45rem;
       white-space: nowrap;
     }
 
@@ -385,7 +387,10 @@ export const clientCss = `
 
     .default-wrap .client-quote-actions .btn {
       flex: 1 1 calc(50% - 0.5rem);
+      min-width: 70px;
       text-align: center;
+      padding: 0.25rem 0.45rem;
+      font-size: 0.72rem;
     }
 
     /* Si une seule action (ex : devis accepté), le bouton prend toute la ligne */

@@ -37,6 +37,36 @@ const RechercheTransitaire = () => {
         const services = Array.isArray(rawServices)
           ? rawServices.map((s) => String(s).trim()).filter(Boolean)
           : [];
+
+        // Réorganisation des services : ordre métier prioritaire puis tri alphabétique
+        const servicePriority = [
+          'transport maritime',
+          'fret aérien',
+          'transport routier',
+          "logistique d'entreposage",
+          'logistique',
+          'dédouanement',
+          'transit'
+        ];
+
+        const servicesOrdered = [...services].sort((a, b) => {
+          const aNorm = String(a).toLowerCase().trim();
+          const bNorm = String(b).toLowerCase().trim();
+
+          const aIndex = servicePriority.indexOf(aNorm);
+          const bIndex = servicePriority.indexOf(bNorm);
+
+          const aHasPriority = aIndex !== -1;
+          const bHasPriority = bIndex !== -1;
+
+          if (aHasPriority && bHasPriority) {
+            return aIndex - bIndex;
+          }
+          if (aHasPriority && !bHasPriority) return -1;
+          if (!aHasPriority && bHasPriority) return 1;
+
+          return aNorm.localeCompare(bNorm);
+        });
         return {
           id: t._id || t.id,
           name,
@@ -45,7 +75,7 @@ const RechercheTransitaire = () => {
           rating: ratingForStars,
           ratingsCount,
           description: t.description || '',
-          services,
+          services: servicesOrdered,
           logoUrl,
         };
       });

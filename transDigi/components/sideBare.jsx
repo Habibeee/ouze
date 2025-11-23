@@ -11,7 +11,7 @@ const menuItems = [
   { id: 'parametres', label: 'Paramètres', icon: Settings },
 ];
 
-export default function SideBare({ activeId = 'dashboard', onNavigate, onOpenChange, className = '', topOffset = 96, items, closeOnNavigate = false, defaultOpen = true, collapsible = true, open: controlledOpen, showFloatingToggle = true, showHeaderToggle = true, hideItemsWhenCollapsed = false }) {
+export default function SideBare({ activeId = 'dashboard', onNavigate, onOpenChange, className = '', topOffset = 96, items, closeOnNavigate = false, defaultOpen = true, collapsible = true, open: controlledOpen, showFloatingToggle = true, showHeaderToggle = true, hideItemsWhenCollapsed = false, disableMobileOverlay = false }) {
   const isControlled = typeof controlledOpen === 'boolean';
   const [internalOpen, setInternalOpen] = useState(defaultOpen);
   const open = isControlled ? controlledOpen : internalOpen;
@@ -106,10 +106,18 @@ export default function SideBare({ activeId = 'dashboard', onNavigate, onOpenCha
             })}
           </div>
       </div>
-      {!isLgUp && open && (
+      {!isLgUp && open && !disableMobileOverlay && (
         <div
           onClick={() => toggleOpen()}
-          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.35)', zIndex: 1040 }}
+          style={{
+            position: 'fixed',
+            left: 0,
+            right: 0,
+            top: topOffset,
+            bottom: 0,
+            background: 'rgba(0,0,0,0.35)',
+            zIndex: 1040,
+          }}
           aria-label="Fermer l'overlay"
         />
       )}

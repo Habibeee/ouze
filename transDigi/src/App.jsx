@@ -99,6 +99,7 @@ function App() {
       '#/historique',
       '#/historique-transitaire',
       '#/nouveau-devis',
+      '#/nouveau-devis-admin',
       '#/recherche-transitaire',
       '#/envois',
       '#/fichiers-recus',
@@ -144,6 +145,7 @@ function App() {
     '#/dashboard-client',
     '#/recherche-transitaire',
     '#/nouveau-devis',
+    '#/nouveau-devis-admin',
     '#/historique',
     '#/profil-client',
     '#/envois',
@@ -158,6 +160,7 @@ function App() {
       case '#/dashboard-client': return 'dashboard';
       case '#/recherche-transitaire': return 'recherche';
       case '#/nouveau-devis': return 'devis';
+      case '#/nouveau-devis-admin': return 'devis-admin';
       case '#/historique': return 'historique';
       case '#/envois': return 'envois';
       case '#/profil-client': return 'profile';
@@ -182,7 +185,7 @@ function App() {
       case '#/transitaire':
         return <FormulaireTransitaire />;
       case '#/recherche-transitaire':
-        return <RechercheTransitaire />;
+        return <ClientDashboard />;
       case '#/dashboard-transitaire':
         return <TransitaireDashboard />;
       case '#/historique-transitaire':
@@ -194,7 +197,7 @@ function App() {
       case '#/gestion-utilisateurs':
         return <GestionUtilisateurs />;
       case '#/historique':
-        return <HistoriqueDevis />;
+        return <ClientDashboard />;
       case '#/envois':
         return <ClientDashboard />;
       case '#/fichiers-recus':
@@ -206,7 +209,9 @@ function App() {
       case '#/detail-devis-client':
         return <DetailDevisClient />;
       case '#/nouveau-devis':
-        return <NouveauDevis />;
+        return <ClientDashboard />;
+      case '#/nouveau-devis-admin':
+        return <ClientDashboard />;
       case '#/connexion':
         return <Connexion />;
       case '#/mot-de-passe-oublie':
@@ -220,7 +225,7 @@ function App() {
       case '#/profile':
         return <ProfilTransitaire />;
       case '#/profil-client':
-        return <ModofierProfClient />;
+        return <ClientDashboard />;
       case '#/apropos':
         return <Apropos />;
       case '#/':
@@ -230,7 +235,10 @@ function App() {
   };
 
   if (isClientRoute) {
-    const hasGlobalSidebar = baseRoute !== '#/client' && baseRoute !== '#/transitaire' && baseRoute !== '#/dashboard-client' && baseRoute !== '#/detail-devis-client';
+    // Éviter la duplication : les pages client qui passent par ClientDashboard gèrent déjà leur propre sidebar.
+    const hasGlobalSidebar = baseRoute !== '#/client' && baseRoute !== '#/transitaire' && baseRoute !== '#/dashboard-client' && baseRoute !== '#/detail-devis-client'
+      && baseRoute !== '#/recherche-transitaire' && baseRoute !== '#/nouveau-devis' && baseRoute !== '#/nouveau-devis-admin'
+      && baseRoute !== '#/historique' && baseRoute !== '#/envois' && baseRoute !== '#/fichiers-recus' && baseRoute !== '#/profil-client';
     return (
       <ToastProvider>
       <div className="d-flex" style={{ minHeight: '100vh' }}>

@@ -119,7 +119,30 @@ const FreightForwardPage = () => {
       // Redirection vers la page de connexion après 2 secondes
       setTimeout(() => { window.location.hash = '#/connexion'; }, 2000);
     } catch (err) {
-      setSubmitError(err?.message || 'Erreur lors de l\'inscription');
+      // Log technique pour le développeur
+      console.error('Erreur inscription client', err);
+      const raw = (err && err.message) ? String(err.message) : '';
+      const status = err && typeof err.status === 'number' ? err.status : undefined;
+
+      // Cas fonctionnels connus (messages plus précis pour l'utilisateur)
+      const lower = raw.toLowerCase();
+      let friendly = '';
+      if (/(email|e-mail)/i.test(raw) && /(existe|déjà|already)/i.test(raw)) {
+        friendly = "Cet email est déjà utilisé. Veuillez en choisir un autre ou vous connecter.";
+      } else if (/(téléphone|telephone|phone)/i.test(raw) && /(existe|déjà|already)/i.test(raw)) {
+        friendly = "Ce numéro de téléphone est déjà utilisé. Veuillez en choisir un autre ou vous connecter.";
+      } else if (/(mot de passe|password)/i.test(raw) && /(faible|weak|court|short|complexité)/i.test(raw)) {
+        friendly = "Votre mot de passe ne respecte pas les critères de sécurité. Utilisez au moins 8 caractères avec des lettres et des chiffres.";
+      } else if (/(champ|field)/i.test(raw) && /(obligatoire|required|manquant|missing)/i.test(raw)) {
+        friendly = "Certains champs obligatoires sont manquants ou invalides. Veuillez vérifier le formulaire.";
+      } else {
+        const looksTechnical = /http\s*\d+|internal server error|typeerror|syntaxerror|validationerror/i.test(raw);
+        const isServer = status && status >= 500;
+        friendly = (isServer || looksTechnical)
+          ? 'Une erreur est survenue. Veuillez réessayer plus tard.'
+          : (raw || 'Une erreur est survenue. Veuillez réessayer plus tard.');
+      }
+      setSubmitError(friendly);
     } finally {
       setSubmitting(false);
     }

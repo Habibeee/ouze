@@ -115,7 +115,15 @@ exports.getDevis = async (req, res) => {
 
     const rawStatut = (req.query.statut || '').toString().toLowerCase().trim();
 
-    let devis = translataire.devis || [];
+    // Côté dashboard transitaire, ne pas afficher les devis créés depuis "Nouveau devis"
+    // (devisOrigin === 'nouveau-devis'), ni ceux explicitement masqués
+    // (visiblePourTranslataire === false). Les admins continuent, eux, à voir
+    // l'intégralité des devis via les routes /admin.
+    let devis = (translataire.devis || []).filter(d => {
+      const originFlag = (d.devisOrigin || '').toString();
+      if (originFlag === 'nouveau-devis') return false;
+      return d.visiblePourTranslataire !== false;
+    });
     if (rawStatut) {
       devis = devis.filter(d => {
         const s = (d.statut || d.status || 'en_attente').toString().toLowerCase();
@@ -311,16 +319,24 @@ exports.getStatistiques = async (req, res) => {
   try {
     const translataire = await Translataire.findById(req.user.id);
 
+    // Ne compter dans les statistiques que les devis effectivement visibles pour le translataire
+    // et qui ne proviennent pas du flux "Nouveau devis" admin-only.
+    const devisVisibles = (translataire.devis || []).filter(d => {
+      const originFlag = (d.devisOrigin || '').toString();
+      if (originFlag === 'nouveau-devis') return false;
+      return d.visiblePourTranslataire !== false;
+    });
+
     const stats = {
-      nombreDevisTotal: translataire.devis.length,
-      nombreDevisEnAttente: translataire.devis.filter(d => d.statut === 'en_attente').length,
-      nombreDevisAcceptes: translataire.devis.filter(d => d.statut === 'accepte').length,
-      nombreDevisRefuses: translataire.devis.filter(d => d.statut === 'refuse').length,
+      nombreDevisTotal: devisVisibles.length,
+      nombreDevisEnAttente: devisVisibles.filter(d => d.statut === 'en_attente').length,
+      nombreDevisAcceptes: devisVisibles.filter(d => d.statut === 'accepte').length,
+      nombreDevisRefuses: devisVisibles.filter(d => d.statut === 'refuse').length,
       nombreDevisEnvoyes: translataire.nombreDevisEnvoyes,
       nombreDevisTraites: translataire.nombreDevisTraites,
       nombreFormulaires: translataire.formulaires.length,
-      tauxAcceptation: translataire.devis.length > 0 
-        ? ((translataire.devis.filter(d => d.statut === 'accepte').length / translataire.devis.length) * 100).toFixed(2)
+      tauxAcceptation: devisVisibles.length > 0 
+        ? ((devisVisibles.filter(d => d.statut === 'accepte').length / devisVisibles.length) * 100).toFixed(2)
         : 0
     };
 

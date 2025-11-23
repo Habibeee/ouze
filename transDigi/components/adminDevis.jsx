@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
-import { listAdminDevis, archiveAdminDevis } from '../services/apiClient.js';
+import { listAdminDevis, archiveAdminDevis, listAdminTranslataires, assignAdminDevisToTranslataire } from '../services/apiClient.js';
 
 // Force le téléchargement pour les URLs Cloudinary (fl_attachment)
 const toDownloadUrl = (url, name) => {
@@ -76,6 +76,9 @@ const AdminDevis = () => {
   const [limit, setLimit] = useState(10);
   const [total, setTotal] = useState(0);
   const [detail, setDetail] = useState(null);
+  const [translataires, setTranslataires] = useState([]);
+  const [assignLoading, setAssignLoading] = useState(false);
+  const [selectedTranslataireId, setSelectedTranslataireId] = useState('');
 
   useEffect(() => {
     const load = async () => {
@@ -103,6 +106,19 @@ const AdminDevis = () => {
     };
     load();
   }, [page, limit]);
+
+  useEffect(() => {
+    const loadTranslataires = async () => {
+      try {
+        const res = await listAdminTranslataires({ page: 1, limit: 100, isApproved: true });
+        const list = res?.translataires || res?.items || [];
+        setTranslataires(list);
+      } catch (e) {
+        console.error('Erreur chargement transitaires pour assignation devis:', e?.message);
+      }
+    };
+    loadTranslataires();
+  }, []);
 
   const handleArchive = async (id) => {
     if (!id) return;
@@ -148,6 +164,40 @@ const AdminDevis = () => {
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / limit));
   const pageRows = filtered.slice((page - 1) * limit, page * limit);
+
+  const handleAssignToTranslataire = async () => {
+    if (!detail || !detail.id) return;
+    if (!selectedTranslataireId) {
+      alert('Veuillez choisir un transitaire.');
+      return;
+    }
+    if (!window.confirm('Envoyer ce devis à ce transitaire ?')) return;
+    try {
+      setAssignLoading(true);
+      await assignAdminDevisToTranslataire(detail.id, selectedTranslataireId);
+      // Rechargement des devis admin pour mettre à jour le statut
+      const res = await listAdminDevis({ page, limit });
+      const list = res?.items || res?.devis || res || [];
+      const mapped = list.map((d) => {
+        const cid = d._id || d.id || '';
+        const client = extractClient(d);
+        const route = extractRoute(d);
+        const det = extractDetails(d);
+        const created = d.createdAt ? new Date(d.createdAt).toISOString().slice(0, 10) : '';
+        const statut = normalizeStatus(d.statut || d.status);
+        return { id: cid, client, route, created, statut, details: det, raw: d };
+      });
+      setRows(mapped);
+      setTotal(Number(res?.total || res?.count || list.length) || list.length);
+      // Fermer le panneau de détail après assignation
+      setDetail(null);
+      setSelectedTranslataireId('');
+    } catch (e) {
+      alert(e?.message || "Erreur lors de l'envoi du devis au transitaire");
+    } finally {
+      setAssignLoading(false);
+    }
+  };
 
   return (
     <div className="card border-0 shadow-sm mt-3">
@@ -268,43 +318,165 @@ const AdminDevis = () => {
             <button type="button" className="btn-close text-reset" aria-label="Fermer" onClick={() => setDetail(null)}></button>
           </div>
           <div className="offcanvas-body">
-            <h6 className="mb-2">Client</h6>
-            <p className="small mb-1"><strong>Nom :</strong> {detail.client.name}</p>
-            <p className="small mb-1"><strong>Email :</strong> {detail.client.email || '-'}</p>
-            <p className="small mb-3"><strong>Téléphone :</strong> {detail.client.phone || '-'}</p>
+            {(() => {
+              const raw = detail.raw || {};
+              const typeService = raw.typeService || '-';
+              const description = raw.description || '';
+              const origin = raw.origin || raw.origine || '';
+              const destination = raw.destination || raw.arrivee || '';
+              const montant = raw.montantEstime;
+              const clientFiles = Array.isArray(raw.clientFichiers)
+                ? raw.clientFichiers
+                : (raw.clientFichiers ? [raw.clientFichiers] : (raw.clientFichier ? [raw.clientFichier] : []));
+              const hasClientFiles = clientFiles && clientFiles.length;
+              const statutNorm = normalizeStatus(raw.statut || raw.status || detail.statut);
+              const alreadyForwarded = !!raw.forwardedToTranslataire;
 
-            <h6 className="mb-2">Transport</h6>
-            <p className="small mb-1"><strong>Trajet :</strong> {detail.route || '-'}</p>
-            <p className="small mb-1"><strong>Date de création :</strong> {detail.created || '-'}</p>
+              const asStatusBadge = (s) => {
+                const v = (s || '').toString().toLowerCase();
+                if (v.includes('attent') || v.includes('pending')) return { bg: '#FFF3E0', fg: '#F57C00', label: 'En attente' };
+                if (v.includes('accep')) return { bg: '#E3F2FD', fg: '#1976D2', label: 'Accepté' };
+                if (v.includes('refus') || v.includes('rej')) return { bg: '#FFEBEE', fg: '#C62828', label: 'Refusé' };
+                if (v.includes('annul') || v.includes('cancel')) return { bg: '#F3E5F5', fg: '#6A1B9A', label: 'Annulé' };
+                if (v.includes('archiv') || v.includes('traite')) return { bg: '#E8F5E9', fg: '#2E7D32', label: 'Traité / Archivé' };
+                return { bg: '#ECEFF1', fg: '#37474F', label: s || 'Statut inconnu' };
+              };
+              const badge = asStatusBadge(statutNorm);
 
-            <h6 className="mb-2 mt-3">Détails de la marchandise</h6>
-            <p className="small mb-1"><strong>Type :</strong> {detail.details.marchandise || '-'}</p>
-            <p className="small mb-1"><strong>Poids :</strong> {detail.details.poids || '-'}</p>
-            <p className="small mb-1"><strong>Volume :</strong> {detail.details.volume || '-'}</p>
-            <p className="small mb-1"><strong>Mode de transport :</strong> {detail.details.mode || '-'}</p>
-            <p className="small mb-3"><strong>Dimensions :</strong> {detail.details.dimensions || '-'}</p>
+              return (
+                <>
+                  <div className="mb-3">
+                    <div className="text-muted small">ID</div>
+                    <div className="fw-semibold">{detail.id}</div>
+                  </div>
+                  <div className="mb-3">
+                    <div className="text-muted small">Client</div>
+                    <div className="fw-semibold">{detail.client.name}</div>
+                    <div className="small text-muted">{detail.client.email || '-'}</div>
+                    <div className="small text-muted">{detail.client.phone || '-'}</div>
+                  </div>
+                  <div className="mb-3">
+                    <div className="text-muted small">Type de service</div>
+                    <div className="fw-semibold">{typeService}</div>
+                  </div>
+                  <div className="mb-3">
+                    <div className="text-muted small">Origine</div>
+                    <div className="fw-semibold">{origin || '-'}</div>
+                  </div>
+                  <div className="mb-3">
+                    <div className="text-muted small">Destination</div>
+                    <div className="fw-semibold">{destination || '-'}</div>
+                  </div>
+                  <div className="mb-3">
+                    <div className="text-muted small">Itinéraire</div>
+                    <div className="fw-semibold">{detail.route || '-'}</div>
+                  </div>
+                  <div className="mb-3">
+                    <div className="text-muted small">Date de création</div>
+                    <div className="fw-semibold">{detail.created || '-'}</div>
+                  </div>
+                  {description && (
+                    <div className="mb-3">
+                      <div className="text-muted small">Description</div>
+                      <div>{description}</div>
+                    </div>
+                  )}
+                  {typeof montant !== 'undefined' && montant !== null && (
+                    <div className="mb-3">
+                      <div className="text-muted small">Montant estimé (client)</div>
+                      <div className="fw-semibold">{String(montant)}</div>
+                    </div>
+                  )}
+                  {hasClientFiles && (
+                    <div className="mb-3">
+                      <div className="text-muted small">Pièces jointes du client</div>
+                      <ul className="small mb-0">
+                        {clientFiles.map((f, idx) => {
+                          const url = (f && typeof f === 'object') ? (f.url || f.link || f.location) : f;
+                          const name = (f && typeof f === 'object') ? (f.name || f.filename || f.originalName || `Fichier ${idx + 1}`) : `Fichier ${idx + 1}`;
+                          if (!url) return null;
+                          return (
+                            <li key={idx}>
+                              <a href={toDownloadUrl(url, name)} download>{name}</a>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </div>
+                  )}
+                  <div className="mb-4">
+                    <div className="text-muted small">Statut</div>
+                    <span className="badge px-3 py-2" style={{ backgroundColor: badge.bg, color: badge.fg, fontWeight: 500 }}>
+                      {badge.label}
+                    </span>
+                  </div>
 
-            <h6 className="mb-2">Notes</h6>
-            <p className="small mb-3" style={{ whiteSpace: 'pre-wrap' }}>{detail.details.notes || '-'}</p>
+                  {/* Assignation à un transitaire */}
+                  <div className="mb-4">
+                    <div className="text-muted small mb-1">Envoyer ce devis à un transitaire</div>
+                    {alreadyForwarded ? (
+                      <p className="small text-muted mb-0">
+                        Ce devis a déjà été transmis à un transitaire.
+                      </p>
+                    ) : (
+                      <>
+                        <select
+                          className="form-select mb-2"
+                          value={selectedTranslataireId}
+                          onChange={(e) => setSelectedTranslataireId(e.target.value)}
+                        >
+                          <option value="">Choisir un transitaire...</option>
+                          {translataires.map((t) => (
+                            <option key={t._id || t.id} value={t._id || t.id}>
+                              {t.nomEntreprise || t.name || 'Transitaire'}
+                            </option>
+                          ))}
+                        </select>
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-primary w-100"
+                          onClick={handleAssignToTranslataire}
+                          disabled={assignLoading || !translataires.length}
+                        >
+                          {assignLoading ? 'Envoi en cours...' : 'Envoyer au transitaire'}
+                        </button>
+                      </>
+                    )}
+                  </div>
 
-            {Array.isArray(detail.details.docs) && detail.details.docs.length > 0 && (
-              <>
-                <h6 className="mb-2">Documents</h6>
-                <ul className="small">
-                  {detail.details.docs.map((doc, idx) => (
-                    <li key={idx}>
-                      {doc.url ? (
-                        <a href={toDownloadUrl(doc.url, doc.name || `Document ${idx + 1}`)} download>
-                          {doc.name || `Document ${idx + 1}`}
-                        </a>
-                      ) : (
-                        doc.name || `Document ${idx + 1}`
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              </>
-            )}
+                  <hr className="my-3" />
+
+                  <h6 className="mb-2">Détails de la marchandise</h6>
+                  <p className="small mb-1"><strong>Type :</strong> {detail.details.marchandise || '-'}</p>
+                  <p className="small mb-1"><strong>Poids :</strong> {detail.details.poids || '-'}</p>
+                  <p className="small mb-1"><strong>Volume :</strong> {detail.details.volume || '-'}</p>
+                  <p className="small mb-1"><strong>Mode de transport :</strong> {detail.details.mode || '-'}</p>
+                  <p className="small mb-3"><strong>Dimensions :</strong> {detail.details.dimensions || '-'}</p>
+
+                  <h6 className="mb-2">Notes</h6>
+                  <p className="small mb-3" style={{ whiteSpace: 'pre-wrap' }}>{detail.details.notes || '-'}</p>
+
+                  {Array.isArray(detail.details.docs) && detail.details.docs.length > 0 && (
+                    <>
+                      <h6 className="mb-2">Autres documents</h6>
+                      <ul className="small">
+                        {detail.details.docs.map((doc, idx) => (
+                          <li key={idx}>
+                            {doc.url ? (
+                              <a href={toDownloadUrl(doc.url, doc.name || `Document ${idx + 1}`)} download>
+                                {doc.name || `Document ${idx + 1}`}
+                              </a>
+                            ) : (
+                              doc.name || `Document ${idx + 1}`
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                    </>
+                  )}
+                </>
+              );
+            })()}
           </div>
         </div>
       )}

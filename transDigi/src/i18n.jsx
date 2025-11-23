@@ -107,7 +107,7 @@ const TRANSLATIONS = {
     'home.how.forwarders.step3.text': 'Répondez aux demandes avec des offres compétitives.',
     'home.how.forwarders.step4.title': 'Gagnez de nouveaux clients',
     'home.how.forwarders.step4.text': 'Développez votre activité sur de nouveaux marchés.',
-    'home.testimonials.title': "Ce qu'ils en disent",
+    'home.testimonials.title': 'Avis de nos clients et partenaires',
     'home.testimonials.quote1.text': "\"TransDigiSN a transformé notre gestion logistique. Trouver un transitaire fiable n'a jamais été aussi simple et rapide. Une plateforme indispensable !\"",
     'home.testimonials.quote1.author': 'Amy Ndiaye',
     'home.testimonials.quote1.role': 'Responsable Logistique, TechCorp',

@@ -41,6 +41,27 @@ router.post('/auth/login', async (req, res) => {
       });
     }
 
+    // Vérifier que le compte est approuvé (clients & transitaires)
+    // On considère qu'un compte est "en attente" si isApproved === false
+    // ou si un champ statut est présent avec la valeur 'en_attente'.
+    const isPendingApproval = (user) => {
+      try {
+        if (user && user.isApproved === false) return true;
+        const statut = user && user.statut ? String(user.statut).toLowerCase() : '';
+        if (statut === 'en_attente') return true;
+        return false;
+      } catch {
+        return false;
+      }
+    };
+
+    if (isPendingApproval(user)) {
+      return res.status(403).json({
+        success: false,
+        message: "Votre compte est en attente d'approbation par l'administrateur"
+      });
+    }
+
     // Vérifier JWT_SECRET
     if (!JWT_SECRET) {
       console.error('❌ JWT_SECRET manquant lors de la création du token');

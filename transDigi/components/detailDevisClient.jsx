@@ -10,19 +10,37 @@ const DetailDevisClient = () => {
   const toast = useToast();
   const [item, setItem] = useState(null);
 
+  // Force le téléchargement pour les URLs Cloudinary (fl_attachment)
+  const toDownloadUrl = (url, name) => {
+    if (!url) return url;
+    try {
+      const u = new URL(url);
+      if (!u.hostname.includes('res.cloudinary.com')) return url;
+    } catch {
+      return url;
+    }
+    if (url.includes('/upload/')) {
+      const safeName = (name || 'document').toString().replace(/[^a-z0-9._-]/gi, '_');
+      const parts = url.split('/upload/');
+      return `${parts[0]}/upload/fl_attachment:${safeName}/${parts[1]}`;
+    }
+    return url;
+  };
+
   const triggerDownload = (urlRaw, name) => {
     if (!urlRaw) return;
     const safeName = (name || 'document').toString();
+    const url = toDownloadUrl(urlRaw, safeName);
     try {
       const a = document.createElement('a');
-      a.href = urlRaw;
+      a.href = url || urlRaw;
       a.download = safeName;
       a.style.display = 'none';
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
     } catch {
-      try { window.open(urlRaw, '_blank'); } catch {}
+      try { window.open(url || urlRaw, '_blank'); } catch {}
     }
   };
 
