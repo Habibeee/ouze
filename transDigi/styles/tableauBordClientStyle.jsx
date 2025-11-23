@@ -1,8 +1,14 @@
 export const clientStyles = {
-  layout: { minHeight: '100vh', backgroundColor: 'var(--bg)' },
-  sidebar: { width: '280px', position: 'fixed', height: '100vh', overflowY: 'auto', zIndex: 1000 },
+  layout: { 
+    minHeight: '100vh', 
+    backgroundColor: 'var(--bg)',
+    maxWidth: '100%',
+    margin: '0 auto',
+    boxSizing: 'border-box'
+  },
+  sidebar: { width: '240px', position: 'fixed', height: '100vh', overflowY: 'auto', zIndex: 1000 },
   primary: '#0EA5E9',
-  mainMarginLg: '280px',
+  mainMarginLg: '240px',
   menuBtnBase: { border: 'none', padding: '12px 16px', borderRadius: '8px' },
   activeMenuBtn: { backgroundColor: '#0EA5E9', color: '#ffffff' },
   inactiveMenuBtn: { backgroundColor: 'transparent', color: 'var(--text)' },
