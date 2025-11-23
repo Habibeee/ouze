@@ -58,10 +58,10 @@ export const headerCss = `
   @media (max-width: 991.98px) {
     .mobile-menu-toggle {
       border-radius: 999px;
-      border-width: 1px;
-      border-color: #0b5f8a;
-      background-color: #0b5f8a;
-      color: #ffffff;
+      border-width: 0;
+      border-color: transparent;
+      background-color: transparent;
+      color: #000000;
       width: 40px;
       height: 40px;
       display: inline-flex;
@@ -71,8 +71,21 @@ export const headerCss = `
     }
 
     .mobile-menu-toggle:hover {
-      background-color: #0a4a6a;
-      border-color: #0a4a6a;
+      background-color: transparent;
+      border-color: transparent;
+      color: #000000;
+    }
+
+    /* Icône du menu mobile en mode sombre : blanche */
+    [data-theme="dark"] .navbar-compact .mobile-menu-toggle {
+      background-color: transparent;
+      border-color: transparent;
+      color: #ffffff;
+    }
+
+    [data-theme="dark"] .navbar-compact .mobile-menu-toggle:hover {
+      background-color: transparent;
+      border-color: transparent;
       color: #ffffff;
     }
 
