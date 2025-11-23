@@ -419,15 +419,21 @@ export const clientCss = `
 
     .default-wrap .client-quote-actions .btn {
       flex: 1 1 0;
-      min-width: 0 !important;
+      min-width: 0 !important; /* même largeur pour Détail / Modifier / Annuler */
       text-align: center;
       padding: 0.25rem 0.5rem;
       font-size: 0.72rem;
+      margin-right: 0.3rem;
+    }
+
+    .default-wrap .client-quote-actions .btn:last-child {
+      margin-right: 0;
     }
 
     /* Si une seule action (ex : devis accepté), le bouton prend toute la ligne */
     .default-wrap .client-quote-actions .btn:only-child {
       flex-basis: 100%;
+      margin-right: 0;
     }
   }
 
