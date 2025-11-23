@@ -715,12 +715,12 @@ return (
                     </button>
                   </div>
                 </div>
-                <div className="d-flex flex-column gap-3">
+                <div className="d-flex flex-column gap-3 client-quotes-list">
                   {devis.filter(item => devisFilter==='tous' ? true : item.status===devisFilter).map((item) => (
-                    <div key={item.id} className="border rounded-3 p-2 p-md-3 shadow-sm" style={{ background:'var(--card)' }}>
+                    <div key={item.id} className="border rounded-3 p-2 p-md-3 shadow-sm client-quote-card" style={{ background:'var(--card)' }}>
                       <div className="d-flex flex-column flex-sm-row justify-content-between align-items-start gap-2">
                         <div className="d-flex flex-column flex-grow-1" style={{ minWidth: 0 }}>
-                          <div className="d-flex align-items-center gap-2 flex-wrap">
+                          <div className="d-flex align-items-center gap-3 flex-wrap">
                             <span className={`badge rounded-pill px-2 px-md-3 py-1 py-md-2 ${item.status === 'accepte' ? 'bg-success' : item.status === 'refuse' ? 'bg-danger' : item.status === 'annule' ? 'bg-danger' : 'bg-warning text-dark' }`}>
                               {item.status === 'accepte'
                                 ? t('client.quotes.status.accepted')
@@ -737,7 +737,7 @@ return (
                           <div className="mt-2 fw-semibold" style={{ fontSize: '15px' }}>{item.routeLabel && item.routeLabel !== '-' ? item.routeLabel : t('client.quotes.route_missing')}</div>
                           <div className="text-muted small">{item.date}</div>
                         </div>
-                        <div className="d-flex flex-column flex-sm-row align-items-stretch align-items-sm-start gap-2 flex-shrink-0 client-quote-actions text-end text-sm-start">
+                        <div className="d-flex flex-row align-items-stretch align-items-sm-start gap-2 flex-shrink-0 client-quote-actions text-end text-sm-start">
                           <a
                             className="btn btn-sm btn-outline-secondary btn-client-detail align-self-end align-self-sm-start"
                             style={{ minWidth: '120px' }}

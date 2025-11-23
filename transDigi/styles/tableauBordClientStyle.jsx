@@ -34,6 +34,17 @@ export const clientCss = `
     color: var(--text);
   }
 
+  /* Cartes de devis dans "Mes devis" */
+  .default-wrap .client-quotes-list {
+    row-gap: 1rem;
+  }
+
+  .default-wrap .client-quote-card {
+    width: 100%;
+    box-shadow: 0 4px 10px rgba(15,23,42,0.06);
+    background-color: var(--card);
+  }
+
   /* Filtres "Tous / Acceptés / En attente" - dashboard client */
   .default-wrap .client-filter-group {
     display: flex;
@@ -66,22 +77,28 @@ export const clientCss = `
     color: #f97316;
   }
 
-  .default-wrap .client-filter-btn:hover,
-  .default-wrap .client-filter-btn.client-filter-active {
+  /* état survol commun */
+  .default-wrap .client-filter-btn:hover {
     color: #ffffff;
   }
 
-  .default-wrap .client-filter-all.client-filter-active,
+  /* Bouton actif : légère mise en avant sans fond coloré persistant pour "Tous" et "En attente" */
+  .default-wrap .client-filter-btn.client-filter-active {
+    box-shadow: 0 0 0 1px rgba(15,23,42,0.05);
+  }
+
+  /* "Tous" : seulement hover en vert */
   .default-wrap .client-filter-all:hover {
     background-color: #16a34a;
   }
 
+  /* "Acceptés" : on garde un fond bleu en actif pour bien signaler le filtre sélectionné */
   .default-wrap .client-filter-accepted.client-filter-active,
   .default-wrap .client-filter-accepted:hover {
     background-color: #0ea5e9;
   }
 
-  .default-wrap .client-filter-pending.client-filter-active,
+  /* "En attente" : seulement hover en orange (plus de fond jaune persistant) */
   .default-wrap .client-filter-pending:hover {
     background-color: #f97316;
   }
@@ -370,24 +387,37 @@ export const clientCss = `
       white-space: nowrap;
     }
 
+    /* Filtres "Tous / Acceptés / En attente" sur mobile : 3 boutons de même largeur */
+    .default-wrap .client-filter-group {
+      width: 100%;
+      gap: 0.5rem;
+    }
+
+    .default-wrap .client-filter-group .client-filter-btn {
+      flex: 1 1 0;
+      min-width: 0;
+      text-align: center;
+      padding-inline: 0.75rem;
+    }
+
     /* Cartes "Mes devis" sur mobile */
     .default-wrap .border.rounded-3.p-2,
     .default-wrap .border.rounded-3.p-2.p-md-3 {
       display: flex;
       flex-direction: column;
-      gap: 0.5rem;
+      gap: 0.75rem;
     }
 
     .default-wrap .client-quote-actions {
       width: 100%;
       justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 0.5rem;
+      flex-wrap: nowrap;
+      gap: 0.4rem;
     }
 
     .default-wrap .client-quote-actions .btn {
-      flex: 1 1 calc(50% - 0.5rem);
-      min-width: 70px;
+      flex: 1 1 0;
+      min-width: 0 !important;
       text-align: center;
       padding: 0.25rem 0.45rem;
       font-size: 0.72rem;
