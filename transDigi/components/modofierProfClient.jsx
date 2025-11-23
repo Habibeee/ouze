@@ -2,8 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { Eye, EyeOff, User, Mail, Phone, MapPin, LayoutGrid, FileText, Clock, Truck, Search as SearchIcon } from 'lucide-react';
 import { modofierProfClientCss } from '../styles/modofierProfClientStyle.jsx';
 import { get, put, putForm } from '../services/apiClient.js';
+import { useI18n } from '../src/i18n.jsx';
 
 const ModofierProfClient = () => {
+  const { t } = useI18n();
   const [showCurrent, setShowCurrent] = useState(false);
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -53,7 +55,7 @@ const ModofierProfClient = () => {
           try { localStorage.setItem('avatarUrl', u.photoProfil); } catch {}
         }
       } catch (e) {
-        setErr(e?.message || 'Erreur chargement profil');
+        setErr(e?.message || t('client.profile.error.load'));
       }
     };
     run();
@@ -65,8 +67,8 @@ const ModofierProfClient = () => {
     setMsg(''); setErr(''); setFieldErr({ email: '', phone: '' });
     // validations simples
     const nextFieldErr = { email: '', phone: '' };
-    if (form.email && !isEmail(form.email)) nextFieldErr.email = 'E‑mail invalide';
-    if (form.phone && !isPhone(form.phone)) nextFieldErr.phone = 'Téléphone invalide';
+    if (form.email && !isEmail(form.email)) nextFieldErr.email = t('client.profile.error.email_invalid');
+    if (form.phone && !isPhone(form.phone)) nextFieldErr.phone = t('client.profile.error.phone_invalid');
     if (nextFieldErr.email || nextFieldErr.phone) { setFieldErr(nextFieldErr); return; }
     try {
       setSaving(true);
@@ -81,20 +83,20 @@ const ModofierProfClient = () => {
         const fd = new FormData();
         fd.append('photo', avatarFile);
         const res = await putForm('/users/photo', fd);
-        setMsg(res?.message || 'Photo mise à jour');
+        setMsg(res?.message || t('client.profile.msg.photo_updated'));
         try {
           const url = (res?.url || res?.photoUrl || res?.photo || avatarPreview || '').toString();
           if (url) localStorage.setItem('avatarUrl', url);
         } catch {}
       }
-      if (!avatarFile) setMsg('Informations mises à jour');
+      if (!avatarFile) setMsg(t('client.profile.msg.updated'));
     } catch (e) {
       if (e?.status === 409) {
         const m = (e?.message || '').toLowerCase();
-        if (m.includes('mail') || m.includes('email')) setFieldErr((p)=>({ ...p, email: 'Cet e‑mail est déjà utilisé' }));
-        if (m.includes('phone') || m.includes('télé') || m.includes('tel') || m.includes('telephone')) setFieldErr((p)=>({ ...p, phone: 'Ce téléphone est déjà utilisé' }));
+        if (m.includes('mail') || m.includes('email')) setFieldErr((p)=>({ ...p, email: t('client.profile.error.email_taken') }));
+        if (m.includes('phone') || m.includes('télé') || m.includes('tel') || m.includes('telephone')) setFieldErr((p)=>({ ...p, phone: t('client.profile.error.phone_taken') }));
       } else {
-        setErr(e?.message || 'Erreur lors de l\'enregistrement');
+        setErr(e?.message || t('client.profile.error.save'));
       }
     } finally {
       setSaving(false);
@@ -137,9 +139,9 @@ const ModofierProfClient = () => {
               </div>
               <div className="d-flex gap-2 justify-content-center mt-3">
                 <input id="avatarInput" type="file" accept="image/*" className="d-none" onChange={onAvatarChange} />
-                <button type="button" className="btn btn-outline-primary btn-sm" onClick={() => document.getElementById('avatarInput').click()}>Choisir une photo</button>
+                <button type="button" className="btn btn-outline-primary btn-sm" onClick={() => document.getElementById('avatarInput').click()}>{t('client.profile.buttons.choose_photo')}</button>
                 {avatarPreview && (
-                  <button type="button" className="btn btn-outline-secondary btn-sm" onClick={clearAvatar}>Supprimer</button>
+                  <button type="button" className="btn btn-outline-secondary btn-sm" onClick={clearAvatar}>{t('client.profile.buttons.remove_photo')}</button>
                 )}
               </div>
             </div>
@@ -151,31 +153,31 @@ const ModofierProfClient = () => {
               <div className="card-body p-4 p-md-5">
                 <form onSubmit={handleSubmit}>
                   {/* Informations personnelles */}
-                  <h6 className="section-title">Informations Personnelles</h6>
+                  <h6 className="section-title">{t('client.profile.section.personal')}</h6>
                   <div className="row g-3 mb-4">
                     <div className="col-12 col-md-6">
-                      <label className="form-label fw-semibold small">Nom</label>
+                      <label className="form-label fw-semibold small">{t('client.profile.field.last_name')}</label>
                       <div className="input-group input-with-icon">
                         <span className="input-group-text"><User size={18} /></span>
                         <input type="text" className="form-control" value={form.lastName} onChange={(e) => handleChange('lastName', e.target.value)} />
                       </div>
                     </div>
                     <div className="col-12 col-md-6">
-                      <label className="form-label fw-semibold small">Prénom</label>
+                      <label className="form-label fw-semibold small">{t('client.profile.field.first_name')}</label>
                       <div className="input-group input-with-icon">
                         <span className="input-group-text"><User size={18} /></span>
                         <input type="text" className="form-control" value={form.firstName} onChange={(e) => handleChange('firstName', e.target.value)} />
                       </div>
                     </div>
                     <div className="col-12">
-                      <label className="form-label fw-semibold small">Adresse complète</label>
+                      <label className="form-label fw-semibold small">{t('client.profile.field.address')}</label>
                       <div className="input-group input-with-icon">
                         <span className="input-group-text"><MapPin size={18} /></span>
                         <input type="text" className="form-control" value={form.address} onChange={(e) => handleChange('address', e.target.value)} />
                       </div>
                     </div>
                     <div className="col-12 col-md-6">
-                      <label className="form-label fw-semibold small">Numéro de téléphone</label>
+                      <label className="form-label fw-semibold small">{t('client.profile.field.phone')}</label>
                       <div className="input-group input-with-icon">
                         <span className="input-group-text"><Phone size={18} /></span>
                         <input type="tel" className={`form-control ${fieldErr.phone ? 'is-invalid' : ''}`} value={form.phone} onChange={(e) => handleChange('phone', normalizePhone(e.target.value))} onKeyDown={(e)=>{ const allowed = /[0-9+]/; if (e.key.length===1 && !allowed.test(e.key)) e.preventDefault(); }} />
@@ -183,7 +185,7 @@ const ModofierProfClient = () => {
                       {fieldErr.phone && <div className="invalid-feedback d-block">{fieldErr.phone}</div>}
                     </div>
                     <div className="col-12 col-md-6">
-                      <label className="form-label fw-semibold small">Adresse e-mail</label>
+                      <label className="form-label fw-semibold small">{t('client.profile.field.email')}</label>
                       <div className="input-group input-with-icon">
                         <span className="input-group-text"><Mail size={18} /></span>
                         <input type="email" className={`form-control ${fieldErr.email ? 'is-invalid' : ''}`} value={form.email} onChange={(e) => handleChange('email', e.target.value)} />
@@ -195,30 +197,30 @@ const ModofierProfClient = () => {
                   <hr className="my-4" />
 
                   {/* Sécurité */}
-                  <h6 className="section-title">Sécurité</h6>
+                  <h6 className="section-title">{t('client.profile.section.security')}</h6>
                   <div className="row g-3 mb-4">
                     <div className="col-12">
-                      <label className="form-label fw-semibold small">Mot de passe actuel</label>
+                      <label className="form-label fw-semibold small">{t('client.profile.field.current_password')}</label>
                       <div className="input-group input-with-icon">
-                        <input type={showCurrent ? 'text' : 'password'} className="form-control" placeholder="Entrez votre mot de passe actuel" value={form.currentPassword} onChange={(e) => handleChange('currentPassword', e.target.value)} />
+                        <input type={showCurrent ? 'text' : 'password'} className="form-control" placeholder={t('client.profile.field.current_password.placeholder')} value={form.currentPassword} onChange={(e) => handleChange('currentPassword', e.target.value)} />
                         <button type="button" className="btn btn-light icon-toggle" onClick={() => setShowCurrent(s => !s)}>
                           {showCurrent ? <EyeOff size={18} /> : <Eye size={18} />}
                         </button>
                       </div>
                     </div>
                     <div className="col-12 col-md-6">
-                      <label className="form-label fw-semibold small">Nouveau mot de passe</label>
+                      <label className="form-label fw-semibold small">{t('client.profile.field.new_password')}</label>
                       <div className="input-group input-with-icon">
-                        <input type={showNew ? 'text' : 'password'} className="form-control" placeholder="Entrez un nouveau mot de passe" value={form.newPassword} onChange={(e) => handleChange('newPassword', e.target.value)} />
+                        <input type={showNew ? 'text' : 'password'} className="form-control" placeholder={t('client.profile.field.new_password.placeholder')} value={form.newPassword} onChange={(e) => handleChange('newPassword', e.target.value)} />
                         <button type="button" className="btn btn-light icon-toggle" onClick={() => setShowNew(s => !s)}>
                           {showNew ? <EyeOff size={18} /> : <Eye size={18} />}
                         </button>
                       </div>
                     </div>
                     <div className="col-12 col-md-6">
-                      <label className="form-label fw-semibold small">Confirmer le nouveau mot de passe</label>
+                      <label className="form-label fw-semibold small">{t('client.profile.field.confirm_password')}</label>
                       <div className="input-group input-with-icon">
-                        <input type={showConfirm ? 'text' : 'password'} className="form-control" placeholder="Confirmez votre nouveau mot de passe" value={form.confirmPassword} onChange={(e) => handleChange('confirmPassword', e.target.value)} />
+                        <input type={showConfirm ? 'text' : 'password'} className="form-control" placeholder={t('client.profile.field.confirm_password.placeholder')} value={form.confirmPassword} onChange={(e) => handleChange('confirmPassword', e.target.value)} />
                         <button type="button" className="btn btn-light icon-toggle" onClick={() => setShowConfirm(s => !s)}>
                           {showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
                         </button>
@@ -228,8 +230,8 @@ const ModofierProfClient = () => {
 
                   {/* Actions */}
                   <div className="d-flex flex-column flex-sm-row gap-3 justify-content-end">
-                    <button type="button" className="btn btn-outline-secondary" disabled={saving}>Annuler</button>
-                    <button type="submit" className="btn btn-primary brand-primary" disabled={saving}>{saving ? 'Enregistrement...' : 'Enregistrer les modifications'}</button>
+                    <button type="button" className="btn btn-outline-secondary" disabled={saving}>{t('client.profile.actions.cancel')}</button>
+                    <button type="submit" className="btn btn-primary brand-primary" disabled={saving}>{saving ? t('client.profile.actions.saving') : t('client.profile.actions.save')}</button>
                   </div>
                 </form>
               </div>

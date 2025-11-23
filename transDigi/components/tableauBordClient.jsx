@@ -529,7 +529,7 @@ return (
         { id: 'devis-admin', label: t('client.sidebar.new_quote'), icon: FileText },
         { id: 'historique', label: t('client.sidebar.history'), icon: Clock },
         { id: 'envois', label: t('client.sidebar.shipments'), icon: Truck },
-        { id: 'fichiers', label: 'Mes fichiers reçus', icon: FileText },
+        { id: 'fichiers', label: t('client.sidebar.files_received'), icon: FileText },
         { id: 'profil', label: t('client.sidebar.profile'), icon: User },
       ]}
       onNavigate={(id) => {
