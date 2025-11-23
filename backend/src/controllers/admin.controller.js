@@ -972,3 +972,29 @@ const bulkAccountsAction = async (req, res) => {
     return res.status(500).json({ success: false, message: 'Erreur lors de l\'opération en masse', error: error.message });
   }
 };
+
+// Export des fonctions du contrôleur
+module.exports = {
+  updateAdminEmail,
+  getAdminProfile,
+  updateAdminProfile,
+  listAdmins,
+  createAdmin,
+  updateAdminStatus,
+  deleteAdminAccount,
+  changeAdminPassword,
+  getAllUsers,
+  getDevisById,
+  updateDevisStatus,
+  setTranslataireRating,
+  approveUser,
+  getAllTranslataires,
+  approveTranslataire,
+  toggleBlockAccount,
+  deleteAccount,
+  getStatistiques,
+  getDashboardUsers,
+  getDashboardTranslataires,
+  getAllDevis,
+  bulkAccountsAction
+};
