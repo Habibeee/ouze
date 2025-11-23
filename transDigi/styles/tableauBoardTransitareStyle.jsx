@@ -9,6 +9,53 @@ export const transitareCss = `
   /* ========================================
      🎨 STYLES RESPONSIVE - DASHBOARD TRANSITAIRE
      ======================================== */
+  
+  /* Styles pour les cartes de statistiques */
+  .forwarder-stats-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    text-align: center;
+    min-height: 90px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  
+  .forwarder-stats-card .card-body {
+    padding: 0.5rem !important;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  
+  .forwarder-stats-card .h4 {
+    font-size: 1.25rem;
+    margin-bottom: 0;
+    line-height: 1.2;
+  }
+  
+  .forwarder-stats-card .small {
+    font-size: 0.7rem;
+    opacity: 0.8;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  /* Ajustements pour mobile */
+  @media (max-width: 767.98px) {
+    .forwarder-stats-card {
+      min-height: 80px;
+    }
+    
+    .forwarder-stats-card .h4 {
+      font-size: 1.1rem;
+    }
+    
+    .forwarder-stats-card .small {
+      font-size: 0.65rem;
+    }
+  }
 
   /* Base styles */
   :root { --sidebar-width: 280px; }

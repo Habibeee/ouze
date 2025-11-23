@@ -545,21 +545,36 @@ const TransitaireDashboard = () => {
         {/* Main content area */}
         <div className="container-fluid px-2 px-md-4 py-3 py-md-4">
           {/* Page Title */}
-          <div className="d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between gap-2 mb-3 mb-md-4">
-            <h1 className="h3 h2-md fw-bold mb-0 text-body forwarder-main-title">{t('forwarder.page.title')}</h1>
-            <button className="btn btn-outline-secondary btn-sm" onClick={async ()=>{ try { await fetchDevis({ page:1, limit, status: activeTab }); lastStatsAtRef.current = 0; await updateStats(); } catch {} }}>{t('forwarder.page.refresh')}</button>
+          <div className="d-flex flex-column flex-sm-row align-items-start justify-content-between gap-2 mb-3 mb-md-4">
+            <div className="d-flex flex-column">
+              <h1 className="h3 h2-md fw-bold mb-0 text-body forwarder-main-title">{t('forwarder.page.title')}</h1>
+              <h5 className="fw-semibold text-body forwarder-stats-title mb-0">{t('forwarder.stats.title')}</h5>
+            </div>
+            <div className="ms-auto">
+              <button 
+                className="btn btn-outline-secondary btn-sm" 
+                onClick={async ()=>{ 
+                  try { 
+                    await fetchDevis({ page:1, limit, status: activeTab }); 
+                    lastStatsAtRef.current = 0; 
+                    await updateStats(); 
+                  } catch {} 
+                }}
+              >
+                {t('forwarder.page.refresh')}
+              </button>
+            </div>
           </div>
 
           {/* Stats Section */}
           <div className="mb-3 mb-md-4">
-            <h5 className="fw-semibold mb-3 text-body forwarder-stats-title">{t('forwarder.stats.title')}</h5>
-            <div className="row g-2 g-md-3">
+            <div className="row g-2 g-md-3 justify-content-center">
               {stats.map((stat, index) => (
-                <div key={index} className="col-12 col-sm-6 col-lg-3">
-                  <div className="card border-0 shadow-sm h-100 forwarder-stats-card">
-                    <div className="card-body p-3">
-                      <div className="small mb-2" style={{ color: 'var(--bs-body-color)' }}>{stat.label}</div>
-                      <div className="h3 fw-bold mb-0" style={{ color: 'var(--bs-body-color)' }}>{stat.value}</div>
+                <div key={index} className="col-6 col-sm-4 col-lg-2 d-flex">
+                  <div className="card border-0 shadow-sm w-100 forwarder-stats-card">
+                    <div className="card-body p-2 d-flex flex-column justify-content-center">
+                      <div className="small mb-1 text-muted text-truncate" title={stat.label}>{stat.label}</div>
+                      <div className="h4 fw-bold mb-0 text-nowrap">{stat.value}</div>
                     </div>
                   </div>
                 </div>
