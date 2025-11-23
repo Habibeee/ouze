@@ -568,9 +568,9 @@ const TransitaireDashboard = () => {
 
           {/* Stats Section */}
           <div className="mb-3 mb-md-4">
-            <div className="row g-2 g-md-3 justify-content-center">
+            <div className="row g-1 g-md-2 justify-content-center">
               {stats.map((stat, index) => (
-                <div key={index} className="col-6 col-sm-4 col-lg-2 d-flex">
+                <div key={index} className="col-4 d-flex">
                   <div className="card border-0 shadow-sm w-100 forwarder-stats-card">
                     <div className="card-body p-2 d-flex flex-column justify-content-center">
                       <div className="small mb-1 text-muted text-truncate" title={stat.label}>{stat.label}</div>
@@ -587,15 +587,18 @@ const TransitaireDashboard = () => {
             <div className="card-body p-0">
               {/* Tabs */}
               <div className="d-flex flex-wrap align-items-center justify-content-between gap-3 p-3 border-bottom">
-                <div className="d-flex gap-2 flex-wrap">
-                  {tabs.map((tab) => (
+                <div className="d-flex flex-nowrap overflow-x-auto gap-1">
+                  {['En attente', 'En cours', 'Traité'].map((status) => (
                     <button
-                      key={tab.id}
-                      onClick={() => setActiveTab(tab.id)}
-                      className={`btn ${activeTab === tab.id ? 'text-white' : 'btn-light'}`}
-                      style={{ backgroundColor: activeTab === tab.id ? transitareStyles.primary : undefined, border: 'none' }}
+                      key={status}
+                      className={`btn btn-sm flex-shrink-0 ${
+                        activeTab === status.toLowerCase()
+                          ? 'btn-primary'
+                          : 'btn-outline-secondary'
+                      }`}
+                      onClick={() => setActiveTab(status.toLowerCase())}
                     >
-                      {tab.id === 'en-attente' ? t('forwarder.tabs.pending') : tab.id === 'en-cours' ? t('forwarder.tabs.in_progress') : t('forwarder.tabs.processed')} ({tab.count})
+                      {status}
                     </button>
                   ))}
                 </div>
@@ -612,9 +615,19 @@ const TransitaireDashboard = () => {
                 <table className="table table-hover mb-0">
                   <thead className="bg-light">
                     <tr>
-                      <th className="px-4 py-3">{t('forwarder.table.header.id')}</th>
+                      <th className="px-4 py-3">
+                        <span className="d-none d-sm-inline">{t('forwarder.table.header.id')}</span>
+                        <span className="d-inline d-sm-none">ID</span>
+                      </th>
                       <th className="py-3">{t('forwarder.table.header.client')}</th>
-                      <th className="py-3">{t('forwarder.table.header.date')}</th>
+                      <th className="text-nowrap">
+                        <span className="d-inline d-sm-none" title={devis._id}>
+                          {devis._id.substring(0, 6)}...
+                        </span>
+                        <span className="d-none d-sm-inline">
+                          {devis._id}
+                        </span>
+                      </th>
                       <th className="py-3">{t('forwarder.table.header.route')}</th>
                       <th className="py-3">{t('forwarder.table.header.status')}</th>
                       <th className="py-3">{t('forwarder.table.header.actions')}</th>
@@ -640,7 +653,14 @@ const TransitaireDashboard = () => {
                       <tr key={item.id}>
                         <td className="px-4 py-3 fw-semibold">{item.id}</td>
                         <td className="py-3">{item.client}</td>
-                        <td className="py-3 text-body">{item.date}</td>
+                        <td className="text-nowrap">
+                          <span className="d-inline d-sm-none" title={item._id}>
+                            {item._id.substring(0, 6)}...
+                          </span>
+                          <span className="d-none d-sm-inline">
+                            {item._id}
+                          </span>
+                        </td>
                         <td className="py-3 text-body">{item.route}</td>
                         <td className="py-3">
                           <span className="badge px-3 py-2" style={{ backgroundColor: statusBadge(item.status).bg, color: statusBadge(item.status).fg, fontWeight: '500' }}>
