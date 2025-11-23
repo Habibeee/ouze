@@ -973,6 +973,58 @@ const bulkAccountsAction = async (req, res) => {
   }
 };
 
+// @desc    Assigner un devis admin à un transitaire
+// @route   POST /api/admin/devis/:id/assign-translataire
+// @access  Private (Admin)
+const assignAdminDevisToTranslataire = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { translataireId } = req.body;
+    
+    // Vérifier si le devis existe
+    const devis = await AdminDevis.findById(id);
+    if (!devis) {
+      return res.status(404).json({ success: false, message: 'Devis non trouvé' });
+    }
+    
+    // Vérifier si le transitaire existe
+    const translataire = await Translataire.findById(translataireId);
+    if (!translataire) {
+      return res.status(404).json({ success: false, message: 'Transitaire non trouvé' });
+    }
+    
+    // Mettre à jour le devis avec l'ID du transitaire
+    devis.assignedTo = translataireId;
+    devis.status = 'en_cours';
+    await devis.save();
+    
+    // Envoyer une notification au transitaire
+    try {
+      await sendNewDevisToTranslataire({
+        to: translataire.email,
+        translataireName: translataire.nomEntreprise,
+        clientName: devis.client.nom,
+        devisId: devis._id
+      });
+    } catch (emailError) {
+      console.error('Erreur lors de l\'envoi de l\'email:', emailError);
+    }
+    
+    res.json({
+      success: true,
+      message: 'Devis assigné avec succès',
+      devis
+    });
+  } catch (error) {
+    console.error('Erreur lors de l\'assignation du devis:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erreur lors de l\'assignation du devis',
+      error: error.message
+    });
+  }
+};
+
 // Export des fonctions du contrôleur
 module.exports = {
   updateAdminEmail,
@@ -986,6 +1038,7 @@ module.exports = {
   getAllUsers,
   getDevisById,
   updateDevisStatus,
+  assignAdminDevisToTranslataire,
   setTranslataireRating,
   approveUser,
   getAllTranslataires,
