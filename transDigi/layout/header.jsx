@@ -175,7 +175,7 @@ function Header({ showSidebarToggle = false, onToggleSidebar, hideNavbarToggler 
                 <ArrowLeft size={26} />
               </button>
             </div>
-            <ul className="list-unstyled mb-4 mobile-menu-links">
+            <ul className="list-unstyled mb-1 mobile-menu-links">
               <li>
                 <button
                   type="button"
@@ -205,7 +205,7 @@ function Header({ showSidebarToggle = false, onToggleSidebar, hideNavbarToggler 
               </li>
             </ul>
             <div className="d-flex flex-column gap-3 mt-3">
-              <div className="d-flex justify-content-center align-items-center small" aria-label="Language switcher mobile">
+              <div className="d-flex align-items-center small" aria-label="Language switcher mobile">
                 <span
                   onClick={() => setLang('fr')}
                   style={{
@@ -232,18 +232,22 @@ function Header({ showSidebarToggle = false, onToggleSidebar, hideNavbarToggler 
               </div>
               <button
                 type="button"
-                className="btn btn-success w-100 fw-semibold"
-                onClick={() => navigateHash('#/connexion')}
+                onClick={toggleTheme}
+                className="btn btn-link p-0 mobile-menu-theme-toggle"
+                aria-label={t('aria.toggle.theme')}
               >
-                {t('nav.login')}
+                {theme === 'dark' ? (
+                  <i className="bi bi-brightness-high"></i>
+                ) : (
+                  <i className="bi bi-moon-stars"></i>
+                )}
               </button>
               <button
                 type="button"
-                onClick={toggleTheme}
-                className={`btn w-100 fw-semibold ${theme === 'dark' ? 'btn-light' : 'btn-dark'}`}
-                aria-label={t('aria.toggle.theme')}
+                className="btn btn-success fw-semibold px-4 py-2 mobile-menu-primary-btn"
+                onClick={() => navigateHash('#/connexion')}
               >
-                {theme === 'dark' ? <i className="bi bi-brightness-high"></i> : <i className="bi bi-moon-stars"></i>}
+                {t('nav.login')}
               </button>
             </div>
           </div>
