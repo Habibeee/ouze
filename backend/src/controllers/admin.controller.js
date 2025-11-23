@@ -8,7 +8,7 @@ const Notification = require('../models/Notification');
 const { getIO } = require('../services/socket');
 
 // ===== Helpers =====
-const ensureSuperAdmin = (req, res) => {
+const ensureSuperAdmin = (req, res, next) => {
   if (!req.user || req.user.role !== 'super_admin') {
     res.status(403).json({ success: false, message: 'Accès réservé au super administrateur' });
     return false;
@@ -19,7 +19,7 @@ const ensureSuperAdmin = (req, res) => {
 // @desc    Mettre à jour l'email de l'admin connecté
 // @route   PUT /api/admin/profile/email
 // @access  Private (Admin)
-exports.updateAdminEmail = async (req, res) => {
+const updateAdminEmail = async (req, res) => {
   try {
     const { email } = req.body || {};
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
@@ -40,7 +40,7 @@ exports.updateAdminEmail = async (req, res) => {
 // @desc    Récupérer le profil de l'admin connecté (préférences notifications)
 // @route   GET /api/admin/profile
 // @access  Private (Admin)
-exports.getAdminProfile = async (req, res) => {
+const getAdminProfile = async (req, res) => {
   try {
     const admin = await Admin.findById(req.user._id).select('-motDePasse');
     if (!admin) return res.status(404).json({ success: false, message: 'Admin non trouvé' });
@@ -64,7 +64,7 @@ exports.getAdminProfile = async (req, res) => {
 // @desc    Mettre à jour le profil de l'admin connecté (préférences notifications)
 // @route   PUT /api/admin/profile
 // @access  Private (Admin)
-exports.updateAdminProfile = async (req, res) => {
+const updateAdminProfile = async (req, res) => {
   try {
     const { emailNotifications, pushNotifications, topics } = req.body || {};
     const admin = await Admin.findById(req.user._id).select('-motDePasse');
@@ -90,7 +90,7 @@ exports.updateAdminProfile = async (req, res) => {
 // @desc    Lister les admins
 // @route   GET /api/admin/admins
 // @access  Private (Super Admin)
-exports.listAdmins = async (req, res) => {
+const listAdmins = async (req, res) => {
   try {
     if (!ensureSuperAdmin(req, res)) return;
     const { page = 1, limit = 20 } = req.query;
@@ -105,7 +105,7 @@ exports.listAdmins = async (req, res) => {
 // @desc    Créer un admin
 // @route   POST /api/admin/admins
 // @access  Private (Super Admin)
-exports.createAdmin = async (req, res) => {
+const createAdmin = async (req, res) => {
   try {
     if (!ensureSuperAdmin(req, res)) return;
     const { nom, email, motDePasse, telephone, role = 'admin', permissions = [] } = req.body;
@@ -122,7 +122,7 @@ exports.createAdmin = async (req, res) => {
 // @desc    Mettre à jour le statut d'un admin (block/unblock/archive/unarchive)
 // @route   PUT /api/admin/admins/:id/status
 // @access  Private (Super Admin)
-exports.updateAdminStatus = async (req, res) => {
+const updateAdminStatus = async (req, res) => {
   try {
     if (!ensureSuperAdmin(req, res)) return;
     const { id } = req.params;
@@ -146,7 +146,7 @@ exports.updateAdminStatus = async (req, res) => {
 // @desc    Supprimer un admin
 // @route   DELETE /api/admin/admins/:id
 // @access  Private (Super Admin)
-exports.deleteAdminAccount = async (req, res) => {
+const deleteAdminAccount = async (req, res) => {
   try {
     if (!ensureSuperAdmin(req, res)) return;
     const { id } = req.params;
@@ -162,7 +162,7 @@ exports.deleteAdminAccount = async (req, res) => {
 // @desc    Modifier mon mot de passe (admin)
 // @route   PUT /api/admin/profile/password
 // @access  Private (Admin)
-exports.changeAdminPassword = async (req, res) => {
+const changeAdminPassword = async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
     if (!currentPassword || !newPassword) return res.status(400).json({ success: false, message: 'Champs requis' });
@@ -181,7 +181,7 @@ exports.changeAdminPassword = async (req, res) => {
 // @desc    Obtenir tous les utilisateurs
 // @route   GET /api/admin/users
 // @access  Private (Admin)
-exports.getAllUsers = async (req, res) => {
+const getAllUsers = async (req, res) => {
   try {
     const { page = 1, limit = 10, search, isVerified } = req.query;
 
@@ -223,7 +223,7 @@ exports.getAllUsers = async (req, res) => {
 // @desc    Obtenir un devis par ID (vue admin)
 // @route   GET /api/admin/devis/:id
 // @access  Private (Admin)
-exports.getDevisById = async (req, res) => {
+const getDevisById = async (req, res) => {
   try {
     const id = String(req.params.id || '');
     if (!id || id.length < 12) {
@@ -262,7 +262,7 @@ exports.getDevisById = async (req, res) => {
 // @desc    Mettre à jour le statut d'un devis (admin)
 // @route   PUT /api/admin/devis/:id
 // @access  Private (Admin)
-exports.updateDevisStatus = async (req, res) => {
+const updateDevisStatus = async (req, res) => {
   try {
     const id = String(req.params.id || '');
     if (!id || id.length < 12) {
@@ -301,7 +301,7 @@ exports.updateDevisStatus = async (req, res) => {
 // @desc    Définir la note admin d'un translataire (1 à 5)
 // @route   PUT /api/admin/translataires/:id/rating
 // @access  Private (Admin)
-exports.setTranslataireRating = async (req, res) => {
+const setTranslataireRating = async (req, res) => {
   try {
     const { id } = req.params;
     let { rating } = req.body || {};
@@ -336,7 +336,7 @@ exports.setTranslataireRating = async (req, res) => {
 // @desc    Approuver un utilisateur (client)
 // @route   PUT /api/admin/users/:id/approve
 // @access  Private (Admin)
-exports.approveUser = async (req, res) => {
+const approveUser = async (req, res) => {
   try {
     const user = await User.findById(req.params.id);
     if (!user) {
@@ -390,7 +390,7 @@ exports.approveUser = async (req, res) => {
 // @desc    Obtenir tous les translataires
 // @route   GET /api/admin/translataires
 // @access  Private (Admin)
-exports.getAllTranslataires = async (req, res) => {
+const getAllTranslataires = async (req, res) => {
   try {
     const { page = 1, limit = 10, search, isApproved, isVerified } = req.query;
 
@@ -436,7 +436,7 @@ exports.getAllTranslataires = async (req, res) => {
 // @desc    Approuver/Rejeter/Suspendre un translataire
 // @route   PUT /api/admin/translataires/:id/approve
 // @access  Private (Admin)
-exports.approveTranslataire = async (req, res) => {
+const approveTranslataire = async (req, res) => {
   try {
     const translataire = await Translataire.findById(req.params.id);
 
@@ -554,7 +554,7 @@ exports.approveTranslataire = async (req, res) => {
 // @desc    Bloquer/Débloquer un compte
 // @route   PUT /api/admin/:userType/:id/block
 // @access  Private (Admin)
-exports.toggleBlockAccount = async (req, res) => {
+const toggleBlockAccount = async (req, res) => {
   try {
     const { userType, id } = req.params;
     const { isBlocked } = req.body;
@@ -627,7 +627,7 @@ exports.toggleBlockAccount = async (req, res) => {
 // @desc    Supprimer un compte
 // @route   DELETE /api/admin/:userType/:id
 // @access  Private (Admin)
-exports.deleteAccount = async (req, res) => {
+const deleteAccount = async (req, res) => {
   try {
     const { userType, id } = req.params;
     const Model = userType === 'user' ? User : userType === 'translataire' ? Translataire : null;
@@ -689,7 +689,7 @@ exports.deleteAccount = async (req, res) => {
 // @desc    Obtenir les statistiques globales
 // @route   GET /api/admin/statistiques
 // @access  Private (Admin)
-exports.getStatistiques = async (req, res) => {
+const getStatistiques = async (req, res) => {
   try {
     const totalUsers = await User.countDocuments();
     const usersBlocked = await User.countDocuments({ isBlocked: true });
@@ -757,7 +757,7 @@ exports.getStatistiques = async (req, res) => {
 // @desc    Obtenir la liste des utilisateurs (pour tableau de bord)
 // @route   GET /api/admin/dashboard/users
 // @access  Private (Admin)
-exports.getDashboardUsers = async (req, res) => {
+const getDashboardUsers = async (req, res) => {
   try {
     const users = await User.find()
       .select('nom prenom email telephone isVerified createdAt')
@@ -780,7 +780,7 @@ exports.getDashboardUsers = async (req, res) => {
 // @desc    Obtenir la liste des translataires (pour tableau de bord)
 // @route   GET /api/admin/dashboard/translataires
 // @access  Private (Admin)
-exports.getDashboardTranslataires = async (req, res) => {
+const getDashboardTranslataires = async (req, res) => {
   try {
     const translataires = await Translataire.find()
       .select('nomEntreprise email ninea isApproved isVerified typeServices createdAt')
@@ -803,7 +803,7 @@ exports.getDashboardTranslataires = async (req, res) => {
 // @desc    Obtenir les devis traités
 // @route   GET /api/admin/devis
 // @access  Private (Admin)
-exports.getAllDevis = async (req, res) => {
+const getAllDevis = async (req, res) => {
   try {
     const translataires = await Translataire.find()
       .populate('devis.client', 'nom prenom email')
@@ -842,7 +842,7 @@ exports.getAllDevis = async (req, res) => {
 // @desc    Opérations en masse: block/unblock/archive/unarchive/delete
 // @route   POST /api/admin/:userType/bulk/:action
 // @access  Private (Admin)
-exports.bulkAccountsAction = async (req, res) => {
+const bulkAccountsAction = async (req, res) => {
   try {
     const { userType, action } = req.params;
     const { ids } = req.body;
