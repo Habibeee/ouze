@@ -31,11 +31,11 @@ export const transitareCss = `
   }
   
   .forwarder-stats-card .h4 {
-    font-size: 1.25rem;
+    font-size: 1.5rem;
     margin-bottom: 0.25rem;
     line-height: 1.2;
     color: var(--bs-body-color) !important;
-    font-weight: 600;
+    font-weight: 700;
   }
   
   .forwarder-stats-card .small {
@@ -59,7 +59,7 @@ export const transitareCss = `
     }
     
     .forwarder-stats-card .h4 {
-      font-size: 1.1rem;
+      font-size: 1.3rem;
       margin-bottom: 0.15rem;
     }
     

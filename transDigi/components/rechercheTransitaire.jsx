@@ -1,8 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { 
-  MapPin, Wrench, Building2, Search, Bell, User, Star,
-  Plane, Truck, Ship, Package, ArrowUpDown, CheckCircle,
-  LayoutGrid, FileText, Clock
+  MapPin, Wrench, Building2, Search, Star,
+  CheckCircle, Clock, AlertCircle
 } from 'lucide-react';
 import { transitaireStyles, transitaireCss } from '../styles/rechercheTransitaireStyle.jsx';
 import { searchTranslatairesClient } from '../services/apiClient.js';
@@ -18,6 +17,7 @@ const RechercheTransitaire = () => {
   const [err, setErr] = useState('');
   // Sélection locale simple pour "Voir les avis" côté client
   const [selectionAvis, setSelectionAvis] = useState({}); // { [idTrans]: 'satisfait' | 'moyen' | 'pas_satisfait' }
+  const [selectedTransitaire, setSelectedTransitaire] = useState(null);
 
   const fetchTrans = async () => {
     try {
@@ -248,34 +248,31 @@ const RechercheTransitaire = () => {
                         ? `#/nouveau-devis?translataireId=${encodeURIComponent(transitaire.id)}&${nameParam}`
                         : `#/nouveau-devis?${nameParam}`;
                       return (
-                        <a
-                          href={href}
-                          className="btn text-white"
+                        <button
+                          className="btn text-white w-100"
                           style={transitaireStyles.primaryBtn}
                           onClick={() => {
                             try {
-                              if (transitaire.id) localStorage.setItem('pendingTranslataireId', String(transitaire.id));
-                              if (transitaire.name) localStorage.setItem('pendingTranslataireName', String(transitaire.name));
-                            } catch {}
+                              if (transitaire.id) {
+                                localStorage.setItem('pendingTranslataireId', String(transitaire.id));
+                                localStorage.setItem('pendingTranslataireName', String(transitaire.name || ''));
+                                setSelectedTransitaire(transitaire);
+                                success(`Transitaire sélectionné : ${transitaire.name}`);
+                                window.location.hash = '#/nouveau-devis';
+                              }
+                            } catch (e) {
+                              console.error('Erreur lors de la sélection du transitaire:', e);
+                            }
                           }}
                         >
                           {t('client.search.quote_button')}
-                        </a>
+                        </button>
                       );
                     })()}
-                    <select
-                      className="form-select"
-                      value={selectionAvis[transitaire.id] || ''}
-                      onChange={(e) => setSelectionAvis(prev => ({
-                        ...prev,
-                        [transitaire.id]: e.target.value
-                      }))}
-                    >
-                      <option value="">{t('client.search.review.label')}</option>
-                      <option value="satisfait">{t('client.search.review.satisfied')}</option>
-                      <option value="moyen">{t('client.search.review.neutral')}</option>
-                      <option value="pas_satisfait">{t('client.search.review.unsatisfied')}</option>
-                    </select>
+                    <div className="d-flex align-items-center gap-2 text-muted small">
+                      <AlertCircle size={16} />
+                      <span>Ce transitaire sera responsable de votre demande</span>
+                    </div>
                   </div>
                 </div>
               </div>

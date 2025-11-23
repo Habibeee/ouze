@@ -160,9 +160,9 @@ const TransitaireDashboard = () => {
   const [error, setError] = useState('');
 
   const [stats, setStats] = useState([
-    { label: 'Total Devis Reçus', value: '-' },
-    { label: "Taux d'Acceptation", value: '-' },
-    { label: 'Devis en Attente', value: '-' }
+    { label: 'Total Devis Reçus', value: '-', className: 'fs-5' },
+    { label: "Taux d'Acceptation", value: '-', className: 'fs-5' },
+    { label: 'Devis en Attente', value: '-', className: 'fs-5' },
   ]);
 
   const [tabs, setTabs] = useState([
@@ -573,7 +573,7 @@ const TransitaireDashboard = () => {
                 <div key={index} className="col-4 d-flex">
                   <div className="card border-0 shadow-sm w-100 forwarder-stats-card">
                     <div className="card-body p-2 d-flex flex-column justify-content-center">
-                      <div className="small mb-1 text-muted text-truncate" title={stat.label}>{stat.label}</div>
+                      <div className="fw-medium mb-1 text-truncate" title={stat.label} style={{ fontSize: '1rem' }}>{stat.label}</div>
                       <div className="h4 fw-bold mb-0 text-nowrap">{stat.value}</div>
                     </div>
                   </div>
