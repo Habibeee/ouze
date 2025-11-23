@@ -1,18 +1,23 @@
 import React, { useEffect, useState } from 'react';
 import { headerStyles, headerCss } from '../styles/headerStyle.jsx';
-import { Menu, ArrowLeft, X, MoreVertical } from 'lucide-react';
+import { Menu, ArrowLeft, X, MoreVertical, LogOut } from 'lucide-react';
+import { getAuth, clearAuth } from '../services/authStore';
 import { useI18n } from '../src/i18n.jsx';
 
 function Header({ showSidebarToggle = false, onToggleSidebar, hideNavbarToggler = false }) {
   const [theme, setTheme] = useState('light');
   const { lang, setLang, t } = useI18n();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
     const saved = localStorage.getItem('theme') || 'light';
     setTheme(saved);
     document.documentElement.dataset.theme = saved;
     document.body.classList.toggle('theme-dark', saved === 'dark');
+    // Vérifier si l'utilisateur est connecté
+    const { token } = getAuth();
+    setIsLoggedIn(!!token);
   }, []);
 
   const toggleTheme = () => {
@@ -91,7 +96,28 @@ function Header({ showSidebarToggle = false, onToggleSidebar, hideNavbarToggler 
             </ul>
 
             <div className="d-flex align-items-center gap-2">
-              <a className="btn fw-semibold px-4" href="#/connexion" style={{ backgroundColor: '#28A745', color: 'white', border: 'none', borderRadius: '6px' }}>{t('nav.login')}</a>
+              <button
+                type="button"
+                className={`btn fw-semibold px-4 ${isLoggedIn ? 'btn-outline-danger' : 'btn-success'}`}
+                onClick={() => {
+                  if (isLoggedIn) {
+                    clearAuth();
+                    window.location.hash = '#/';
+                    window.location.reload();
+                  } else {
+                    window.location.hash = '#/connexion';
+                  }
+                }}
+              >
+                {isLoggedIn ? (
+                  <>
+                    <LogOut size={16} className="me-1" />
+                    {t('nav.logout')}
+                  </>
+                ) : (
+                  t('nav.login')
+                )}
+              </button>
               <div className="ms-2 d-flex align-items-center" aria-label="Language switcher">
                 <span
                   onClick={() => setLang('fr')}
@@ -244,10 +270,25 @@ function Header({ showSidebarToggle = false, onToggleSidebar, hideNavbarToggler 
               </button>
               <button
                 type="button"
-                className="btn btn-success fw-semibold px-4 py-2 mobile-menu-primary-btn"
-                onClick={() => navigateHash('#/connexion')}
+                className={`btn fw-semibold px-4 py-2 mobile-menu-primary-btn ${isLoggedIn ? 'btn-outline-danger' : 'btn-success'}`}
+                onClick={() => {
+                  if (isLoggedIn) {
+                    clearAuth();
+                    window.location.hash = '#/';
+                    window.location.reload();
+                  } else {
+                    navigateHash('#/connexion');
+                  }
+                }}
               >
-                {t('nav.login')}
+                {isLoggedIn ? (
+                  <>
+                    <LogOut size={16} className="me-1" />
+                    {t('nav.logout')}
+                  </>
+                ) : (
+                  t('nav.login')
+                )}
               </button>
             </div>
           </div>
