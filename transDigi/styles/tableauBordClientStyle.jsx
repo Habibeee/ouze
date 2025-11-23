@@ -41,8 +41,10 @@ export const clientCss = `
 
   .default-wrap .client-quote-card {
     width: 100%;
-    box-shadow: 0 4px 10px rgba(15,23,42,0.06);
+    max-width: 100%;
+    box-shadow: 0 6px 16px rgba(15,23,42,0.10);
     background-color: var(--card);
+    margin-bottom: 0.75rem;
   }
 
   /* Filtres "Tous / Acceptés / En attente" - dashboard client */
@@ -412,14 +414,14 @@ export const clientCss = `
       width: 100%;
       justify-content: space-between;
       flex-wrap: nowrap;
-      gap: 0.4rem;
+      gap: 0.6rem; /* plus d’espace entre les 3 boutons */
     }
 
     .default-wrap .client-quote-actions .btn {
       flex: 1 1 0;
       min-width: 0 !important;
       text-align: center;
-      padding: 0.25rem 0.45rem;
+      padding: 0.25rem 0.5rem;
       font-size: 0.72rem;
     }
 
