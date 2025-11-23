@@ -650,12 +650,18 @@ const TransitaireDashboard = () => {
                         <td className="px-4 py-3 fw-semibold">{item.id}</td>
                         <td className="py-3">{item.client}</td>
                         <td className="text-nowrap">
-                          <span className="d-inline d-sm-none" title={item._id}>
-                            {item._id.substring(0, 6)}...
-                          </span>
-                          <span className="d-none d-sm-inline">
-                            {item._id}
-                          </span>
+                          {item._id ? (
+                            <>
+                              <span className="d-inline d-sm-none" title={item._id}>
+                                {item._id.substring(0, 6)}...
+                              </span>
+                              <span className="d-none d-sm-inline">
+                                {item._id}
+                              </span>
+                            </>
+                          ) : (
+                            <span className="text-muted">-</span>
+                          )}
                         </td>
                         <td className="py-3 text-body">{item.route}</td>
                         <td className="py-3">
