@@ -6,11 +6,6 @@ import { listMesDevis } from '../services/apiClient.js';
 const TrackingApp = () => {
   const [activeTab, setActiveTab] = useState('en-cours');
   const [selectedShipment, setSelectedShipment] = useState(null);
-  const [isDetailRoute, setIsDetailRoute] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    const h = window.location.hash || '';
-    return h.startsWith('#/envoi');
-  });
   const [leafletReady, setLeafletReady] = useState(!!(typeof window !== 'undefined' && window.L));
   const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState({ status: 'all', carrier: 'all', dateFrom: '', dateTo: '' });
@@ -371,17 +366,6 @@ const TrackingApp = () => {
     }
   }, [currentPageShipments, selectedShipment]);
 
-  // Suivre l'évolution du hash pour savoir si on est sur la route détail (#/envoi)
-  useEffect(() => {
-    const update = () => {
-      if (typeof window === 'undefined') return;
-      const h = window.location.hash || '';
-      setIsDetailRoute(h.startsWith('#/envoi'));
-    };
-    update();
-    window.addEventListener('hashchange', update);
-    return () => window.removeEventListener('hashchange', update);
-  }, []);
 
   useEffect(() => {
     // Initialize or update map when a shipment is selected
@@ -425,106 +409,7 @@ const TrackingApp = () => {
     };
   }, [selectedShipment]);
 
-  // Vue détail seule (mobile / route #/envoi)
-  if (isDetailRoute) {
-    return (
-      <div className="bg-body" style={{ minHeight: '100vh', backgroundColor: 'var(--bg)' }}>
-        <style>{suiviEnvoiCss}</style>
-        <div className="container py-3" style={{ maxWidth: '100%', overflowX: 'hidden' }}>
-          <div className="mb-3 d-md-none">
-            <button
-              type="button"
-              className="btn btn-outline-secondary btn-sm"
-              onClick={() => { window.location.hash = '#/envois'; }}
-            >
-              Retour aux envois
-            </button>
-          </div>
-
-          {selectedShipment ? (
-            <div className="rounded-3 shadow-sm p-3 p-md-4" style={{ backgroundColor: 'var(--card)' }}>
-              <div className="d-flex justify-content-between align-items-center mb-4">
-                <h5 className="fw-bold mb-0">Détails de l'envoi #{selectedShipment.id}</h5>
-                <span
-                  className="badge"
-                  style={{
-                    backgroundColor: selectedShipment.status === 'livre' ? '#d4edda' : '#e3f2fd',
-                    color: selectedShipment.status === 'livre' ? '#28A745' : '#007BFF'
-                  }}
-                >
-                  {selectedShipment.status === 'livre' ? 'Livré' : 'En transit'}
-                </span>
-              </div>
-
-              <div id="leafletMap" className="mb-4" style={{ height: '260px', borderRadius: '8px', overflow: 'hidden', maxWidth: '100%' }} />
-
-              <div className="mb-4">
-                <h6 className="fw-bold mb-3">Historique de l'envoi</h6>
-                <div className="timeline">
-                  {selectedShipment.history?.map((event, index) => (
-                    <div key={index} className="timeline-item d-flex">
-                      <div className="timeline-axis position-relative">
-                        <span className={`timeline-dot ${index === currentHistoryIndex ? 'is-current' : ''}`}></span>
-                        {index < selectedShipment.history.length - 1 && (
-                          <span className="timeline-line"></span>
-                        )}
-                      </div>
-                      <div className="timeline-content">
-                        <p className="fw-bold mb-1">{event.status}</p>
-                        <p className="text-muted small mb-1">{event.date}</p>
-                        {event.description && (
-                          <p className="text-muted small mb-1">{event.description}</p>
-                        )}
-                        {event.location && (
-                          <p className="text-muted small mb-0">{event.location}</p>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <h6 className="fw-bold mb-3">Détails supplémentaires</h6>
-                <div className="row g-3">
-                  <div className="col-6">
-                    <p className="text-muted small mb-1">Origine</p>
-                    <p className="fw-semibold small mb-0">{selectedShipment.details?.origin || selectedShipment.origin}</p>
-                  </div>
-                  <div className="col-6">
-                    <p className="text-muted small mb-1">Destination</p>
-                    <p className="fw-semibold small mb-0">{selectedShipment.details?.destination || selectedShipment.destination}</p>
-                  </div>
-                  <div className="col-6">
-                    <p className="text-muted small mb-1">Poids</p>
-                    <p className="fw-semibold small mb-0">{selectedShipment.details?.poids || '-'}</p>
-                  </div>
-                  <div className="col-6">
-                    <p className="text-muted small mb-1">Dimensions</p>
-                    <p className="fw-semibold small mb-0">{selectedShipment.details?.dimensions || '-'}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="rounded-3 shadow-sm p-4 text-center text-muted" style={{ backgroundColor: 'var(--card)' }}>
-              <Package size={48} color="var(--border)" className="mb-3" />
-              <p>Aucun envoi sélectionné.</p>
-              <button
-                type="button"
-                className="btn btn-primary btn-sm mt-2"
-                onClick={() => { window.location.hash = '#/envois'; }}
-              >
-                Retour aux envois
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  // Vue liste + panneau latéral
+  // Vue liste + panneau latéral (comportement original)
   return (
     <div className="bg-body" style={{ minHeight: '100vh', backgroundColor: 'var(--bg)' }}>
       <style>{suiviEnvoiCss}</style>
