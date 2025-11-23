@@ -683,9 +683,9 @@ return (
               )}
               <p className="text-muted">{t('client.welcome.subtitle')}</p>
               <div className="small mt-2 p-2 p-md-3 rounded-3" style={{ backgroundColor: '#E0F2FE', color: '#0F172A' }}>
-                <strong>Information :</strong>{' '}
-                En cliquant sur <strong>Nouveau devis</strong>, votre demande est envoyée à tous les transitaires.<br />
-                En cliquant sur <strong>Rechercher un transitaire</strong>, vous choisissez vous‑même un transitaire et le devis lui est adressé directement, tout en restant visible par l'administrateur.
+                <strong>{t('client.info.label')}</strong>{' '}
+                {t('client.info.new_quote.before')}<strong>{t('client.info.new_quote.button')}</strong>{t('client.info.new_quote.after')}<br />
+                {t('client.info.search.before')}<strong>{t('client.info.search.button')}</strong>{t('client.info.search.after')}
               </div>
             </div>
 

@@ -204,9 +204,9 @@ const NouveauDevisAdmin = () => {
           <div className="row justify-content-center">
             <div className="col-12 col-lg-10 col-xl-8">
               <div className="mb-3 mb-md-4">
-                <h1 className="h2 h1-md fw-bold mb-2 mb-md-3">Nouveau devis (plateforme)</h1>
+                <h1 className="h2 h1-md fw-bold mb-2 mb-md-3">Nouveau devis</h1>
                 <p className="text-muted">
-                  Ce formulaire envoie votre demande uniquement à l'équipe plateforme (admin), qui la répartira ensuite auprès des transitaires partenaires.
+                  Ce formulaire envoie votre demande à tous les transitaires partenaires.
                 </p>
               </div>
 

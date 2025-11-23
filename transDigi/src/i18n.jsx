@@ -211,6 +211,14 @@ const TRANSLATIONS = {
     'client.welcome.title_prefix': 'Bonjour',
     'client.welcome.subtitle': 'Voici un aperçu de votre activité récente.',
 
+    'client.info.label': 'Information :',
+    'client.info.new_quote.before': 'En cliquant sur ',
+    'client.info.new_quote.button': 'Nouveau devis',
+    'client.info.new_quote.after': ", votre demande est envoyée à tous les transitaires partenaires.",
+    'client.info.search.before': 'En cliquant sur ',
+    'client.info.search.button': 'Rechercher un transitaire',
+    'client.info.search.after': ", vous choisissez vous‑même un transitaire et le devis lui est adressé directement.",
+
     'client.quotes.title': 'Mes devis',
     'client.quotes.filter.all': 'Tous',
     'client.quotes.filter.accepted': 'Acceptés',
@@ -653,6 +661,14 @@ const TRANSLATIONS = {
 
     'client.welcome.title_prefix': 'Hello',
     'client.welcome.subtitle': 'Here is an overview of your recent activity.',
+
+    'client.info.label': 'Information:',
+    'client.info.new_quote.before': 'By clicking ',
+    'client.info.new_quote.button': 'New quote',
+    'client.info.new_quote.after': ', your request is sent to all partner forwarders.',
+    'client.info.search.before': 'By clicking ',
+    'client.info.search.button': 'Search for a forwarder',
+    'client.info.search.after': ', you choose a forwarder yourself and the quote is sent directly to them.',
 
     'client.quotes.title': 'My quotes',
     'client.quotes.filter.all': 'All',
