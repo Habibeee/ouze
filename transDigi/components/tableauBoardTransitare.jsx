@@ -620,13 +620,9 @@ const TransitaireDashboard = () => {
                         <span className="d-inline d-sm-none">ID</span>
                       </th>
                       <th className="py-3">{t('forwarder.table.header.client')}</th>
-                      <th className="text-nowrap">
-                        <span className="d-inline d-sm-none" title={devis._id}>
-                          {devis._id.substring(0, 6)}...
-                        </span>
-                        <span className="d-none d-sm-inline">
-                          {devis._id}
-                        </span>
+                      <th className="py-3">
+                        <span className="d-none d-sm-inline">Détails</span>
+                        <span className="d-inline d-sm-none">Dét.</span>
                       </th>
                       <th className="py-3">{t('forwarder.table.header.route')}</th>
                       <th className="py-3">{t('forwarder.table.header.status')}</th>
