@@ -218,7 +218,6 @@ const getAllUsers = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Erreur lors de la récupération',
-<<<<<<< HEAD
       error: error.message
     });
   }
@@ -264,8 +263,7 @@ const getDevisById = async (req, res) => {
 };
 
 // @desc    Mettre à jour le statut d'un devis (admin)
-=======
->>>>>>> 33cd6c8961d8a0221e8c2e6e78f6dcb99eac5385
+
 // @route   PUT /api/admin/devis/:id
 // @access  Private (Admin)
 const updateDevisStatus = async (req, res) => {
@@ -283,7 +281,6 @@ const updateDevisStatus = async (req, res) => {
     const allowedStatus = ['en_attente', 'accepte', 'refuse', 'expire', 'annule', 'archive', 'traite'];
     if (!allowedStatus.includes(statut)) {
       return res.status(400).json({ success: false, message: 'Statut invalide' });
-<<<<<<< HEAD
     }
 
     const translataire = await Translataire.findOne({ 'devis._id': id }).select('nomEntreprise devis');
@@ -344,8 +341,6 @@ const setTranslataireRating = async (req, res) => {
 // @route   PUT /api/admin/users/:id/approve
 // @access  Private (Admin)
 const approveUser = async (req, res) => {
-=======
->>>>>>> 33cd6c8961d8a0221e8c2e6e78f6dcb99eac5385
   try {
     const user = await User.findById(req.params.id);
     if (!user) {
