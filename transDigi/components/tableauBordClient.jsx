@@ -497,386 +497,143 @@ const getUserDisplayName = () => {
     }
   } catch {}
   return 'Utilisateur';
-};
-const userDisplayName = getUserDisplayName();
+  const userDisplayName = getUserDisplayName();
+  const [showIntroWelcome, setShowIntroWelcome] = useState(true);
 
-const [showIntroWelcome, setShowIntroWelcome] = useState(true);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowIntroWelcome(false);
+    }, 10000);
+    return () => clearTimeout(timer);
+  }, []);
 
-useEffect(() => {
-  const timer = setTimeout(() => {
-    setShowIntroWelcome(false);
-  }, 10000);
-  return () => clearTimeout(timer);
-}, []);
-
-return (
-  <div className="d-flex" style={{ ...clientStyles.layout, backgroundColor: 'var(--bg)' }}>
-    <style>{clientCss}</style>
-    
-    {/* Sidebar */}
-    <SideBare
-      topOffset={96}
-      closeOnNavigate={!isLgUp}
-      defaultOpen={true}
-      open={sidebarOpen}
-      hideItemsWhenCollapsed={true}
-      disableMobileOverlay={true}
-      onOpenChange={(o)=>setSidebarOpen(!!o)}
-      activeId={section}
-      items={[
-        { id: 'dashboard', label: t('client.sidebar.dashboard'), icon: LayoutGrid },
-        { id: 'recherche', label: t('client.sidebar.search_forwarder'), icon: Search },
-        { id: 'devis-admin', label: t('client.sidebar.new_quote'), icon: FileText },
-        { id: 'historique', label: t('client.sidebar.history'), icon: Clock },
-        { id: 'envois', label: t('client.sidebar.shipments'), icon: Truck },
-        { id: 'fichiers', label: 'Mes fichiers reçus', icon: FileText },
-        { id: 'profil', label: t('client.sidebar.profile'), icon: User },
-      ]}
-      onNavigate={(id) => {
-        setSection(id);
-        if (id === 'dashboard') {
-          window.location.hash = '#/dashboard-client';
-        } else if (id === 'recherche') {
-          window.location.hash = '#/recherche-transitaire';
-        } else if (id === 'devis-admin') {
-          window.location.hash = '#/nouveau-devis-admin';
-        } else if (id === 'historique') {
-          window.location.hash = '#/historique';
-        } else if (id === 'envois') {
-          window.location.hash = '#/envois';
-        } else if (id === 'fichiers') {
-          window.location.hash = '#/fichiers-recus';
-        } else if (id === 'profil') {
-          window.location.hash = '#/profil-client';
-        }
-      }}
-    />
-  
-    {/* Main Content */}
-    <div className="flex-grow-1" style={{ marginLeft: isLgUp ? (sidebarOpen ? '240px' : '56px') : '0 !important', transition: 'margin-left .25s ease', paddingLeft: 0, minWidth: 0, width: '100%', maxWidth: '100vw', overflowX: 'hidden', position: 'relative', backgroundColor: 'var(--bg)' }}>
-      {/* Header interne : menu + notifications + profil */}
-      <div className="w-100 d-flex justify-content-between align-items-center gap-2 px-2 px-md-3 py-2">
-        {/* Hamburger menu button - visible only on mobile */}
-        {!isLgUp && (
-          <button 
-            className="btn btn-link p-1" 
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            aria-label="Toggle menu"
-          >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="3" y1="12" x2="21" y2="12"></line>
-              <line x1="3" y1="6" x2="21" y2="6"></line>
-              <line x1="3" y1="18" x2="21" y2="18"></line>
-            </svg>
-          </button>
-        )}
-        <div className="d-flex align-items-center gap-2 position-relative ms-auto">
-          <button className="btn btn-link position-relative" onClick={onBellClick} aria-label={t('client.header.notifications')}>
-            <Bell size={20} />
-            {unreadCount > 0 && (
-              <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">{unreadCount}</span>
+  return (
+    <div className="d-flex" style={{ ...clientStyles.layout, backgroundColor: 'var(--bg)' }}>
+      <style>{clientCss}</style>
+      <SideBare
+        defaultOpen={true}
+        open={sidebarOpen}
+        hideItemsWhenCollapsed={true}
+        disableMobileOverlay={true}
+        onOpenChange={(o)=>setSidebarOpen(!!o)}
+        activeId={section}
+        items={[
+          { id: 'dashboard', label: t('client.sidebar.dashboard'), icon: LayoutGrid },
+          { id: 'recherche', label: t('client.sidebar.search_forwarder'), icon: Search },
+          { id: 'devis-admin', label: t('client.sidebar.new_quote'), icon: FileText },
+          { id: 'historique', label: t('client.sidebar.history'), icon: Clock },
+          { id: 'envois', label: t('client.sidebar.shipments'), icon: Truck },
+          { id: 'fichiers', label: t('client.sidebar.files_received'), icon: FileText },
+          { id: 'profil', label: t('client.sidebar.profile'), icon: User },
+        ]}
+        onNavigate={(id) => {
+          setSection(id);
+          if (id === 'dashboard') {
+            window.location.hash = '#/dashboard-client';
+          } else if (id === 'recherche') {
+            window.location.hash = '#/recherche-transitaire';
+          } else if (id === 'devis-admin') {
+            window.location.hash = '#/nouveau-devis-admin';
+          } else if (id === 'historique') {
+            window.location.hash = '#/historique';
+          } else if (id === 'envois') {
+            window.location.hash = '#/envois';
+          } else if (id === 'fichiers') {
+            window.location.hash = '#/fichiers-recus';
+          } else if (id === 'profil') {
+            window.location.hash = '#/profil-client';
+          }
+        }}
+      />
+      <div className="flex-grow-1" style={{ marginLeft: isLgUp ? (sidebarOpen ? '240px' : '56px') : '0', transition: 'margin 0.3s ease', backgroundColor: 'var(--bg)' }}>
+        {/* En-tête avec barre de navigation */}
+        <div className="w-100 d-flex justify-content-between align-items-center gap-2 px-2 px-md-3 py-2 bg-body border-bottom" style={{ position: 'sticky', top: 0, zIndex: 10, backgroundColor: 'var(--card)' }}>
+          <div className="d-flex align-items-center gap-2">
+            {!isLgUp && (
+              <button
+                className="btn btn-link p-1 me-1"
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+                style={{ color: 'var(--text)' }}
+              >
+                <Menu size={24} />
+              </button>
             )}
-          </button>
-          {notifOpen && (
-            <div className="card shadow-sm" style={{ position: 'absolute', top: '100%', right: 0, zIndex: 1050, minWidth: 320 }}>
-              <div className="card-body p-0">
-                <div className="d-flex justify-content-between align-items-center px-3 py-2 border-bottom">
-                  <div className="fw-semibold">{t('client.header.notifications')}</div>
-                  <button className="btn btn-sm btn-link" onClick={onMarkAll}>{t('client.header.mark_all_read')}</button>
-                </div>
-                {notifLoading ? (
-                  <div className="p-3 small text-muted">{t('client.header.loading')}</div>
+            <h1 className="h5 mb-0 d-none d-md-block">
+              {section === 'dashboard' && t('client.dashboard.title')}
+              {section === 'recherche' && t('client.search.title')}
+              {section === 'devis' && t('client.quotes.new')}
+              {section === 'devis-admin' && t('client.quotes.new')}
+              {section === 'historique' && t('client.history.title')}
+              {section === 'envois' && t('client.shipments.title')}
+              {section === 'fichiers' && t('client.files.title')}
+              {section === 'profil' && t('client.profile.title')}
+            </h1>
+          </div>
+          <div className="d-flex align-items-center gap-2">
+            <button
+              className={`btn btn-light position-relative p-2 ${notifOpen ? 'active' : ''}`}
+              onClick={onBellClick}
+              style={{ borderRadius: '50%', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            >
+              <Bell size={20} />
+              {unreadCount > 0 && (
+                <span className="position-absolute top-0 end-0 translate-middle badge rounded-pill bg-danger" style={{ fontSize: '10px', padding: '4px 6px' }}>
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
+            </button>
+            <div className="dropdown">
+              <button
+                className="btn btn-link text-decoration-none p-0"
+                onClick={() => setProfileMenuOpen(!profileMenuOpen)}
+                style={{ color: 'var(--text)' }}
+              >
+                {avatarUrl ? (
+                  <img
+                    src={avatarUrl}
+                    alt="Profile"
+                    className="rounded-circle"
+                    style={{ width: '40px', height: '40px', objectFit: 'cover' }}
+                  />
                 ) : (
-                  <div className="list-group list-group-flush">
-                    {(notifs.length ? notifs : []).map(n => (
-                      <button key={n.id || n._id} className={`list-group-item list-group-item-action d-flex justify-content-between ${n.read ? '' : 'fw-semibold'}`} onClick={() => onNotifClick(n.id || n._id, n)}>
-                        <div className="me-2" style={{ whiteSpace: 'normal', textAlign: 'left' }}>
-                          <div>{n.title || t('client.header.notifications')}</div>
-                          {n.body && <div className="small text-muted">{n.body}</div>}
-                        </div>
-                        {!n.read && <span className="badge bg-primary">Nouveau</span>}
-                      </button>
-                    ))}
-                    {!notifs.length && <div className="p-3 small text-muted">{t('client.header.no_notifications')}</div>}
+                  <div className="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" style={{ width: '40px', height: '40px' }}>
+                    {userInitials || <User size={20} />}
                   </div>
                 )}
-              </div>
-            </div>
-          )}
-          <button className="btn p-0 border-0 bg-transparent" onClick={() => setProfileMenuOpen(!profileMenuOpen)} aria-label={t('client.header.open_profile_menu')}>
-            {avatarUrl ? (
-              <img
-                src={avatarUrl}
-                alt="Profil"
-                className="rounded-circle"
-                style={{ width: 36, height: 36, objectFit: 'cover', border: '2px solid #e9ecef' }}
-              />
-            ) : (
-              <div
-                className="rounded-circle d-flex align-items-center justify-content-center"
-                style={{ width: 36, height: 36, border: '2px solid #e9ecef', backgroundColor: '#E9ECEF' }}
-              >
-                <span style={{ fontWeight: 600, color: '#495057', fontSize: 14 }}>
-                  {(userInitials || '').trim() || (userDisplayName ? userDisplayName.charAt(0).toUpperCase() : 'U')}
-                </span>
-              </div>
-            )}
-          </button>
-          {profileMenuOpen && (
-            <div className="card shadow-sm" style={{ position: 'absolute', top: '100%', right: 0, zIndex: 1050, minWidth: '200px' }}>
-              <div className="list-group list-group-flush">
-                <button className="list-group-item list-group-item-action" onClick={() => { setProfileMenuOpen(false); setSection('profil'); }}>
-                  {t('client.header.menu.edit_profile')}
-                </button>
-                <button className="list-group-item list-group-item-action" onClick={() => { setProfileMenuOpen(false); window.location.hash = '#/modifierModpss'; }}>
-                  {t('client.header.menu.edit_password')}
-                </button>
-                <button className="list-group-item list-group-item-action text-danger" onClick={async () => { setProfileMenuOpen(false); try { await logout(); } finally { window.location.hash = '#/connexion'; } }}>
-                  {t('client.header.menu.logout')}
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Main Content Area */}
-      <div className="container-fluid px-2 px-md-4 py-3 py-md-4" style={{ backgroundColor: 'var(--bg)' }}>
-        {/* Bouton retour vers le dashboard sur mobile, pour les autres sections */}
-        {(isGotoDevis || section !== 'dashboard') && (
-          <div className="d-md-none mb-3">
-            <button
-              type="button"
-              className="btn btn-outline-light btn-sm"
-              onClick={() => { setSection('dashboard'); window.location.hash = '#/dashboard-client'; }}
-            >
-              Retour au tableau de bord
-            </button>
-          </div>
-        )}
-
-        {/* Toasts globaux gèrent désormais les messages */}
-        {isGotoDevis ? (
-          <NouveauDevis />
-        ) : section === 'envois' ? (
-          <TrackingApp />
-        ) : section === 'fichiers' ? (
-          <MesFichiersRecus />
-        ) : section === 'profil' ? (
-          <ModofierProfClient />
-        ) : section === 'historique' ? (
-          <HistoriqueDevis />
-        ) : section === 'recherche' ? (
-          <RechercheTransitaire />
-        ) : section === 'devis' ? (
-          <NouveauDevis />
-        ) : section === 'devis-admin' ? (
-          <NouveauDevisAdmin />
-        ) : (
-          <div className="default-wrap">
-            {/* Welcome Section */}
-            <div className="mb-4">
-              {showIntroWelcome && (
-                <h1 className="h2 fw-bold mb-2">
-                  Bonjour, {userDisplayName} !
-                </h1>
+              </button>
+              {profileMenuOpen && (
+                <div className="dropdown-menu dropdown-menu-end show" style={{ position: 'absolute', right: 0, marginTop: '8px', zIndex: 1000, minWidth: '200px' }}>
+                  <div className="dropdown-header d-flex flex-column align-items-center py-3">
+                    {avatarUrl ? (
+                      <img
+                        src={avatarUrl}
+                        alt="Profile"
+                        className="rounded-circle mb-2"
+                        style={{ width: '64px', height: '64px', objectFit: 'cover' }}
+                      />
+                    ) : (
+                      <div className="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center mb-2" style={{ width: '64px', height: '64px' }}>
+                        {userInitials || <User size={28} />}
+                      </div>
+                    )}
+                    <div className="text-center">
+                      <div className="fw-bold">{getUserDisplayName()}</div>
+                      <div className="text-muted small">{userEmail || ''}</div>
+                    </div>
+                  </div>
+                  <div className="dropdown-divider"></div>
+                  <button className="dropdown-item d-flex align-items-center gap-2" onClick={onProfileClick}>
+                    <User size={16} /> {t('client.profile.title')}
+                  </button>
+                  <div className="dropdown-divider"></div>
+                  <button className="dropdown-item d-flex align-items-center gap-2 text-danger" onClick={onLogout}>
+                    <LogOut size={16} /> {t('client.logout')}
+                  </button>
+                </div>
               )}
-              <p className="text-muted">{t('client.welcome.subtitle')}</p>
-              <div className="small mt-2 p-2 p-md-3 rounded-3" style={{ backgroundColor: '#E0F2FE', color: '#0F172A' }}>
-                <strong>Information :</strong>{' '}
-                En cliquant sur <strong>Nouveau devis</strong>, votre demande est envoyée à tous les transitaires.<br />
-                En cliquant sur <strong>Rechercher un transitaire</strong>, vous choisissez vous‑même un transitaire et le devis lui est adressé directement, tout en restant visible par l'administrateur.
-              </div>
-            </div>
-
-            {/* Mes Devis Section */}
-            <div className="card border-0 shadow-sm mb-4" style={{ backgroundColor: 'var(--card)' }}>
-              <div className="card-body" style={{ backgroundColor: 'var(--card)' }}>
-                <div className="d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between gap-2 mb-3">
-                  <h5 className="fw-bold mb-0">{t('client.quotes.title')}</h5>
-                  <div className="d-flex flex-row flex-wrap align-items-center client-filter-group mt-1 mt-sm-0 gap-2">
-                    <button
-                      className={`btn btn-sm client-filter-btn client-filter-all ${devisFilter==='tous' ? 'client-filter-active' : ''}`}
-                      onClick={()=>setDevisFilter('tous')}
-                    >
-                      {t('client.quotes.filter.all')}
-                    </button>
-                    <button
-                      className={`btn btn-sm client-filter-btn client-filter-accepted ${devisFilter==='accepte' ? 'client-filter-active' : ''}`}
-                      onClick={()=>setDevisFilter('accepte')}
-                    >
-                      {t('client.quotes.filter.accepted')}
-                    </button>
-                    <button
-                      className={`btn btn-sm client-filter-btn client-filter-pending ${devisFilter==='attente' ? 'client-filter-active' : ''}`}
-                      onClick={()=>setDevisFilter('attente')}
-                    >
-                      {t('client.quotes.filter.pending')}
-                    </button>
-                  </div>
-                </div>
-                <div className="d-flex flex-column gap-3">
-                  {devis.filter(item => devisFilter==='tous' ? true : item.status===devisFilter).map((item) => (
-                    <div key={item.id} className="border rounded-3 p-2 p-md-3 shadow-sm" style={{ background:'var(--card)' }}>
-                      <div className="d-flex flex-column flex-sm-row justify-content-between align-items-start gap-2">
-                        <div className="d-flex flex-column flex-grow-1" style={{ minWidth: 0 }}>
-                          <div className="d-flex align-items-center gap-2 flex-wrap">
-                            <span className={`badge rounded-pill px-2 px-md-3 py-1 py-md-2 ${item.status === 'accepte' ? 'bg-success' : item.status === 'refuse' ? 'bg-danger' : item.status === 'annule' ? 'bg-danger' : 'bg-warning text-dark' }`}>
-                              {item.status === 'accepte'
-                                ? t('client.quotes.status.accepted')
-                                : item.status === 'refuse'
-                                  ? t('client.quotes.status.refused')
-                                  : item.status === 'annule'
-                                    ? t('client.quotes.status.canceled')
-                                    : item.status === 'attente'
-                                      ? t('client.quotes.status.waiting')
-                                      : item.statusLabel}
-                            </span>
-                            <span className="text-muted small text-truncate" title={item.id} style={{ fontFamily:'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace', maxWidth: '150px' }}>#{String(item.id).slice(0,10)}…</span>
-                          </div>
-                          <div className="mt-2 fw-semibold" style={{ fontSize: '15px' }}>{item.routeLabel && item.routeLabel !== '-' ? item.routeLabel : t('client.quotes.route_missing')}</div>
-                          <div className="text-muted small">{item.date}</div>
-                        </div>
-                        <div className="d-flex flex-column flex-sm-row align-items-stretch align-items-sm-start gap-2 flex-shrink-0 client-quote-actions text-end text-sm-start">
-                          <a
-                            className="btn btn-sm btn-outline-secondary btn-client-detail align-self-end align-self-sm-start"
-                            style={{ minWidth: '120px' }}
-                            href={`#/detail-devis-client?id=${encodeURIComponent(item.id)}`}
-                          >
-                            {t('client.quotes.detail')}
-                          </a>
-                          {item.status === 'attente' && (
-                            confirmCancelId === item.id ? (
-                              <button
-                                className="btn btn-sm btn-danger btn-client-cancel-confirm align-self-end align-self-sm-start"
-                                style={{ minWidth: '120px' }}
-                                onClick={() => cancelDevis(item.id)}
-                              >
-                                {t('client.quotes.cancel.confirm')}
-                              </button>
-                            ) : (
-                              <>
-                                <button
-                                  className="btn btn-sm btn-outline-primary btn-client-edit align-self-end align-self-sm-start"
-                                  style={{ minWidth: '120px' }}
-                                  onClick={() => onOpenEdit(item)}
-                                >
-                                  {t('client.quotes.edit')}
-                                </button>
-                                <button
-                                  className="btn btn-sm btn-outline-danger btn-client-cancel align-self-end align-self-sm-start"
-                                  style={{ minWidth: '120px' }}
-                                  onClick={() => cancelDevis(item.id)}
-                                >
-                                  {t('client.quotes.cancel')}
-                                </button>
-                              </>
-                            )
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <div className="d-flex flex-column flex-sm-row justify-content-between align-items-center gap-2 p-2 p-md-3 border-top">
-                  <p className="text-muted small mb-0 text-center text-sm-start">{t('client.quotes.pagination.label')} {page} {total ? ` / ${Math.max(1, Math.ceil(total / limit))}` : ''}</p>
-                  <div className="d-flex align-items-center gap-2 flex-wrap">
-                    <select className="form-select form-select-sm" style={{ width: 80 }} value={limit} onChange={(e) => { const l = Number(e.target.value)||10; setLimit(l); setPage(1); fetchDevis({ page: 1, limit: l }); }}>
-                      {[5,10,20,50].map(n => <option key={n} value={n}>{n}/p</option>)}
-                    </select>
-                    <nav>
-                      <ul className="pagination pagination-sm mb-0">
-                        <li className={`page-item ${page <= 1 ? 'disabled' : ''}`}>
-                          <button className="page-link" onClick={() => { if (page>1) { const p=page-1; setPage(p); fetchDevis({ page: p, limit }); window.scrollTo({ top: 0, behavior: 'smooth' }); } }}>{t('client.quotes.pagination.prev')}</button>
-                        </li>
-                        <li className={`page-item ${total && page >= Math.ceil(total/limit) ? 'disabled' : ''}`}>
-                          <button className="page-link" onClick={() => { const max = total ? Math.ceil(total/limit) : page+1; if (!total || page < max) { const p=page+1; setPage(p); fetchDevis({ page: p, limit }); window.scrollTo({ top: 0, behavior: 'smooth' }); } }}>{t('client.quotes.pagination.next')}</button>
-                        </li>
-                      </ul>
-                    </nav>
-                  </div>
-                </div>
-
-              </div>
-
-              {/* Right Column */}
-              <div className="col-12 col-lg-4">
-                {/* Recent Activity */}
-                <div className="card border-0 shadow-sm" style={{ backgroundColor: 'var(--card)' }}>
-                  <div className="card-body" style={{ backgroundColor: 'var(--card)' }}>
-                    <div className="d-flex justify-content-between align-items-center mb-3">
-                      <h5 className="fw-bold mb-0">{t('client.activity.title')}</h5>
-                      <button className="btn btn-sm btn-link" onClick={onBellClick}>{t('client.activity.view_all')}</button>
-                    </div>
-                    <div className="d-flex flex-column gap-3">
-                      {recentActivities.length === 0 && (
-                        <div className="text-muted small">{t('client.activity.none')}</div>
-                      )}
-                      {recentActivities.map((a) => {
-                        const isSuccess = a.type.includes('approve') || a.type.includes('appr') || a.type.includes('success');
-                        const bgColor = isSuccess ? '#E8F5E9' : '#E3F2FD';
-                        const iconColor = isSuccess ? '#28A745' : '#2196F3';
-                        const Icon = isSuccess ? CheckCircle : Mail;
-                        return (
-                          <div key={a.id} className="d-flex gap-3">
-                            <div className="rounded-circle p-2 flex-shrink-0" style={{ backgroundColor: bgColor, width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                              <Icon size={20} style={{ color: iconColor }} />
-                            </div>
-                            <div className="flex-grow-1">
-                              <div className="small">{a.title}</div>
-                              {a.text && <div className="text-muted small" style={{ whiteSpace: 'normal' }}>{a.text}</div>}
-                              <div className="text-muted" style={{ fontSize: '12px' }}>{a.time}</div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
-        )}
-        {editOpen && (
-          <>
-            <div className="modal fade show" style={{ display:'block' }} tabIndex="-1" role="dialog" aria-modal="true">
-              <div className="modal-dialog">
-                <div className="modal-content">
-                  <div className="modal-header">
-                    <h5 className="modal-title">Modifier la demande</h5>
-                    <button type="button" className="btn-close" onClick={()=>setEditOpen(false)} aria-label="Fermer"></button>
-                  </div>
-                  <div className="modal-body">
-                    <div className="mb-3">
-                      <label className="form-label">Type de service</label>
-                      <select className="form-select" value={editTypeService} onChange={(e)=>setEditTypeService(e.target.value)}>
-                        <option value="">(inchangé)</option>
-                        <option value="aerien">Aérien</option>
-                        <option value="maritime">Maritime</option>
-                        <option value="routier">Routier</option>
-                        <option value="ferroviaire">Ferroviaire</option>
-                      </select>
-                    </div>
-                    <div className="row g-3">
-                      <div className="col-12 col-md-6">
-                        <label className="form-label">Origine</label>
-                        <input type="text" className="form-control" placeholder="Adresse d'enlèvement" value={editOrigin} onChange={(e)=>setEditOrigin(e.target.value)} />
-                      </div>
-                      <div className="col-12 col-md-6">
-                        <label className="form-label">Destination</label>
-                        <input type="text" className="form-control" placeholder="Adresse de livraison" value={editDestination} onChange={(e)=>setEditDestination(e.target.value)} />
-                      </div>
-                      <div className="col-12 col-md-6">
-                        <label className="form-label">Date d'expiration</label>
-                        <input type="date" className="form-control" value={editDateExpiration} onChange={(e)=>setEditDateExpiration(e.target.value)} />
-                      </div>
-                      <div className="col-6 col-md-3">
-                        <label className="form-label">Poids total (kg)</label>
-                        <input type="number" className="form-control" value={editWeight} onChange={(e)=>setEditWeight(e.target.value)} />
-                      </div>
-                      <div className="col-6 col-md-3">
-                        <label className="form-label">Type d'emballage</label>
-                        <select className="form-select" value={editPackageType} onChange={(e)=>setEditPackageType(e.target.value)}>
+        </div>
                           <option value="">(inchangé)</option>
                           <option value="palettes">Palettes</option>
                           <option value="cartons">Cartons</option>
@@ -953,10 +710,166 @@ return (
             <div className="modal-backdrop fade show" onClick={()=>setEditOpen(false)}></div>
           </>
         )}
+
+        {/* Contenu principal */}
+        <div className="container-fluid px-3 px-md-4 py-3">
+          {section === 'dashboard' ? (
+            <div className="row">
+              {/* Section principale - Gauche */}
+              <div className="col-12 col-lg-8">
+                {/* Carte de bienvenue */}
+                <div className="card border-0 shadow-sm mb-4">
+                  <div className="card-body">
+                    <h2 className="h4 fw-bold mb-3">
+                      {t('client.dashboard.welcome')}, {getUserDisplayName()} !
+                    </h2>
+                    <p className="text-muted mb-0">
+                      {t('client.dashboard.subtitle')}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Mes devis récents */}
+                <div className="card border-0 shadow-sm mb-4">
+                  <div className="card-body">
+                    <div className="d-flex justify-content-between align-items-center mb-3">
+                      <h5 className="fw-bold mb-0">Mes devis récents</h5>
+                      <a href="#/historique" className="btn btn-sm btn-link">
+                        Voir tout
+                      </a>
+                    </div>
+                    <div className="table-responsive">
+                      <table className="table table-hover align-middle">
+                        <thead>
+                          <tr>
+                            <th>Référence</th>
+                            <th>Client</th>
+                            <th>Statut</th>
+                            <th>Date</th>
+                            <th className="text-end">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {recentQuotes && recentQuotes.length > 0 ? (
+                            recentQuotes.map((quote, index) => (
+                              <tr key={index}>
+                                <td>{quote.reference || `DEVIS-${quote.id}`}</td>
+                                <td>{quote.clientName || 'N/A'}</td>
+                                <td>
+                                  <span className={`badge bg-${getStatusBadgeClass(quote.status)}`}>
+                                    {quote.status}
+                                  </span>
+                                </td>
+                                <td>{new Date(quote.createdAt).toLocaleDateString()}</td>
+                                <td className="text-end">
+                                  <button 
+                                    className="btn btn-sm btn-outline-primary"
+                                    onClick={() => onOpenEdit(quote)}
+                                  >
+                                    Voir
+                                  </button>
+                                </td>
+                              </tr>
+                            ))
+                          ) : (
+                            <tr>
+                              <td colSpan="5" className="text-center py-4 text-muted">
+                                Aucun devis récent
+                              </td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Section de droite - Activité récente et statistiques */}
+              <div className="col-12 col-lg-4">
+                {/* Activité récente */}
+                <div className="card border-0 shadow-sm mb-4">
+                  <div className="card-body">
+                    <div className="d-flex justify-content-between align-items-center mb-3">
+                      <h5 className="fw-bold mb-0">Activité récente</h5>
+                      <button 
+                        className="btn btn-sm btn-link p-0" 
+                        onClick={onBellClick}
+                        title="Voir toutes les notifications"
+                      >
+                        <Bell size={18} />
+                      </button>
+                    </div>
+                    <div className="d-flex flex-column gap-3" style={{ maxHeight: '400px', overflowY: 'auto' }}>
+                      {recentActivities && recentActivities.length > 0 ? (
+                        recentActivities.map((activity, index) => (
+                          <div key={index} className="d-flex gap-2 p-2 rounded" style={{ backgroundColor: 'var(--bs-gray-100)' }}>
+                            <div className="flex-shrink-0">
+                              <div className="rounded-circle bg-primary bg-opacity-10 d-flex align-items-center justify-content-center" style={{ width: '36px', height: '36px' }}>
+                                <Bell size={18} className="text-primary" />
+                              </div>
+                            </div>
+                            <div className="flex-grow-1">
+                              <div className="small fw-medium">{activity.title}</div>
+                              <div className="small text-muted">{activity.text}</div>
+                              <div className="text-muted" style={{ fontSize: '0.75rem' }}>
+                                {new Date(activity.createdAt).toLocaleString()}
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="text-center py-3 text-muted">
+                          Aucune activité récente
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Statistiques rapides */}
+                <div className="card border-0 shadow-sm">
+                  <div className="card-body">
+                    <h5 className="fw-bold mb-3">Statistiques</h5>
+                    <div className="d-flex flex-column gap-2">
+                      <div className="d-flex justify-content-between align-items-center">
+                        <span>Devis en attente</span>
+                        <span className="badge bg-warning text-dark">
+                          {stats?.pendingQuotes || 0}
+                        </span>
+                      </div>
+                      <div className="d-flex justify-content-between align-items-center">
+                        <span>Devis acceptés</span>
+                        <span className="badge bg-success">
+                          {stats?.acceptedQuotes || 0}
+                        </span>
+                      </div>
+                      <div className="d-flex justify-content-between align-items-center">
+                        <span>Devis refusés</span>
+                        <span className="badge bg-danger">
+                          {stats?.rejectedQuotes || 0}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <>
+              {section === 'recherche' && <RechercheTransitaire />}
+              {section === 'devis' && <NouveauDevis />}
+              {section === 'devis-admin' && <NouveauDevisAdmin />}
+              {section === 'historique' && <HistoriqueDevis />}
+              {section === 'envois' && <TrackingApp />}
+              {section === 'fichiers' && <MesFichiersRecus />}
+              {section === 'profil' && <ModofierProfClient />}
+            </>
+          )}
+        </div>
       </div>
     </div>
-  </div>
-);
-};
+  );
+}
 
 export default ClientDashboard;

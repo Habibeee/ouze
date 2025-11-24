@@ -41,6 +41,11 @@ export const headerCss = `
   @media (max-width: 575.98px) {
     .navbar-compact .container-fluid { padding-left: .5rem !important; padding-right: .5rem !important; }
     .navbar-compact .btn.px-4 { padding-left: .75rem !important; padding-right: .75rem !important; }
+    /* Forcer le bouton menu mobile (trois traits) à se coller à gauche */
+    .navbar-compact .mobile-menu-toggle {
+      margin-left: 0 !important;
+      margin-right: auto !important;
+    }
   }
   @media (max-width: 575.98px) {
     .navbar-compact img[alt="TransDigiSN"] { height: 56px !important; }
@@ -53,10 +58,10 @@ export const headerCss = `
   @media (max-width: 991.98px) {
     .mobile-menu-toggle {
       border-radius: 999px;
-      border-width: 1px;
-      border-color: #0b5f8a;
-      background-color: #0b5f8a;
-      color: #ffffff;
+      border-width: 0;
+      border-color: transparent;
+      background-color: transparent;
+      color: #000000;
       width: 40px;
       height: 40px;
       display: inline-flex;
@@ -66,8 +71,21 @@ export const headerCss = `
     }
 
     .mobile-menu-toggle:hover {
-      background-color: #0a4a6a;
-      border-color: #0a4a6a;
+      background-color: transparent;
+      border-color: transparent;
+      color: #000000;
+    }
+
+    /* Icône du menu mobile en mode sombre : blanche */
+    [data-theme="dark"] .navbar-compact .mobile-menu-toggle {
+      background-color: transparent;
+      border-color: transparent;
+      color: #ffffff;
+    }
+
+    [data-theme="dark"] .navbar-compact .mobile-menu-toggle:hover {
+      background-color: transparent;
+      border-color: transparent;
       color: #ffffff;
     }
 
@@ -82,9 +100,10 @@ export const headerCss = `
       position: fixed;
       top: 0;
       right: 0;
-      height: 100vh;
-      width: 78%;
-      max-width: 320px;
+      height: auto;
+      max-height: 60vh;
+      width: 55%;
+      max-width: 220px;
       background: #ffffff;
       z-index: 1050;
       padding: 1.5rem 1.25rem;
@@ -109,23 +128,41 @@ export const headerCss = `
     }
   }
 
+  /* Boutons du menu mobile plus étroits */
+  .mobile-menu-primary-btn {
+    min-width: 120px;
+    border-radius: 999px;
+    padding-left: 1.5rem !important;
+    padding-right: 1.5rem !important;
+    align-self: flex-start;
+  }
+
+  .mobile-menu-theme-toggle {
+    color: #0b5f8a;
+    align-self: flex-start;
+  }
+
+  [data-theme="dark"] .mobile-menu-theme-toggle {
+    color: #0b5f8a;
+  }
+
   body.mobile-menu-open {
     overflow: hidden;
   }
 
-  /* Forcer des couleurs lisibles dans le menu mobile en mode sombre */
+  /* Menu mobile en mode sombre : panneau sombre, texte clair */
   [data-theme="dark"] .mobile-menu-panel {
-    background: #ffffff;
-    color: #0b5f8a;
+    background: #0b1120;
+    color: #ffffff;
   }
 
   [data-theme="dark"] .mobile-menu-panel .btn.btn-link,
   [data-theme="dark"] .mobile-menu-panel .mobile-menu-link {
-    color: #0b5f8a !important;
+    color: #e5e7eb !important;
   }
 
   [data-theme="dark"] .mobile-menu-panel .mobile-menu-link:hover {
-    color: #063a55 !important;
+    color: #ffffff !important;
   }
 `;
 

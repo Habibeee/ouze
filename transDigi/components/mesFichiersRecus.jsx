@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { FileText } from 'lucide-react';
 import { listMesDevis as listMesDevisApi } from '../services/apiClient.js';
+import { useI18n } from '../src/i18n.jsx';
 
 const MesFichiersRecus = () => {
+  const { t } = useI18n();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState('');
@@ -69,7 +71,7 @@ const MesFichiersRecus = () => {
         });
         setItems(rows);
       } catch (e) {
-        setErr(e?.message || 'Erreur de chargement des fichiers');
+        setErr(e?.message || t('client.files.loading'));
       } finally {
         setLoading(false);
       }
@@ -79,14 +81,14 @@ const MesFichiersRecus = () => {
   return (
     <div className="container-fluid px-0 px-md-2 py-2 py-md-3">
       <div className="d-flex align-items-center justify-content-between mb-3 mb-md-4">
-        <h1 className="h4 h3-md fw-bold mb-0">Mes fichiers reçus</h1>
+        <h1 className="h4 h3-md fw-bold mb-0">{t('client.files.title')}</h1>
       </div>
       {err && <div className="alert alert-danger" role="alert">{err}</div>}
-      {loading && !items.length && <div className="text-muted">Chargement...</div>}
+      {loading && !items.length && <div className="text-muted">{t('client.files.loading')}</div>}
       {!loading && !err && items.length === 0 && (
         <div className="border rounded-3 p-4 text-center bg-body-secondary-subtle text-muted">
           <FileText size={40} className="mb-2" />
-          <div>Aucun fichier reçu pour le moment.</div>
+          <div>{t('client.files.empty')}</div>
         </div>
       )}
       {!loading && items.length > 0 && (
@@ -96,10 +98,10 @@ const MesFichiersRecus = () => {
               <table className="table mb-0 align-middle">
                 <thead className="bg-light">
                   <tr>
-                    <th className="px-3">Fichier</th>
-                    <th>Transitaire</th>
-                    <th>Type de service</th>
-                    <th>Date</th>
+                    <th className="px-3">{t('client.files.table.file')}</th>
+                    <th>{t('client.files.table.forwarder')}</th>
+                    <th>{t('client.files.table.service')}</th>
+                    <th>{t('client.files.table.date')}</th>
                     <th></th>
                   </tr>
                 </thead>
@@ -121,7 +123,7 @@ const MesFichiersRecus = () => {
                           className="btn btn-sm btn-outline-primary"
                           onClick={() => triggerDownload(it.url, it.name)}
                         >
-                          Télécharger
+                          {t('client.files.download')}
                         </button>
                       </td>
                     </tr>

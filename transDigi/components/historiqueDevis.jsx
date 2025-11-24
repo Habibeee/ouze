@@ -3,12 +3,13 @@ import { useToast } from './ui/ToastProvider.jsx';
 import { Search, ChevronLeft, ChevronRight, LayoutGrid, FileText, Clock, User, Truck, Search as SearchIcon } from 'lucide-react';
 import { historiqueDevisCss } from '../styles/historiqueDevisStyle.jsx';
 import { listMesDevis, cancelDevis } from '../services/apiClient.js';
+import { useI18n } from '../src/i18n.jsx';
 
 const statusMeta = {
-  accepte: { label: 'Accepté', className: 'badge-status success' },
-  attente: { label: 'En attente', className: 'badge-status warning' },
-  refuse: { label: 'Refusé', className: 'badge-status danger' },
-  annule: { label: 'Annulé', className: 'badge-status danger' },
+  accepte: { key: 'client.history.filter.status.accepted', className: 'badge-status success' },
+  attente: { key: 'client.history.filter.status.pending', className: 'badge-status warning' },
+  refuse: { key: 'client.history.filter.status.refused', className: 'badge-status danger' },
+  annule: { key: 'client.history.filter.status.canceled', className: 'badge-status danger' },
 };
 
 const normalizeStatus = (raw) => {
@@ -28,6 +29,7 @@ const HistoriqueDevis = () => {
   const [date, setDate] = useState('');
   const [page, setPage] = useState(1);
   const pageSize = 10;
+  const { t } = useI18n();
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState('');
@@ -52,19 +54,19 @@ const HistoriqueDevis = () => {
         }));
         setRows(mapped);
       } catch (e) {
-        setErr(e?.message || 'Erreur de chargement');
+        setErr(e?.message || t('client.history.error'));
       } finally { setLoading(false); }
   };
 
   const handleArchive = async (id) => {
     if (!id) return;
-    if (!window.confirm('Voulez-vous ARCHIVER ce devis ? Il restera visible dans votre historique avec un statut mis à jour.')) return;
+    if (!window.confirm(t('client.history.confirm.archive'))) return;
     try {
       await cancelDevis(id);
       await load();
-      toast.success('Devis archivé avec succès.');
+      toast.success(t('client.history.toast.archived'));
     } catch (e) {
-      toast.error(e?.message || "Erreur lors de l'archivage");
+      toast.error(e?.message || t('client.history.toast.archive_error'));
     }
   };
 
@@ -72,13 +74,13 @@ const HistoriqueDevis = () => {
 
   const handleCancel = async (id) => {
     if (!id) return;
-    if (!window.confirm('Voulez-vous ANNULER ce devis ? Il restera visible dans votre historique avec le statut "Annulé".')) return;
+    if (!window.confirm(t('client.history.confirm.cancel'))) return;
     try {
       await cancelDevis(id);
       await load();
-      toast.success('Devis annulé avec succès.');
+      toast.success(t('client.history.toast.canceled'));
     } catch (e) {
-      toast.error(e?.message || 'Erreur lors de l\'annulation');
+      toast.error(e?.message || t('client.history.toast.cancel_error'));
     }
   };
 
@@ -115,7 +117,7 @@ const HistoriqueDevis = () => {
     <div className="bg-body" style={{ minHeight: '100vh' }}>
       <style>{historiqueDevisCss}</style>
       <div className="container-fluid px-3 px-md-4 py-4">
-        <h2 className="fw-bold mb-3">Mon Historique de Devis</h2>
+        <h2 className="fw-bold mb-3">{t('client.history.title')}</h2>
         {/* Toasts globaux gèrent désormais les messages */}
 
         {/* Filter Bar */}
@@ -124,31 +126,31 @@ const HistoriqueDevis = () => {
             <div className="d-flex flex-column flex-xl-row align-items-stretch gap-2">
               <div className="position-relative flex-grow-1">
                 <Search size={18} className="text-muted" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--muted)' }} />
-                <input className="form-control ps-5" placeholder="Rechercher par transitaire ou numéro" value={query} onChange={(e) => setQuery(e.target.value)} />
+                <input className="form-control ps-5" placeholder={t('client.history.search.placeholder')} value={query} onChange={(e) => setQuery(e.target.value)} />
               </div>
               <select className="form-select filter-select" value={status} onChange={(e) => setStatus(e.target.value)}>
-                <option value="tous">Statut: Tous</option>
-                <option value="accepte">Accepté</option>
-                <option value="attente">En attente</option>
-                <option value="refuse">Refusé</option>
-                <option value="annule">Annulé / Archivé</option>
+                <option value="tous">{t('client.history.filter.status.all')}</option>
+                <option value="accepte">{t('client.history.filter.status.accepted')}</option>
+                <option value="attente">{t('client.history.filter.status.pending')}</option>
+                <option value="refuse">{t('client.history.filter.status.refused')}</option>
+                <option value="annule">{t('client.history.filter.status.canceled')}</option>
               </select>
               <select className="form-select filter-select" value={type} onChange={(e) => setType(e.target.value)}>
-                <option value="tous">Type de service</option>
+                <option value="tous">{t('client.history.filter.type')}</option>
                 {Array.from(new Set(rows.map(r => (r.typeService || '').toString()).filter(Boolean))).map((t) => (
                   <option key={t} value={t}>{t}</option>
                 ))}
               </select>
               <select className="form-select filter-select" value={destination} onChange={(e) => setDestination(e.target.value)}>
-                <option value="tous">Destination</option>
+                <option value="tous">{t('client.history.filter.destination')}</option>
                 {Array.from(new Set(rows.map(r => r.destination))).map((d) => (
                   <option key={d} value={d}>{d}</option>
                 ))}
               </select>
               <input type="date" className="form-control filter-select" value={date} onChange={(e) => setDate(e.target.value)} />
               <div className="d-flex gap-2">
-                <button className="btn btn-primary">Appliquer</button>
-                <button type="button" className="btn btn-link text-decoration-none" onClick={reset}>Réinitialiser</button>
+                <button className="btn btn-primary">{t('client.history.filter.apply')}</button>
+                <button type="button" className="btn btn-link text-decoration-none" onClick={reset}>{t('client.history.filter.reset')}</button>
               </div>
             </div>
           </div>
@@ -160,20 +162,20 @@ const HistoriqueDevis = () => {
             <table className="table align-middle mb-0 quotes-table">
               <thead>
                 <tr>
-                  <th>Numéro de devis</th>
-                  <th>Transitaire</th>
-                  <th className="d-none d-md-table-cell">Date de la demande</th>
-                  <th className="d-none d-lg-table-cell">Type de service</th>
-                  <th className="d-none d-xl-table-cell">Description</th>
-                  <th className="d-none d-lg-table-cell">Origine</th>
-                  <th className="d-none d-lg-table-cell">Destination</th>
-                  <th>Statut</th>
-                  <th className="text-end">Actions</th>
+                  <th>{t('client.history.table.id')}</th>
+                  <th>{t('client.history.table.forwarder')}</th>
+                  <th className="d-none d-md-table-cell">{t('client.history.table.date')}</th>
+                  <th className="d-none d-lg-table-cell">{t('client.history.table.service')}</th>
+                  <th className="d-none d-xl-table-cell">{t('client.history.table.description')}</th>
+                  <th className="d-none d-lg-table-cell">{t('client.history.table.origin')}</th>
+                  <th className="d-none d-lg-table-cell">{t('client.history.table.destination')}</th>
+                  <th>{t('client.history.table.status')}</th>
+                  <th className="text-end">{t('client.history.table.actions')}</th>
                 </tr>
               </thead>
               <tbody>
                 {loading && (
-                  <tr><td colSpan={6} className="text-center text-muted py-4">Chargement...</td></tr>
+                  <tr><td colSpan={6} className="text-center text-muted py-4">{t('client.history.loading')}</td></tr>
                 )}
                 {err && !loading && (
                   <tr><td colSpan={6} className="text-center text-danger py-4">{err}</td></tr>
@@ -187,13 +189,17 @@ const HistoriqueDevis = () => {
                     <td className="d-none d-xl-table-cell" style={{maxWidth: 300, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'}} title={r.description}>{r.description}</td>
                     <td className="d-none d-lg-table-cell">{r.origin}</td>
                     <td className="d-none d-lg-table-cell">{r.destination}</td>
-                    <td><span className={(statusMeta[r.statut]||statusMeta['attente']).className}>{(statusMeta[r.statut]||statusMeta['attente']).label}</span></td>
+                    <td>
+                      <span className={(statusMeta[r.statut]||statusMeta['attente']).className}>
+                        {t((statusMeta[r.statut]||statusMeta['attente']).key)}
+                      </span>
+                    </td>
                     <td className="text-end">
                       <div className="d-inline-flex gap-2">
                         {r.statut === 'attente' && (
-                          <button className="btn btn-sm btn-outline-warning" onClick={() => handleCancel(r.id)}>Annuler</button>
+                          <button className="btn btn-sm btn-outline-warning" onClick={() => handleCancel(r.id)}>{t('client.history.actions.cancel')}</button>
                         )}
-                        <button className="btn btn-sm btn-outline-secondary" onClick={() => handleArchive(r.id)}>Archiver</button>
+                        <button className="btn btn-sm btn-outline-secondary" onClick={() => handleArchive(r.id)}>{t('client.history.actions.archive')}</button>
                       </div>
                     </td>
                   </tr>
@@ -204,11 +210,11 @@ const HistoriqueDevis = () => {
 
           {/* Footer */}
           <div className="d-flex justify-content-between align-items-center p-3">
-            <small className="text-muted">Page {page} sur {totalPages}</small>
+            <small className="text-muted">{t('client.history.pagination.label').replace('{{page}}', String(page)).replace('{{total}}', String(totalPages))}</small>
             <nav>
               <ul className="pagination mb-0">
                 <li className={`page-item ${page === 1 ? 'disabled' : ''}`}>
-                  <button className="page-link" onClick={() => setPage((p) => Math.max(1, p - 1))} aria-label="Précédent">
+                  <button className="page-link" onClick={() => setPage((p) => Math.max(1, p - 1))} aria-label={t('client.history.pagination.prev_aria')}>
                     <ChevronLeft size={16} />
                   </button>
                 </li>
@@ -218,7 +224,7 @@ const HistoriqueDevis = () => {
                   </li>
                 ))}
                 <li className={`page-item ${page === totalPages ? 'disabled' : ''}`}>
-                  <button className="page-link" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} aria-label="Suivant">
+                  <button className="page-link" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} aria-label={t('client.history.pagination.next_aria')}>
                     <ChevronRight size={16} />
                   </button>
                 </li>

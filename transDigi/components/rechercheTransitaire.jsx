@@ -1,13 +1,14 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { 
-  MapPin, Wrench, Building2, Search, Bell, User, Star,
-  Plane, Truck, Ship, Package, ArrowUpDown, CheckCircle,
-  LayoutGrid, FileText, Clock
+  MapPin, Wrench, Building2, Search, Star,
+  CheckCircle, Clock, AlertCircle
 } from 'lucide-react';
 import { transitaireStyles, transitaireCss } from '../styles/rechercheTransitaireStyle.jsx';
 import { searchTranslatairesClient } from '../services/apiClient.js';
+import { useI18n } from '../src/i18n.jsx';
 
 const RechercheTransitaire = () => {
+  const { t, lang } = useI18n();
   const [searchFilters, setSearchFilters] = useState({ location: '', service: '', company: '' });
   const [page, setPage] = useState(1);
   const pageSize = 6;
@@ -16,6 +17,7 @@ const RechercheTransitaire = () => {
   const [err, setErr] = useState('');
   // Sélection locale simple pour "Voir les avis" côté client
   const [selectionAvis, setSelectionAvis] = useState({}); // { [idTrans]: 'satisfait' | 'moyen' | 'pas_satisfait' }
+  const [selectedTransitaire, setSelectedTransitaire] = useState(null);
 
   const fetchTrans = async () => {
     try {
@@ -120,8 +122,8 @@ const RechercheTransitaire = () => {
       {/* Hero Section */}
       <div className="container px-2 px-md-3 py-3 py-md-5">
         <div className="text-center mb-3 mb-md-5">
-          <h1 className="h2 h1-md fw-bold mb-2 mb-md-3" style={transitaireStyles.heroTitle}>Trouvez votre transitaire</h1>
-          <p className="text-muted small" style={{ fontSize: '0.95rem' }}>Recherchez des transitaires par localisation, service ou nom d'entreprise.</p>
+          <h1 className="h2 h1-md fw-bold mb-2 mb-md-3" style={transitaireStyles.heroTitle}>{t('client.search.title')}</h1>
+          <p className="text-muted small" style={{ fontSize: '0.95rem' }}>{t('client.search.subtitle')}</p>
         </div>
 
         {/* Search Bar */}
@@ -131,19 +133,19 @@ const RechercheTransitaire = () => {
               <div className="col-12 col-md-3">
                 <div className="input-group">
                   <span className="input-group-text border-end-0"><MapPin size={20} className="text-muted" /></span>
-                  <input type="text" className="form-control border-start-0" placeholder="Localisation" value={searchFilters.location} onChange={(e)=>setSearchFilters({...searchFilters, location:e.target.value})} />
+                  <input type="text" className="form-control border-start-0" placeholder={t('client.search.filters.location')} value={searchFilters.location} onChange={(e)=>setSearchFilters({...searchFilters, location:e.target.value})} />
                 </div>
               </div>
               <div className="col-12 col-md-3">
                 <div className="input-group">
                   <span className="input-group-text border-end-0"><Wrench size={20} className="text-muted" /></span>
-                  <input type="text" className="form-control border-start-0" placeholder="Service" value={searchFilters.service} onChange={(e)=>setSearchFilters({...searchFilters, service:e.target.value})} />
+                  <input type="text" className="form-control border-start-0" placeholder={t('client.search.filters.service')} value={searchFilters.service} onChange={(e)=>setSearchFilters({...searchFilters, service:e.target.value})} />
                 </div>
               </div>
               <div className="col-12 col-md-3">
                 <div className="input-group">
                   <span className="input-group-text border-end-0"><Building2 size={20} className="text-muted" /></span>
-                  <input type="text" className="form-control border-start-0" placeholder="Entreprise" value={searchFilters.company} onChange={(e)=>setSearchFilters({...searchFilters, company:e.target.value})} />
+                  <input type="text" className="form-control border-start-0" placeholder={t('client.search.filters.company')} value={searchFilters.company} onChange={(e)=>setSearchFilters({...searchFilters, company:e.target.value})} />
                 </div>
               </div>
               <div className="col-12 col-md-3">
@@ -152,7 +154,7 @@ const RechercheTransitaire = () => {
                   style={transitaireStyles.publishBtn}
                   onClick={() => { fetchTrans(); }}
                 >
-                  <Search size={20} className="me-2" /> Rechercher
+                  <Search size={20} className="me-2" /> {t('client.search.button.submit')}
                 </button>
               </div>
             </div>
@@ -162,10 +164,26 @@ const RechercheTransitaire = () => {
         {/* Results Header */}
         <div className="d-flex justify-content-between align-items-center mb-4">
           <p className="text-muted mb-0">
-            {loading ? 'Chargement...' : (err ? err : (total === 0 ? 'Aucun résultat' : `Affichage de ${Math.min((page-1)*pageSize+1, total)}-${Math.min(page*pageSize, total)} sur ${total} résultats`))}
+            {loading
+              ? t('client.search.results.loading')
+              : (err
+                ? err
+                : (total === 0
+                  ? t('client.search.results.none')
+                  : (() => {
+                      const from = Math.min((page-1)*pageSize+1, total);
+                      const to = Math.min(page*pageSize, total);
+                      const tpl = t('client.search.results.range');
+                      return tpl
+                        .replace('{{from}}', String(from))
+                        .replace('{{to}}', String(to))
+                        .replace('{{total}}', String(total));
+                    })()
+                  )
+                )}
           </p>
           <button className="btn btn-outline-secondary btn-sm d-flex align-items-center gap-2">
-            <ArrowUpDown size={16} /> Trier par Pertinence
+            <ArrowUpDown size={16} /> {t('client.search.sort.relevance')}
           </button>
         </div>
 
@@ -196,7 +214,7 @@ const RechercheTransitaire = () => {
                     {transitaire.verified && (
                       <div className="d-flex align-items-center gap-1" style={transitaireStyles.verified}>
                         <CheckCircle size={16} />
-                        <span className="small">Vérifié</span>
+                        <span className="small">{t('client.search.badge.verified')}</span>
                       </div>
                     )}
                   </div>
@@ -218,7 +236,7 @@ const RechercheTransitaire = () => {
                         ))}
                       </div>
                     ) : (
-                      <p className="text-muted small mb-0">Aucun secteur renseigné</p>
+                      <p className="text-muted small mb-0">{t('client.search.services.none')}</p>
                     )}
                   </div>
 
@@ -230,34 +248,31 @@ const RechercheTransitaire = () => {
                         ? `#/nouveau-devis?translataireId=${encodeURIComponent(transitaire.id)}&${nameParam}`
                         : `#/nouveau-devis?${nameParam}`;
                       return (
-                        <a
-                          href={href}
-                          className="btn text-white"
+                        <button
+                          className="btn text-white w-100"
                           style={transitaireStyles.primaryBtn}
                           onClick={() => {
                             try {
-                              if (transitaire.id) localStorage.setItem('pendingTranslataireId', String(transitaire.id));
-                              if (transitaire.name) localStorage.setItem('pendingTranslataireName', String(transitaire.name));
-                            } catch {}
+                              if (transitaire.id) {
+                                localStorage.setItem('pendingTranslataireId', String(transitaire.id));
+                                localStorage.setItem('pendingTranslataireName', String(transitaire.name || ''));
+                                setSelectedTransitaire(transitaire);
+                                success(`Transitaire sélectionné : ${transitaire.name}`);
+                                window.location.hash = '#/nouveau-devis';
+                              }
+                            } catch (e) {
+                              console.error('Erreur lors de la sélection du transitaire:', e);
+                            }
                           }}
                         >
-                          Demander un devis
-                        </a>
+                          {t('client.search.quote_button')}
+                        </button>
                       );
                     })()}
-                    <select
-                      className="form-select"
-                      value={selectionAvis[transitaire.id] || ''}
-                      onChange={(e) => setSelectionAvis(prev => ({
-                        ...prev,
-                        [transitaire.id]: e.target.value
-                      }))}
-                    >
-                      <option value="">Appréciation</option>
-                      <option value="satisfait">Satisfait</option>
-                      <option value="moyen">Moyen</option>
-                      <option value="pas_satisfait">Pas satisfait</option>
-                    </select>
+                    <div className="d-flex align-items-center gap-2 text-muted small">
+                      <AlertCircle size={16} />
+                      <span>Ce transitaire sera responsable de votre demande</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -269,7 +284,7 @@ const RechercheTransitaire = () => {
         <nav>
           <ul className="pagination justify-content-center">
             <li className={`page-item ${page === 1 ? 'disabled' : ''}`}>
-              <button className="page-link" onClick={() => setPage(p => Math.max(1, p - 1))}>Précédent</button>
+              <button className="page-link" onClick={() => setPage(p => Math.max(1, p - 1))}>{t('client.search.pagination.prev')}</button>
             </li>
             {Array.from({ length: totalPages }).map((_, i) => (
               <li key={i} className={`page-item ${page === i+1 ? 'active' : ''}`}>
@@ -283,7 +298,7 @@ const RechercheTransitaire = () => {
               </li>
             ))}
             <li className={`page-item ${page === totalPages ? 'disabled' : ''}`}>
-              <button className="page-link" onClick={() => setPage(p => Math.min(totalPages, p + 1))}>Suivant</button>
+              <button className="page-link" onClick={() => setPage(p => Math.min(totalPages, p + 1))}>{t('client.search.pagination.next')}</button>
             </li>
           </ul>
         </nav>

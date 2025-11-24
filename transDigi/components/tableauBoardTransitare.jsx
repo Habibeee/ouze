@@ -160,9 +160,9 @@ const TransitaireDashboard = () => {
   const [error, setError] = useState('');
 
   const [stats, setStats] = useState([
-    { label: 'Total Devis Reçus', value: '-' },
-    { label: "Taux d'Acceptation", value: '-' },
-    { label: 'Devis en Attente', value: '-' }
+    { label: 'Total Devis Reçus', value: '-', className: 'fs-5' },
+    { label: "Taux d'Acceptation", value: '-', className: 'fs-5' },
+    { label: 'Devis en Attente', value: '-', className: 'fs-5' },
   ]);
 
   const [tabs, setTabs] = useState([
@@ -545,21 +545,36 @@ const TransitaireDashboard = () => {
         {/* Main content area */}
         <div className="container-fluid px-2 px-md-4 py-3 py-md-4">
           {/* Page Title */}
-          <div className="d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between gap-2 mb-3 mb-md-4">
-            <h1 className="h3 h2-md fw-bold mb-0 text-body forwarder-main-title">{t('forwarder.page.title')}</h1>
-            <button className="btn btn-outline-secondary btn-sm" onClick={async ()=>{ try { await fetchDevis({ page:1, limit, status: activeTab }); lastStatsAtRef.current = 0; await updateStats(); } catch {} }}>{t('forwarder.page.refresh')}</button>
+          <div className="d-flex flex-column flex-sm-row align-items-start justify-content-between gap-2 mb-3 mb-md-4">
+            <div className="d-flex flex-column">
+              <h1 className="h3 h2-md fw-bold mb-0 text-body forwarder-main-title">{t('forwarder.page.title')}</h1>
+              <h5 className="fw-semibold text-body forwarder-stats-title mb-0">{t('forwarder.stats.title')}</h5>
+            </div>
+            <div className="ms-auto">
+              <button 
+                className="btn btn-outline-secondary btn-sm" 
+                onClick={async ()=>{ 
+                  try { 
+                    await fetchDevis({ page:1, limit, status: activeTab }); 
+                    lastStatsAtRef.current = 0; 
+                    await updateStats(); 
+                  } catch {} 
+                }}
+              >
+                {t('forwarder.page.refresh')}
+              </button>
+            </div>
           </div>
 
           {/* Stats Section */}
           <div className="mb-3 mb-md-4">
-            <h5 className="fw-semibold mb-3 text-body forwarder-stats-title">{t('forwarder.stats.title')}</h5>
-            <div className="row g-2 g-md-3">
+            <div className="row g-1 g-md-2 justify-content-center">
               {stats.map((stat, index) => (
-                <div key={index} className="col-12 col-sm-6 col-lg-3">
-                  <div className="card border-0 shadow-sm h-100 forwarder-stats-card">
-                    <div className="card-body p-3">
-                      <div className="small mb-2" style={{ color: 'var(--bs-body-color)' }}>{stat.label}</div>
-                      <div className="h3 fw-bold mb-0" style={{ color: 'var(--bs-body-color)' }}>{stat.value}</div>
+                <div key={index} className="col-4 d-flex">
+                  <div className="card border-0 shadow-sm w-100 forwarder-stats-card">
+                    <div className="card-body p-2 d-flex flex-column justify-content-center">
+                      <div className="fw-medium mb-1 text-truncate" title={stat.label} style={{ fontSize: '1rem' }}>{stat.label}</div>
+                      <div className="h4 fw-bold mb-0 text-nowrap">{stat.value}</div>
                     </div>
                   </div>
                 </div>
@@ -572,15 +587,18 @@ const TransitaireDashboard = () => {
             <div className="card-body p-0">
               {/* Tabs */}
               <div className="d-flex flex-wrap align-items-center justify-content-between gap-3 p-3 border-bottom">
-                <div className="d-flex gap-2 flex-wrap">
-                  {tabs.map((tab) => (
+                <div className="d-flex flex-nowrap overflow-x-auto gap-1">
+                  {['En attente', 'En cours', 'Traité'].map((status) => (
                     <button
-                      key={tab.id}
-                      onClick={() => setActiveTab(tab.id)}
-                      className={`btn ${activeTab === tab.id ? 'text-white' : 'btn-light'}`}
-                      style={{ backgroundColor: activeTab === tab.id ? transitareStyles.primary : undefined, border: 'none' }}
+                      key={status}
+                      className={`btn btn-sm flex-shrink-0 ${
+                        activeTab === status.toLowerCase()
+                          ? 'btn-primary'
+                          : 'btn-outline-secondary'
+                      }`}
+                      onClick={() => setActiveTab(status.toLowerCase())}
                     >
-                      {tab.id === 'en-attente' ? t('forwarder.tabs.pending') : tab.id === 'en-cours' ? t('forwarder.tabs.in_progress') : t('forwarder.tabs.processed')} ({tab.count})
+                      {status}
                     </button>
                   ))}
                 </div>
@@ -597,9 +615,15 @@ const TransitaireDashboard = () => {
                 <table className="table table-hover mb-0">
                   <thead className="bg-light">
                     <tr>
-                      <th className="px-4 py-3">{t('forwarder.table.header.id')}</th>
+                      <th className="px-4 py-3">
+                        <span className="d-none d-sm-inline">{t('forwarder.table.header.id')}</span>
+                        <span className="d-inline d-sm-none">ID</span>
+                      </th>
                       <th className="py-3">{t('forwarder.table.header.client')}</th>
-                      <th className="py-3">{t('forwarder.table.header.date')}</th>
+                      <th className="py-3">
+                        <span className="d-none d-sm-inline">Détails</span>
+                        <span className="d-inline d-sm-none">Dét.</span>
+                      </th>
                       <th className="py-3">{t('forwarder.table.header.route')}</th>
                       <th className="py-3">{t('forwarder.table.header.status')}</th>
                       <th className="py-3">{t('forwarder.table.header.actions')}</th>
@@ -625,7 +649,20 @@ const TransitaireDashboard = () => {
                       <tr key={item.id}>
                         <td className="px-4 py-3 fw-semibold">{item.id}</td>
                         <td className="py-3">{item.client}</td>
-                        <td className="py-3 text-body">{item.date}</td>
+                        <td className="text-nowrap">
+                          {item._id ? (
+                            <>
+                              <span className="d-inline d-sm-none" title={item._id}>
+                                {item._id.substring(0, 6)}...
+                              </span>
+                              <span className="d-none d-sm-inline">
+                                {item._id}
+                              </span>
+                            </>
+                          ) : (
+                            <span className="text-muted">-</span>
+                          )}
+                        </td>
                         <td className="py-3 text-body">{item.route}</td>
                         <td className="py-3">
                           <span className="badge px-3 py-2" style={{ backgroundColor: statusBadge(item.status).bg, color: statusBadge(item.status).fg, fontWeight: '500' }}>

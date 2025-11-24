@@ -2,8 +2,10 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Search, Package, MapPin, Calendar, ChevronDown } from 'lucide-react';
 import { suiviEnvoiCss } from '../styles/suiviEnvoiStyle.jsx';
 import { listMesDevis } from '../services/apiClient.js';
+import { useI18n } from '../src/i18n.jsx';
 
 const TrackingApp = () => {
+  const { t } = useI18n();
   const [activeTab, setActiveTab] = useState('en-cours');
   const [selectedShipment, setSelectedShipment] = useState(null);
   const [leafletReady, setLeafletReady] = useState(!!(typeof window !== 'undefined' && window.L));
@@ -113,14 +115,22 @@ const TrackingApp = () => {
     } catch { return null; }
   };
 
-  // Extraire le paramètre focus depuis le hash
-  const getFocusId = () => {
+  // Extraire infos de routing depuis le hash
+  const getHashInfo = () => {
     try {
       const h = window.location.hash || '';
-      const p = h.split('?');
-      const q = new URLSearchParams(p[1] || '');
-      return q.get('focus');
-    } catch { return null; }
+      const [path, query] = h.split('?');
+      const params = new URLSearchParams(query || '');
+      return { path, params };
+    } catch {
+      return { path: '', params: new URLSearchParams() };
+    }
+  };
+
+  const getFocusId = () => {
+    const { params } = getHashInfo();
+    // compat : accepter ?focus=ID ou ?id=ID
+    return params.get('focus') || params.get('id');
   };
 
   useEffect(() => {
@@ -349,12 +359,15 @@ const TrackingApp = () => {
     }
   }, [leafletReady]);
 
-  // Auto-select a shipment by default when list is available
+  // Auto-select a shipment by default quand aucune cible n'est fournie dans l'URL
   useEffect(() => {
+    const focusId = getFocusId();
+    if (focusId) return; // ne pas écraser la sélection provenant de l'URL
     if (!selectedShipment && currentPageShipments.length > 0) {
       setSelectedShipment(currentPageShipments[0]);
     }
   }, [currentPageShipments, selectedShipment]);
+
 
   useEffect(() => {
     // Initialize or update map when a shipment is selected
@@ -398,6 +411,7 @@ const TrackingApp = () => {
     };
   }, [selectedShipment]);
 
+  // Vue liste + panneau latéral (comportement original)
   return (
     <div className="bg-body" style={{ minHeight: '100vh', backgroundColor: 'var(--bg)' }}>
       <style>{suiviEnvoiCss}</style>
@@ -405,7 +419,7 @@ const TrackingApp = () => {
         <div className="row">
           <div className="col-lg-8">
             <div className="rounded-3 shadow-sm p-4" style={{ backgroundColor: 'var(--card)' }}>
-              <h4 className="fw-bold mb-4">Suivi de mes envois</h4>
+              <h4 className="fw-bold mb-4">{t('client.shipments.title')}</h4>
 
               {/* Search Bar */}
               <div className="position-relative mb-4">
@@ -413,7 +427,7 @@ const TrackingApp = () => {
                 <input
                   type="text"
                   className="form-control ps-5"
-                  placeholder="Rechercher un envoi par numéro de suivi"
+                  placeholder={t('client.shipments.search.placeholder')}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   style={{ backgroundColor: 'var(--card)', border: 'none', padding: '12px 12px 12px 45px' }}
@@ -423,15 +437,15 @@ const TrackingApp = () => {
               {/* Filters */}
               <div className="row g-3 mb-4">
                 <div className="col-12 col-md-3">
-                  <label className="form-label small text-muted">Statut</label>
+                  <label className="form-label small text-muted">{t('client.shipments.filters.status')}</label>
                   <select className="form-select" value={filters.status} onChange={(e)=>setFilters(f=>({...f, status: e.target.value }))}>
-                    <option value="all">Tous</option>
-                    <option value="en-transit">En transit</option>
-                    <option value="livre">Livré</option>
+                    <option value="all">{t('client.quotes.filter.all')}</option>
+                    <option value="en-transit">{t('client.quotes.filter.accepted')}</option>
+                    <option value="livre">{t('client.quotes.status.accepted')}</option>
                   </select>
                 </div>
                 <div className="col-12 col-md-3">
-                  <label className="form-label small text-muted">Transporteur</label>
+                  <label className="form-label small text-muted">{t('client.shipments.filters.carrier')}</label>
                   <select className="form-select" value={filters.carrier} onChange={(e)=>setFilters(f=>({...f, carrier: e.target.value }))}>
                     <option value="all">Tous</option>
                     <option value="chronopost">Chronopost</option>
@@ -439,11 +453,11 @@ const TrackingApp = () => {
                   </select>
                 </div>
                 <div className="col-6 col-md-3">
-                  <label className="form-label small text-muted">Du</label>
+                  <label className="form-label small text-muted">{t('client.shipments.filters.date_from')}</label>
                   <input type="date" className="form-control" value={filters.dateFrom} onChange={(e)=>setFilters(f=>({...f, dateFrom: e.target.value }))} />
                 </div>
                 <div className="col-6 col-md-3">
-                  <label className="form-label small text-muted">Au</label>
+                  <label className="form-label small text-muted">{t('client.shipments.filters.date_to')}</label>
                   <input type="date" className="form-control" value={filters.dateTo} onChange={(e)=>setFilters(f=>({...f, dateTo: e.target.value }))} />
                 </div>
               </div>
@@ -460,7 +474,7 @@ const TrackingApp = () => {
                       fontWeight: activeTab === 'en-cours' ? '600' : '400'
                     }}
                   >
-                    En cours
+                    {t('client.shipments.tabs.in_progress')}
                   </button>
                 </li>
                 <li className="nav-item">
@@ -473,18 +487,18 @@ const TrackingApp = () => {
                       fontWeight: activeTab === 'terminee' ? '600' : '400'
                     }}
                   >
-                    Terminée
+                    {t('client.shipments.tabs.completed')}
                   </button>
                 </li>
               </ul>
 
               {/* Shipments List */}
-              {loading && <div className="text-center text-muted py-3">Chargement...</div>}
+              {loading && <div className="text-center text-muted py-3">{t('client.history.loading')}</div>}
               {err && <div className="alert alert-danger">{err}</div>}
               {!loading && !err && filteredShipments.length === 0 && (
                 <div className="rounded-3 shadow-sm p-4 text-center text-muted" style={{ backgroundColor: 'var(--card)' }}>
                   <Package size={48} color="var(--border)" className="mb-3" />
-                  <p>Aucun envoi à afficher. Les envois apparaissent ici dès qu’un devis est accepté par un transitaire.</p>
+                  <p>{t('client.shipments.empty.title')} {t('client.shipments.empty.subtitle')}</p>
                 </div>
               )}
               <div className="d-flex flex-column gap-3">
@@ -503,11 +517,11 @@ const TrackingApp = () => {
                         </div>
                         <div>
                           <h6 className="fw-bold mb-1">Envoi {shipment.id}</h6>
-                          <p className="text-muted small mb-2">Livraison prévue : {shipment.date}</p>
+                          <p className="text-muted small mb-2">{t('client.shipments.card.expected_date').replace('{{date}}', shipment.date || '')}</p>
                           <span className="carrier-pill">{shipment.statusLabel}</span>
                         </div>
                       </div>
-                      <button className="btn btn-primary btn-sm" onClick={(e) => { e.stopPropagation(); setSelectedShipment(shipment); }}>Suivre</button>
+                      <button className="btn btn-primary btn-sm" onClick={(e) => { e.stopPropagation(); setSelectedShipment(shipment); }}>{t('client.shipments.card.button')}</button>
                     </div>
                     
                     {/* Progress Bar */}
@@ -520,10 +534,10 @@ const TrackingApp = () => {
 
               {/* Pagination */}
               <div className="d-flex justify-content-between align-items-center mt-3">
-                <small className="text-muted">Page {page} sur {totalPages}</small>
+                <small className="text-muted">{t('client.shipments.pagination.label').replace('{{page}}', String(page)).replace('{{total}}', String(totalPages))}</small>
                 <div className="btn-group">
-                  <button className="btn btn-outline-secondary btn-sm" disabled={page === 1} onClick={()=>setPage(p=>Math.max(1, p-1))}>Précédent</button>
-                  <button className="btn btn-outline-secondary btn-sm" disabled={page === totalPages} onClick={()=>setPage(p=>Math.min(totalPages, p+1))}>Suivant</button>
+                  <button className="btn btn-outline-secondary btn-sm" disabled={page === 1} onClick={()=>setPage(p=>Math.max(1, p-1))}>{t('client.shipments.pagination.prev')}</button>
+                  <button className="btn btn-outline-secondary btn-sm" disabled={page === totalPages} onClick={()=>setPage(p=>Math.min(totalPages, p+1))}>{t('client.shipments.pagination.next')}</button>
                 </div>
               </div>
             </div>
@@ -534,7 +548,7 @@ const TrackingApp = () => {
             {selectedShipment ? (
               <div className="rounded-3 shadow-sm p-4" style={{ backgroundColor: 'var(--card)' }}>
                 <div className="d-flex justify-content-between align-items-center mb-4">
-                  <h5 className="fw-bold mb-0">Détails de l'envoi #{selectedShipment.id}</h5>
+                  <h5 className="fw-bold mb-0">{t('client.shipments.detail.title').replace('{{id}}', selectedShipment.id || '')}</h5>
                   <span 
                     className="badge" 
                     style={{ 
@@ -542,7 +556,7 @@ const TrackingApp = () => {
                       color: selectedShipment.status === 'livre' ? '#28A745' : '#007BFF'
                     }}
                   >
-                    {selectedShipment.status === 'livre' ? 'Livré' : 'En transit'}
+                    {selectedShipment.status === 'livre' ? t('client.shipments.detail.status.delivered') : t('client.shipments.detail.status.in_transit')}
                   </span>
                 </div>
 
@@ -551,7 +565,7 @@ const TrackingApp = () => {
 
                 {/* History */}
                 <div className="mb-4">
-                  <h6 className="fw-bold mb-3">Historique de l'envoi</h6>
+                  <h6 className="fw-bold mb-3">{t('client.shipments.detail.history_title')}</h6>
                   <div className="timeline">
                     {selectedShipment.history?.map((event, index) => (
                       <div key={index} className="timeline-item d-flex">
@@ -578,22 +592,22 @@ const TrackingApp = () => {
 
                 {/* Additional Details */}
                 <div>
-                  <h6 className="fw-bold mb-3">Détails supplémentaires</h6>
+                  <h6 className="fw-bold mb-3">{t('client.shipments.detail.more_title')}</h6>
                   <div className="row g-3">
                     <div className="col-6">
-                      <p className="text-muted small mb-1">Origine</p>
+                      <p className="text-muted small mb-1">{t('client.shipments.detail.origin')}</p>
                       <p className="fw-semibold small mb-0">{selectedShipment.details?.origin || selectedShipment.origin}</p>
                     </div>
                     <div className="col-6">
-                      <p className="text-muted small mb-1">Destination</p>
+                      <p className="text-muted small mb-1">{t('client.shipments.detail.destination')}</p>
                       <p className="fw-semibold small mb-0">{selectedShipment.details?.destination || selectedShipment.destination}</p>
                     </div>
                     <div className="col-6">
-                      <p className="text-muted small mb-1">Poids</p>
+                      <p className="text-muted small mb-1">{t('client.shipments.detail.weight')}</p>
                       <p className="fw-semibold small mb-0">{selectedShipment.details?.poids || '-'}</p>
                     </div>
                     <div className="col-6">
-                      <p className="text-muted small mb-1">Dimensions</p>
+                      <p className="text-muted small mb-1">{t('client.shipments.detail.dimensions')}</p>
                       <p className="fw-semibold small mb-0">{selectedShipment.details?.dimensions || '-'}</p>
                     </div>
                   </div>
@@ -602,7 +616,7 @@ const TrackingApp = () => {
             ) : (
               <div className="rounded-3 shadow-sm p-4 text-center text-muted" style={{ backgroundColor: 'var(--card)' }}>
                 <Package size={48} color="var(--border)" className="mb-3" />
-                <p>Sélectionnez un envoi pour voir les détails</p>
+                <p>{t('client.shipments.detail.empty')}</p>
               </div>
             )}
           </div>
