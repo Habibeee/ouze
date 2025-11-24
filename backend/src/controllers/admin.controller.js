@@ -10,6 +10,19 @@ const { sendUserApprovalNotification } = require('../utils/email.service');
 const Notification = require('../models/Notification');
 const { getIO } = require('../services/socket');
 
+// Test de connexion à l'API Brevo
+const testBrevoConnection = async () => {
+  try {
+    const { verifySMTP } = require('../utils/email.service');
+    const result = await verifySMTP();
+    console.log('Test de connexion Brevo:', result);
+    return result;
+  } catch (error) {
+    console.error('Erreur de test de connexion Brevo:', error);
+    return { success: false, error: error.message };
+  }
+};
+
 // ===== Helpers =====
 const ensureSuperAdmin = (req, res, next) => {
   if (!req.user || req.user.role !== 'super_admin') {
@@ -432,40 +445,49 @@ const getAllTranslataires = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Erreur lors de la récupération',
-      error: error.message
-    });
-  }
-};
-
-// @desc    Approuver/Rejeter/Suspendre un translataire
 // @route   PUT /api/admin/translataires/:id/approve
 // @access  Private (Admin)
 const approveTranslataire = async (req, res) => {
   try {
+    console.log('[APPROVE_TRANSLATAIRE] Début de la fonction');
+    
+    // Tester la connexion à l'API Brevo
+    const brevoTest = await testBrevoConnection();
+    console.log('[BREVO_TEST] Résultat du test de connexion:', brevoTest);
+    
     const translataire = await Translataire.findById(req.params.id);
 
     if (!translataire) {
+      console.log(`[APPROVE_TRANSLATAIRE] Translataire non trouvé avec l'ID: ${req.params.id}`);
       return res.status(404).json({
         success: false,
         message: 'Translataire non trouvé'
       });
     }
 
+    console.log(`[APPROVE_TRANSLATAIRE] Traitement du translataire: ${translataire.nomEntreprise} (${translataire.email})`);
+    
     const { statut, commentaire } = req.body;
+    console.log(`[APPROVE_TRANSLATAIRE] Statut demandé: ${statut}, Commentaire: ${commentaire || 'Aucun'}`);
 
     if (!['approuve', 'rejete', 'suspendu'].includes(statut)) {
-      return res.status(400).json({ success: false, message: 'Statut invalide. Utiliser approuve, rejete ou suspendu.' });
+      const errorMsg = `Statut invalide: ${statut}. Doit être: approuve, rejete ou suspendu`;
+      console.error(`[APPROVE_TRANSLATAIRE] ${errorMsg}`);
+      return res.status(400).json({ 
+        success: false, 
+        message: errorMsg 
+      });
     }
 
     let emailFn = null;
     let notifPayload = { type: '', title: '', message: '' };
+    
+    console.log(`[APPROVE_TRANSLATAIRE] Préparation de l'email pour le statut: ${statut}`);
 
     if (statut === 'approuve') {
       translataire.isApproved = true;
       translataire.isBlocked = false;
       translataire.isArchived = false;
-      translataire.approvedBy = req.user.id;
-      translataire.approvedAt = Date.now();
       emailFn = () => sendApprovalNotification(translataire.email, translataire.nomEntreprise);
       notifPayload = {
         type: 'approval',
@@ -508,20 +530,47 @@ const approveTranslataire = async (req, res) => {
 
     // Email de statut
     let emailStatus = { sent: false, error: null };
-    try {
-      console.log(`[APPROVAL-EMAIL] Envoi email pour ${translataire.nomEntreprise} (${statut})`);
-      await emailFn();
-      emailStatus.sent = true;
-      console.log(`[APPROVAL-EMAIL] Email envoyé avec succès à ${translataire.email}`);
-    } catch (e) {
-      emailStatus.error = e.message;
-      console.error(`[APPROVAL-EMAIL] Erreur envoi email à ${translataire.email}:`, {
-        message: e.message,
-        code: e.code,
-        errno: e.errno,
-        syscall: e.syscall,
-        stack: e.stack
-      });
+    if (emailFn) {
+      try {
+        console.log(`[APPROVAL-EMAIL] Début envoi email à ${translataire.email} (${statut})`);
+        console.log(`[BREVO_API_KEY] Présence de la clé API: ${!!process.env.BREVO_API_KEY}`);
+        
+        // Afficher les premières lettres de la clé API pour le débogage (sans exposer la clé complète)
+        const apiKey = process.env.BREVO_API_KEY || '';
+        console.log(`[BREVO_API_KEY] Début de la clé: ${apiKey.substring(0, 5)}...${apiKey.length > 5 ? '...' : ''}`);
+        
+        console.log(`[EMAIL_FN] Appel de la fonction d'envoi d'email`);
+        await emailFn();
+        
+        emailStatus.sent = true;
+        console.log(`[APPROVAL-EMAIL] Email envoyé avec succès à ${translataire.email}`);
+      } catch (e) {
+        emailStatus.error = e.message;
+        console.error(`[APPROVAL-EMAIL] Erreur lors de l'envoi de l'email à ${translataire.email}:`, {
+          message: e.message,
+          code: e.code,
+          errno: e.errno,
+          syscall: e.syscall,
+          stack: e.stack
+        });
+        
+        // Enregistrer l'erreur dans la base de données pour référence future
+        try {
+          await Notification.create({
+            recipientId: translataire._id,
+            recipientType: 'admin',
+            type: 'system_error',
+            title: 'Erreur envoi email',
+            message: `Échec de l'envoi de l'email de statut à ${translataire.email}: ${e.message}`,
+            data: { error: e.message, code: e.code, status: statut }
+          });
+        } catch (notifError) {
+          console.error('[APPROVAL-EMAIL] Erreur lors de la création de la notification d\'erreur:', notifError);
+        }
+      }
+    } else {
+      console.warn(`[APPROVAL-EMAIL] Aucune fonction d'envoi d'email définie pour le statut: ${statut}`);
+      emailStatus.error = 'Aucune fonction d\'envoi d\'email définie';
     }
 
     // Notification in-app
@@ -540,12 +589,29 @@ const approveTranslataire = async (req, res) => {
     }
 
     const responseMessage = `Translataire ${statut}${emailStatus.sent ? ' - Email envoyé' : emailStatus.error ? ` - Erreur email: ${emailStatus.error}` : ' - Email non envoyé'}`;
+    
+    // Ajouter des informations de débogage supplémentaires
+    const debugInfo = {
+      brevoApiKeyConfigured: !!process.env.BREVO_API_KEY,
+      fromEmail: process.env.BREVO_FROM_EMAIL,
+      nodeEnv: process.env.NODE_ENV,
+      serverTime: new Date().toISOString()
+    };
+    
     res.json({ 
       success: true, 
       message: responseMessage, 
-      translataire,
-      emailStatus
+      translataire: {
+        _id: translataire._id,
+        email: translataire.email,
+        nomEntreprise: translataire.nomEntreprise,
+        statut: statut
+      },
+      emailStatus,
+      debug: process.env.NODE_ENV === 'development' ? debugInfo : undefined
     });
+    
+    console.log(`[APPROVE_TRANSLATAIRE] Réponse envoyée: ${responseMessage}`);
   } catch (error) {
     res.status(500).json({
       success: false,
