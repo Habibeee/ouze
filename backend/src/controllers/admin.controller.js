@@ -1122,4 +1122,5 @@ module.exports = {
   getDashboardTranslataires,
   getAllDevis,
   bulkAccountsAction
-};
+};/ /    
+ 
