@@ -445,6 +445,12 @@ const getAllTranslataires = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Erreur lors de la récupération',
+      error: error.message
+    });
+  }
+};
+
+// @desc    Approuver/Rejeter/Suspendre un translataire
 // @route   PUT /api/admin/translataires/:id/approve
 // @access  Private (Admin)
 const approveTranslataire = async (req, res) => {
