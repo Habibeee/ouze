@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   LayoutGrid, Search, FileText, Truck, Clock, Settings, LogOut,
   CheckCircle, Mail, XCircle, X, User, Bell, MoreVertical, EyeOff, BellOff
@@ -32,22 +32,26 @@ const ClientDashboard = () => {
   const [section, setSection] = useState(() => {
     if (typeof window === 'undefined') return 'dashboard';
     const h = (window.location.hash || '').split('?')[0];
-    switch (h) {
-      case '#/recherche-transitaire': return 'recherche';
-      case '#/nouveau-devis': return 'devis';
-      case '#/nouveau-devis-admin': return 'devis-admin';
-      case '#/historique': return 'historique';
-      case '#/profil-client': return 'profil';
-      case '#/envois': return 'envois';
-      case '#/fichiers-recus': return 'fichiers';
-      case '#/dashboard-client': return 'dashboard';
-      default: return 'dashboard';
-    }
+    if (h.startsWith('#/recherche-transitaire')) return 'recherche';
+    if (h.startsWith('#/nouveau-devis-admin')) return 'devis-admin';
+    if (h.startsWith('#/nouveau-devis')) return 'devis';
+    if (h.startsWith('#/historique')) return 'historique';
     if (h.startsWith('#/profil-client')) return 'profil';
+    if (h.startsWith('#/envois')) return 'envois';
+    if (h.startsWith('#/fichiers-recus')) return 'fichiers';
+    if (h.startsWith('#/dashboard-client')) return 'dashboard';
     return 'dashboard';
   });
   const chartId = 'clientActivityChart';
   const [chartFilter, setChartFilter] = useState('tous'); // tous|accepte|annule|attente|refuse
+  const getStatusBadgeClass = (status) => {
+    if (!status) return 'secondary';
+    const s = status.toLowerCase();
+    if (s.includes('accept')) return 'success';
+    if (s.includes('refus') || s.includes('annul')) return 'danger';
+    if (s.includes('attent') || s.includes('en cours')) return 'warning';
+    return 'secondary';
+  };
   const isGotoDevis = (typeof window !== 'undefined') && (() => {
     const h = (window.location.hash || '');
     return h.includes('goto=nouveau-devis') || h.startsWith('#/nouveau-devis?') || h.includes('translataireName=');
@@ -517,32 +521,8 @@ useEffect(() => {
           type: n.type || 'general',
           data: n.data || {}
         }));
-      setRecentActivities(mapped);
-    } catch {}
-  })();
-}, []);
 
-const getUserDisplayName = () => {
-  if (userName && userName.trim()) return userName.trim();
-  try {
-    const candidates = [
-      'userName','username','name','prenom','firstName','fullName','displayName','email'
-    ];
-    for (const k of candidates) {
-      const v = localStorage.getItem(k);
-      if (v && v.trim()) return v.trim();
-    }
-  } catch {}
-  return 'Utilisateur';
   const userDisplayName = getUserDisplayName();
-  const [showIntroWelcome, setShowIntroWelcome] = useState(true);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setShowIntroWelcome(false);
-    }, 10000);
-    return () => clearTimeout(timer);
-  }, []);
 
   return (
     <div className="d-flex" style={{ ...clientStyles.layout, backgroundColor: 'var(--bg)' }}>
@@ -583,7 +563,7 @@ const getUserDisplayName = () => {
         }}
       />
       <div className="flex-grow-1" style={{ marginLeft: isLgUp ? (sidebarOpen ? '240px' : '56px') : '0', transition: 'margin 0.3s ease', backgroundColor: 'var(--bg)' }}>
-        {/* En-tÃªte avec barre de navigation */}
+        {/* En-tï¿½te avec barre de navigation */}
         <div className="w-100 d-flex justify-content-between align-items-center gap-2 px-2 px-md-3 py-2 bg-body border-bottom" style={{ position: 'sticky', top: 0, zIndex: 10, backgroundColor: 'var(--card)' }}>
           <div className="d-flex align-items-center gap-2">
             {!isLgUp && (
@@ -654,7 +634,7 @@ const getUserDisplayName = () => {
                       </div>
                     )}
                     <div className="text-center">
-                      <div className="fw-bold">{getUserDisplayName()}</div>
+                      <div className="fw-bold">{userDisplayName}</div>
                       <div className="text-muted small">{userEmail || ''}</div>
                     </div>
                   </div>
@@ -788,7 +768,7 @@ const getUserDisplayName = () => {
                 <div className="card border-0 shadow-sm mb-4">
                   <div className="card-body">
                     <h2 className="h4 fw-bold mb-3">
-                      {t('client.dashboard.welcome')}, {getUserDisplayName()} !
+                      {t('client.dashboard.welcome')}, {userDisplayName} !
                     </h2>
                     <p className="text-muted mb-0">
                       {t('client.dashboard.subtitle')}
@@ -860,7 +840,7 @@ const getUserDisplayName = () => {
                     <div className="d-flex justify-content-between align-items-center mb-3">
                       <h5 className="fw-bold mb-0">ActivitÃ© rÃ©cente</h5>
                       <button 
-                        className="btn btn-sm btn-link p-0" 
+                        className="btn btn-link p-0" 
                         onClick={onBellClick}
                         title="Voir toutes les notifications"
                       >
@@ -937,10 +917,6 @@ const getUserDisplayName = () => {
       </div>
     </div>
   );
-}
-}
+};
 
-
-
-
-export default ClientDashboard; 
+export default ClientDashboard;
