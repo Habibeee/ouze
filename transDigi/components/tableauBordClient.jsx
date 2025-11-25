@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { 
   LayoutGrid, Search, FileText, Truck, Clock, Settings, LogOut,
   CheckCircle, Mail, XCircle, X, User, Bell, MoreVertical, EyeOff, BellOff
@@ -65,7 +65,7 @@ const ClientDashboard = () => {
     return () => window.removeEventListener('storage', onStorage);
   }, []);
 
-  // Charger la photo de profil depuis l'API et la mémoriser pour persistance entre sessions
+  // Charger la photo de profil depuis l'API et la mÃ©moriser pour persistance entre sessions
   useEffect(() => {
     (async () => {
       try {
@@ -100,9 +100,9 @@ const ClientDashboard = () => {
   const [notifs, setNotifs] = useState([]);
   const [notifLoading, setNotifLoading] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [menuOpen, setMenuOpen] = useState(null); // Pour gérer l'ouverture du menu d'options
-  const [hiddenNotifs, setHiddenNotifs] = useState(new Set()); // Pour suivre les notifications masquées
-  const [disabledNotifTypes, setDisabledNotifTypes] = useState(new Set()); // Pour désactiver des types de notifications
+  const [menuOpen, setMenuOpen] = useState(null); // Pour gÃ©rer l'ouverture du menu d'options
+  const [hiddenNotifs, setHiddenNotifs] = useState(new Set()); // Pour suivre les notifications masquÃ©es
+  const [disabledNotifTypes, setDisabledNotifTypes] = useState(new Set()); // Pour dÃ©sactiver des types de notifications
   const loadNotifs = async () => {
     try { setNotifLoading(true); const data = await listNotifications(10); const items = Array.isArray(data?.items) ? data.items : (Array.isArray(data) ? data : []); setNotifs(items); setUnreadCount(items.filter(n=>!n.read).length); } catch {} finally { setNotifLoading(false); }
   };
@@ -114,13 +114,13 @@ const ClientDashboard = () => {
         const item = prev.find(n => n.id === id);
         const next = prev.map(n => n.id === id ? { ...n, read: true } : n);
         setUnreadCount(next.filter(n=>!n.read).length);
-        // Router vers la ressource associée si connue
+        // Router vers la ressource associÃ©e si connue
         try {
           const data = item?.data || {};
           if (data.devisId) {
             window.location.hash = `#/detail-devis-client?id=${encodeURIComponent(data.devisId)}`;
           } else if (data.translataireId) {
-            // Ouvrir les avis du transitaire ciblé
+            // Ouvrir les avis du transitaire ciblÃ©
             const params = new URLSearchParams({ transId: String(data.translataireId), open: 'reviews' });
             window.location.hash = `#/recherche-transitaire?${params.toString()}`;
           }
@@ -129,20 +129,20 @@ const ClientDashboard = () => {
       });
     } catch {}
   };
-  // Masquer une notification spécifique
+  // Masquer une notification spÃ©cifique
   const hideNotification = (id) => {
     setHiddenNotifs(prev => new Set([...prev, id]));
     setMenuOpen(null);
   };
 
-  // Désactiver un type de notification
+  // DÃ©sactiver un type de notification
   const disableNotificationType = (type) => {
     setDisabledNotifTypes(prev => new Set([...prev, type]));
     setMenuOpen(null);
-    // Ici, vous devriez également appeler une API pour enregistrer cette préférence
+    // Ici, vous devriez Ã©galement appeler une API pour enregistrer cette prÃ©fÃ©rence
   };
 
-  // Vérifier si une notification doit être affichée
+  // VÃ©rifier si une notification doit Ãªtre affichÃ©e
   const shouldShowNotification = (notif) => {
     return !hiddenNotifs.has(notif.id) && 
            !(notif.type && disabledNotifTypes.has(notif.type));
@@ -183,7 +183,7 @@ const ClientDashboard = () => {
 
   // Sync section with current hash for proper navigation between pages
   useEffect(() => {
-    // Guard: accès client uniquement
+    // Guard: accÃ¨s client uniquement
     try {
       const { token } = getAuth();
       if (!token) {
@@ -219,9 +219,9 @@ const ClientDashboard = () => {
     };
     const onHash = () => syncFromHash();
     window.addEventListener('hashchange', onHash);
-    // Synchronisation immédiate
+    // Synchronisation immÃ©diate
     syncFromHash();
-    // Si déjà sur goto=nouveau-devis, forcer la section
+    // Si dÃ©jÃ  sur goto=nouveau-devis, forcer la section
     if ((window.location.hash || '').includes('goto=nouveau-devis')) {
       setSection('devis');
     }
@@ -265,7 +265,7 @@ const ClientDashboard = () => {
   const [editFragile, setEditFragile] = useState(false);
 
 
-  // Dessin de la courbe sur canvas (basée sur les devis réels des 12 derniers mois)
+  // Dessin de la courbe sur canvas (basÃ©e sur les devis rÃ©els des 12 derniers mois)
   useEffect(() => {
     if (section !== 'dashboard') return;
     const canvas = document.getElementById(chartId);
@@ -303,7 +303,7 @@ const ClientDashboard = () => {
     const maxVal = Math.max(1, Math.max(...counts)) * 1.2;
     const stepX = (width - padding * 2) / (counts.length - 1);
 
-    // Fond (suivre le thème)
+    // Fond (suivre le thÃ¨me)
     ctx.clearRect(0, 0, width, height);
     const cssVars = getComputedStyle(document.documentElement);
     const cardBg = (cssVars.getPropertyValue('--card') || '#ffffff').trim();
@@ -363,7 +363,7 @@ const fetchDevis = async (opts) => {
         id: d.id || d._id || '',
         routeLabel: d.route || d.itineraire || d.trajet || '-',
         status: norm,
-        statusLabel: norm === 'accepte' ? 'Accepté' : norm === 'refuse' ? 'Refusé' : norm === 'annule' ? 'Annulé' : 'En attente',
+        statusLabel: norm === 'accepte' ? 'AcceptÃ©' : norm === 'refuse' ? 'RefusÃ©' : norm === 'annule' ? 'AnnulÃ©' : 'En attente',
         createdAt: d.createdAt || d.date || Date.now(),
         date: new Date(d.createdAt || d.date || Date.now()).toLocaleDateString('fr-FR')
       };
@@ -473,9 +473,9 @@ const onSubmitEdit = async () => {
     await updateMonDevis(editId, fd);
     setEditOpen(false);
     await fetchDevis({ page: 1, limit });
-    toast.success('Demande mise à jour');
+    toast.success('Demande mise Ã  jour');
   } catch (e) {
-    toast.error(e?.message || 'Échec de la mise à jour');
+    toast.error(e?.message || 'Ã‰chec de la mise Ã  jour');
   } finally { setEditLoading(false); }
 };
 
@@ -489,14 +489,14 @@ const cancelDevis = async (id) => {
     await cancelDevisApi(id);
     setConfirmCancelId(null);
     await fetchDevis();
-    toast.success('Devis annulé avec succès.');
+    toast.success('Devis annulÃ© avec succÃ¨s.');
   } catch (e) {
     setConfirmCancelId(null);
     toast.error(e?.message || 'Erreur lors de l\'annulation');
   }
 };
 
-// Charger 5 notifications récentes pour la colonne "Activité récente"
+// Charger 5 notifications rÃ©centes pour la colonne "ActivitÃ© rÃ©cente"
 useEffect(() => {
   (async () => {
     try {
@@ -583,7 +583,7 @@ const getUserDisplayName = () => {
         }}
       />
       <div className="flex-grow-1" style={{ marginLeft: isLgUp ? (sidebarOpen ? '240px' : '56px') : '0', transition: 'margin 0.3s ease', backgroundColor: 'var(--bg)' }}>
-        {/* En-tête avec barre de navigation */}
+        {/* En-tÃªte avec barre de navigation */}
         <div className="w-100 d-flex justify-content-between align-items-center gap-2 px-2 px-md-3 py-2 bg-body border-bottom" style={{ position: 'sticky', top: 0, zIndex: 10, backgroundColor: 'var(--card)' }}>
           <div className="d-flex align-items-center gap-2">
             {!isLgUp && (
@@ -673,7 +673,7 @@ const getUserDisplayName = () => {
         </div>
         <div className="card shadow-sm mb-4">
           <div className="card-header bg-white border-0 d-flex justify-content-between align-items-center">
-            <h5 className="mb-0">Activité récente</h5>
+            <h5 className="mb-0">ActivitÃ© rÃ©cente</h5>
             <button className="btn btn-link p-0" onClick={onMarkAll}>
               <small>Marquer tout comme lu</small>
             </button>
@@ -741,7 +741,7 @@ const getUserDisplayName = () => {
                             style={{ backgroundColor: 'transparent' }}
                           >
                             <BellOff size={16} />
-                            <span>Désactiver ce type de notification</span>
+                            <span>DÃ©sactiver ce type de notification</span>
                           </button>
                         </div>
                       )}
@@ -758,7 +758,7 @@ const getUserDisplayName = () => {
             ))}
             {recentActivities.length === 0 && (
               <div className="text-center py-4 text-muted">
-                Aucune activité récente
+                Aucune activitÃ© rÃ©cente
               </div>
             )}
           </div>
@@ -796,11 +796,11 @@ const getUserDisplayName = () => {
                   </div>
                 </div>
 
-                {/* Mes devis récents */}
+                {/* Mes devis rÃ©cents */}
                 <div className="card border-0 shadow-sm mb-4">
                   <div className="card-body">
                     <div className="d-flex justify-content-between align-items-center mb-3">
-                      <h5 className="fw-bold mb-0">Mes devis récents</h5>
+                      <h5 className="fw-bold mb-0">Mes devis rÃ©cents</h5>
                       <a href="#/historique" className="btn btn-sm btn-link">
                         Voir tout
                       </a>
@@ -809,7 +809,7 @@ const getUserDisplayName = () => {
                       <table className="table table-hover align-middle">
                         <thead>
                           <tr>
-                            <th>Référence</th>
+                            <th>RÃ©fÃ©rence</th>
                             <th>Client</th>
                             <th>Statut</th>
                             <th>Date</th>
@@ -841,7 +841,7 @@ const getUserDisplayName = () => {
                           ) : (
                             <tr>
                               <td colSpan="5" className="text-center py-4 text-muted">
-                                Aucun devis récent
+                                Aucun devis rÃ©cent
                               </td>
                             </tr>
                           )}
@@ -852,13 +852,13 @@ const getUserDisplayName = () => {
                 </div>
               </div>
 
-              {/* Section de droite - Activité récente et statistiques */}
+              {/* Section de droite - ActivitÃ© rÃ©cente et statistiques */}
               <div className="col-12 col-lg-4">
-                {/* Activité récente */}
+                {/* ActivitÃ© rÃ©cente */}
                 <div className="card border-0 shadow-sm mb-4">
                   <div className="card-body">
                     <div className="d-flex justify-content-between align-items-center mb-3">
-                      <h5 className="fw-bold mb-0">Activité récente</h5>
+                      <h5 className="fw-bold mb-0">ActivitÃ© rÃ©cente</h5>
                       <button 
                         className="btn btn-sm btn-link p-0" 
                         onClick={onBellClick}
@@ -887,7 +887,7 @@ const getUserDisplayName = () => {
                         ))
                       ) : (
                         <div className="text-center py-3 text-muted">
-                          Aucune activité récente
+                          Aucune activitÃ© rÃ©cente
                         </div>
                       )}
                     </div>
@@ -906,13 +906,13 @@ const getUserDisplayName = () => {
                         </span>
                       </div>
                       <div className="d-flex justify-content-between align-items-center">
-                        <span>Devis acceptés</span>
+                        <span>Devis acceptÃ©s</span>
                         <span className="badge bg-success">
                           {stats?.acceptedQuotes || 0}
                         </span>
                       </div>
                       <div className="d-flex justify-content-between align-items-center">
-                        <span>Devis refusés</span>
+                        <span>Devis refusÃ©s</span>
                         <span className="badge bg-danger">
                           {stats?.rejectedQuotes || 0}
                         </span>
