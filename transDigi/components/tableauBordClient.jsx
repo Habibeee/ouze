@@ -938,9 +938,9 @@ const getUserDisplayName = () => {
     </div>
   );
 }
+}
 
 
 
 
-// Export du composant
-export default ClientDashboard;
+export default ClientDashboard; 
