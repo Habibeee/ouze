@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   LayoutGrid, Search, FileText, Truck, Clock, Settings, LogOut,
-  CheckCircle, Mail, XCircle, X, User, Bell
+  CheckCircle, Mail, XCircle, X, User, Bell, MoreVertical, EyeOff, BellOff
 } from 'lucide-react';
 import { clientStyles, clientCss } from '../styles/tableauBordClientStyle.jsx';
 import SideBare from './sideBare.jsx';
@@ -100,6 +100,9 @@ const ClientDashboard = () => {
   const [notifs, setNotifs] = useState([]);
   const [notifLoading, setNotifLoading] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [menuOpen, setMenuOpen] = useState(null); // Pour gérer l'ouverture du menu d'options
+  const [hiddenNotifs, setHiddenNotifs] = useState(new Set()); // Pour suivre les notifications masquées
+  const [disabledNotifTypes, setDisabledNotifTypes] = useState(new Set()); // Pour désactiver des types de notifications
   const loadNotifs = async () => {
     try { setNotifLoading(true); const data = await listNotifications(10); const items = Array.isArray(data?.items) ? data.items : (Array.isArray(data) ? data : []); setNotifs(items); setUnreadCount(items.filter(n=>!n.read).length); } catch {} finally { setNotifLoading(false); }
   };
@@ -126,7 +129,35 @@ const ClientDashboard = () => {
       });
     } catch {}
   };
-  const onMarkAll = async () => { try { await markAllNotificationsRead(); setNotifs(prev => { const next = prev.map(n => ({ ...n, read: true })); setUnreadCount(0); return next; }); } catch {} };
+  // Masquer une notification spécifique
+  const hideNotification = (id) => {
+    setHiddenNotifs(prev => new Set([...prev, id]));
+    setMenuOpen(null);
+  };
+
+  // Désactiver un type de notification
+  const disableNotificationType = (type) => {
+    setDisabledNotifTypes(prev => new Set([...prev, type]));
+    setMenuOpen(null);
+    // Ici, vous devriez également appeler une API pour enregistrer cette préférence
+  };
+
+  // Vérifier si une notification doit être affichée
+  const shouldShowNotification = (notif) => {
+    return !hiddenNotifs.has(notif.id) && 
+           !(notif.type && disabledNotifTypes.has(notif.type));
+  };
+
+  const onMarkAll = async () => { 
+    try { 
+      await markAllNotificationsRead(); 
+      setNotifs(prev => { 
+        const next = prev.map(n => ({ ...n, read: true })); 
+        setUnreadCount(0); 
+        return next; 
+      }); 
+    } catch {} 
+  };
   useEffect(() => {
     let timer;
     let backoff = 90000; // start at 90s
@@ -471,15 +502,21 @@ useEffect(() => {
     try {
       const items = await listNotifications(5);
       const arr = Array.isArray(items?.items) ? items.items : (Array.isArray(items) ? items : []);
-      const mapped = arr.slice(0,5).map(n => ({
-        id: n.id || n._id || String(Math.random()),
-        type: (n.type || '').toString().toLowerCase(),
-        title: n.title || 'Notification',
-        text: n.body || n.message || '',
-        time: n.createdAt ? new Date(n.createdAt).toLocaleString() : '',
-        data: n.data || {},
-        read: !!n.read,
-      }));
+      const mapped = arr
+        .filter(n => shouldShowNotification({
+          id: n.id || n._id || String(Math.random()),
+          type: n.type || 'general'
+        }))
+        .slice(0, 5)
+        .map(n => ({
+          id: n.id || n._id || String(Math.random()),
+          title: n.title || 'Nouvelle notification',
+          message: n.body || n.message || '',
+          date: n.createdAt ? new Date(n.createdAt) : new Date(),
+          read: n.read || false,
+          type: n.type || 'general',
+          data: n.data || {}
+        }));
       setRecentActivities(mapped);
     } catch {}
   })();
@@ -634,83 +671,113 @@ const getUserDisplayName = () => {
             </div>
           </div>
         </div>
-                          <option value="">(inchangé)</option>
-                          <option value="palettes">Palettes</option>
-                          <option value="cartons">Cartons</option>
-                          <option value="caisses">Caisses</option>
-                          <option value="containers">Containers</option>
-                        </select>
-                      </div>
-                      <div className="col-4 col-md-2">
-                        <label className="form-label">Longueur (cm)</label>
-                        <input type="number" className="form-control" value={editLength} onChange={(e)=>setEditLength(e.target.value)} />
-                      </div>
-                      <div className="col-4 col-md-2">
-                        <label className="form-label">Largeur (cm)</label>
-                        <input type="number" className="form-control" value={editWidth} onChange={(e)=>setEditWidth(e.target.value)} />
-                      </div>
-                      <div className="col-4 col-md-2">
-                        <label className="form-label">Hauteur (cm)</label>
-                        <input type="number" className="form-control" value={editHeight} onChange={(e)=>setEditHeight(e.target.value)} />
-                      </div>
-                      <div className="col-12 col-md-6">
-                        <label className="form-label">Adresse d'enlèvement</label>
-                        <input type="text" className="form-control" value={editPickupAddress} onChange={(e)=>setEditPickupAddress(e.target.value)} />
-                      </div>
-                      <div className="col-12 col-md-6">
-                        <label className="form-label">Date d'enlèvement</label>
-                        <input type="date" className="form-control" value={editPickupDate} onChange={(e)=>setEditPickupDate(e.target.value)} />
-                      </div>
-                      <div className="col-12 col-md-6">
-                        <label className="form-label">Adresse de livraison</label>
-                        <input type="text" className="form-control" value={editDeliveryAddress} onChange={(e)=>setEditDeliveryAddress(e.target.value)} />
-                      </div>
-                      <div className="col-12 col-md-6">
-                        <label className="form-label">Date de livraison</label>
-                        <input type="date" className="form-control" value={editDeliveryDate} onChange={(e)=>setEditDeliveryDate(e.target.value)} />
-                      </div>
-                    </div>
-                    <div className="mb-3">
-                      <label className="form-label">Description</label>
-                      <textarea className="form-control" rows="4" placeholder="Détaillez votre demande" value={editDescription} onChange={(e)=>setEditDescription(e.target.value)} />
-                    </div>
-                    <div className="mb-3">
-                      <label className="form-label">Exigences supplémentaires</label>
-                      <div className="d-flex gap-3 flex-wrap">
-                        <div className="form-check">
-                          <input className="form-check-input" type="checkbox" id="editDangerous" checked={editDangerous} onChange={(e)=>setEditDangerous(e.target.checked)} />
-                          <label className="form-check-label" htmlFor="editDangerous">Matières dangereuses</label>
+        <div className="card shadow-sm mb-4">
+          <div className="card-header bg-white border-0 d-flex justify-content-between align-items-center">
+            <h5 className="mb-0">Activité récente</h5>
+            <button className="btn btn-link p-0" onClick={onMarkAll}>
+              <small>Marquer tout comme lu</small>
+            </button>
+          </div>
+          <div className="list-group list-group-flush" style={{ maxHeight: '300px', overflowY: 'auto' }}>
+            {recentActivities.map((activity, index) => (
+              <div 
+                key={index} 
+                className={`list-group-item list-group-item-action ${!activity.read ? 'fw-bold' : ''}`}
+                style={{ cursor: 'pointer', position: 'relative' }}
+              >
+                <div 
+                  className="d-flex w-100 justify-content-between"
+                  onClick={() => onNotifClick(activity.id)}
+                >
+                  <h6 className="mb-1">{activity.title}</h6>
+                  <div className="d-flex align-items-center">
+                    <small className="text-muted me-2">
+                      {activity.date.toLocaleDateString()}
+                    </small>
+                    <div className="dropdown">
+                      <button 
+                        className="btn btn-link p-0 text-muted" 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setMenuOpen(menuOpen === activity.id ? null : activity.id);
+                        }}
+                      >
+                        <MoreVertical size={16} />
+                      </button>
+                      {menuOpen === activity.id && (
+                        <div 
+                          className="dropdown-menu show" 
+                          style={{
+                            position: 'absolute',
+                            right: '10px',
+                            top: '30px',
+                            backgroundColor: 'var(--bs-gray-800)',
+                            border: '1px solid var(--bs-gray-700)',
+                            borderRadius: '8px',
+                            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                            zIndex: 1000,
+                            minWidth: '220px'
+                          }}
+                        >
+                          <button 
+                            className="dropdown-item text-white d-flex align-items-center gap-2"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              hideNotification(activity.id);
+                            }}
+                            style={{ backgroundColor: 'transparent' }}
+                          >
+                            <EyeOff size={16} />
+                            <span>Masquer cette notification</span>
+                          </button>
+                          <button 
+                            className="dropdown-item text-white d-flex align-items-center gap-2"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (activity.type) {
+                                disableNotificationType(activity.type);
+                              }
+                            }}
+                            style={{ backgroundColor: 'transparent' }}
+                          >
+                            <BellOff size={16} />
+                            <span>Désactiver ce type de notification</span>
+                          </button>
                         </div>
-                        <div className="form-check">
-                          <input className="form-check-input" type="checkbox" id="editTemperature" checked={editTemperature} onChange={(e)=>setEditTemperature(e.target.checked)} />
-                          <label className="form-check-label" htmlFor="editTemperature">Contrôle de température</label>
-                        </div>
-                        <div className="form-check">
-                          <input className="form-check-input" type="checkbox" id="editFragile" checked={editFragile} onChange={(e)=>setEditFragile(e.target.checked)} />
-                          <label className="form-check-label" htmlFor="editFragile">Fragile</label>
-                        </div>
-                      </div>
+                      )}
                     </div>
-                    <div className="mb-3">
-                      <label className="form-label">Notes additionnelles</label>
-                      <textarea className="form-control" rows="3" placeholder="Notes optionnelles" value={editNotes} onChange={(e)=>setEditNotes(e.target.value)} />
-                    </div>
-                    <div className="mb-3">
-                      <label className="form-label">Pièces jointes (optionnel)</label>
-                      <input className="form-control" type="file" multiple onChange={(e)=>setEditFiles(e.target.files)} />
-                    </div>
-                  </div>
-                  <div className="modal-footer">
-                    <button type="button" className="btn btn-outline-secondary" onClick={()=>setEditOpen(false)} disabled={editLoading}>Annuler</button>
-                    <button type="button" className="btn btn-primary" onClick={onSubmitEdit} disabled={editLoading || !editId}>{editLoading ? 'Enregistrement…' : 'Enregistrer'}</button>
                   </div>
                 </div>
+                <p 
+                  className="mb-1"
+                  onClick={() => onNotifClick(activity.id)}
+                >
+                  {activity.message}
+                </p>
               </div>
-            </div>
-            <div className="modal-backdrop fade show" onClick={()=>setEditOpen(false)}></div>
-          </>
-        )}
-
+            ))}
+            {recentActivities.length === 0 && (
+              <div className="text-center py-4 text-muted">
+                Aucune activité récente
+              </div>
+            )}
+          </div>
+        </div>
+        
+        <style jsx>{`
+          .dropdown-menu {
+            --bs-dropdown-bg: var(--bs-gray-800);
+            --bs-dropdown-link-color: var(--bs-white);
+            --bs-dropdown-link-hover-color: var(--bs-white);
+            --bs-dropdown-link-hover-bg: var(--bs-gray-700);
+          }
+          .dropdown-item {
+            padding: 0.5rem 1rem;
+          }
+          .dropdown-item:hover {
+            background-color: var(--bs-gray-700);
+          }
+        `}</style> 
         {/* Contenu principal */}
         <div className="container-fluid px-3 px-md-4 py-3">
           {section === 'dashboard' ? (
