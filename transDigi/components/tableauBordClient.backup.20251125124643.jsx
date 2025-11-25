@@ -937,6 +937,6 @@ const getUserDisplayName = () => {
       </div>
     </div>
   );
-}
+};
 
 export default ClientDashboard;
