@@ -30,6 +30,7 @@ const GestionUtilisateurs = () => {
           email: u.email,
           date: u.createdAt ? new Date(u.createdAt).toLocaleDateString() : '',
           status: u.isBlocked ? 'bloque' : 'actif',
+          role: u.role || 'client',
           raw: u,
         }));
         setUsers(rows);
@@ -206,12 +207,24 @@ const GestionUtilisateurs = () => {
                   <tr><td colSpan="6" className="text-danger">{error}</td></tr>
                 )}
                 {!loading && !error && rows.map(u => (
-                  <tr key={u.id}>
-                    <td><input type="checkbox" className="form-check-input" checked={selectedUsers.includes(u.id)} onChange={() => toggleOne(u.id)} /></td>
-                    <td className="fw-semibold">{u.name}</td>
-                    <td className="text-muted d-none d-md-table-cell">{u.email}</td>
-                    <td className="text-muted d-none d-lg-table-cell">{u.date}</td>
-                    <td>{getStatusBadge(u.status)}</td>
+                  <tr key={u.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4 text-indigo-600 border-gray-300 rounded"
+                        checked={selectedUsers.includes(u.id)}
+                        onChange={() => setSelectedUsers(prev => 
+                          prev.includes(u.id) 
+                            ? prev.filter(id => id !== u.id) 
+                            : [...prev, u.id]
+                        )}
+                      />
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-gray-900">{u.name}</div>
+                      <div className="text-sm text-gray-500">{u.email}</div>
+                      <div className="text-xs text-gray-400">{u.role}</div>
+                    </td>
                     <td className="text-end position-relative">
                       <button className="btn btn-sm btn-light" onClick={() => setOpenMenuId(openMenuId === u.id ? null : u.id)}>
                         <MoreHorizontal size={16} />

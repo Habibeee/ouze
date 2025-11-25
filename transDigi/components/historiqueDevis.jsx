@@ -88,7 +88,9 @@ const HistoriqueDevis = () => {
     let rs = rows;
     if (query) {
       const q = query.toLowerCase();
-      rs = rs.filter(r => (r.id || '').toLowerCase().includes(q) || (r.transitaire || '').toLowerCase().includes(q));
+      rs = rs.filter(r => (r.transitaire || '').toLowerCase().includes(q) || 
+                          (r.destination || '').toLowerCase().includes(q) ||
+                          (r.origin || '').toLowerCase().includes(q));
     }
     if (status !== 'tous') rs = rs.filter(r => r.statut === status);
     if (destination !== 'tous') rs = rs.filter(r => r.destination === destination);
@@ -162,46 +164,23 @@ const HistoriqueDevis = () => {
             <table className="table align-middle mb-0 quotes-table">
               <thead>
                 <tr>
-                  <th>{t('client.history.table.id')}</th>
-                  <th>{t('client.history.table.forwarder')}</th>
-                  <th className="d-none d-md-table-cell">{t('client.history.table.date')}</th>
-                  <th className="d-none d-lg-table-cell">{t('client.history.table.service')}</th>
-                  <th className="d-none d-xl-table-cell">{t('client.history.table.description')}</th>
-                  <th className="d-none d-lg-table-cell">{t('client.history.table.origin')}</th>
-                  <th className="d-none d-lg-table-cell">{t('client.history.table.destination')}</th>
-                  <th>{t('client.history.table.status')}</th>
-                  <th className="text-end">{t('client.history.table.actions')}</th>
+                  {cols.map((col) => (
+                    <th key={col.key}>{col.label}</th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
                 {loading && (
-                  <tr><td colSpan={6} className="text-center text-muted py-4">{t('client.history.loading')}</td></tr>
+                  <tr><td colSpan={cols.length} className="text-center text-muted py-4">{t('client.history.loading')}</td></tr>
                 )}
                 {err && !loading && (
-                  <tr><td colSpan={6} className="text-center text-danger py-4">{err}</td></tr>
+                  <tr><td colSpan={cols.length} className="text-center text-danger py-4">{err}</td></tr>
                 )}
                 {!loading && !err && pageRows.map((r) => (
                   <tr key={r.id}>
-                    <td><a href={`#/detail-devis-client?id=${encodeURIComponent(r.id)}`} className="link-primary fw-semibold">{r.id}</a></td>
-                    <td>{r.transitaire}</td>
-                    <td className="d-none d-md-table-cell">{r.date}</td>
-                    <td className="d-none d-lg-table-cell text-capitalize">{r.typeService}</td>
-                    <td className="d-none d-xl-table-cell" style={{maxWidth: 300, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'}} title={r.description}>{r.description}</td>
-                    <td className="d-none d-lg-table-cell">{r.origin}</td>
-                    <td className="d-none d-lg-table-cell">{r.destination}</td>
-                    <td>
-                      <span className={(statusMeta[r.statut]||statusMeta['attente']).className}>
-                        {t((statusMeta[r.statut]||statusMeta['attente']).key)}
-                      </span>
-                    </td>
-                    <td className="text-end">
-                      <div className="d-inline-flex gap-2">
-                        {r.statut === 'attente' && (
-                          <button className="btn btn-sm btn-outline-warning" onClick={() => handleCancel(r.id)}>{t('client.history.actions.cancel')}</button>
-                        )}
-                        <button className="btn btn-sm btn-outline-secondary" onClick={() => handleArchive(r.id)}>{t('client.history.actions.archive')}</button>
-                      </div>
-                    </td>
+                    {cols.map((col) => (
+                      <td key={col.key}>{renderCell(r, col)}</td>
+                    ))}
                   </tr>
                 ))}
               </tbody>
