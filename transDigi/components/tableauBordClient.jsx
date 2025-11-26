@@ -3,6 +3,7 @@ import {
   LayoutGrid, Search, FileText, Truck, Clock, Settings, LogOut,
   CheckCircle, Mail, XCircle, X, User, Bell, MoreVertical, EyeOff, BellOff
 } from 'lucide-react';
+import { Menu, MenuButton, MenuItem, MenuItems, Transition } from '@headlessui/react';
 import { clientStyles, clientCss } from '../styles/tableauBordClientStyle.jsx';
 import SideBare from './sideBare.jsx';
 import RechercheTransitaire from './rechercheTransitaire.jsx';
@@ -84,7 +85,7 @@ const ClientDashboard = () => {
     return () => window.removeEventListener('storage', onStorage);
   }, []);
 
-  // Charger la photo de profil depuis l'API et la mÃ©moriser pour persistance entre sessions
+  // Charger la photo de profil depuis l'API et la mémoriser pour persistance entre sessions
   useEffect(() => {
     (async () => {
       try {
@@ -120,13 +121,56 @@ const ClientDashboard = () => {
   const [notifLoading, setNotifLoading] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const notifRef = React.createRef(null);
-  const [menuOpen, setMenuOpen] = useState(null); // Pour gÃ©rer l'ouverture du menu d'options
-  const [hiddenNotifs, setHiddenNotifs] = useState(new Set()); // Pour suivre les notifications masquÃ©es
-  const [disabledNotifTypes, setDisabledNotifTypes] = useState(new Set()); // Pour dÃ©sactiver des types de notifications
+  const [menuOpen, setMenuOpen] = useState(null); // Pour gérer l'ouverture du menu d'options
+  const [hiddenNotifs, setHiddenNotifs] = useState(new Set()); // Pour suivre les notifications masquées
+  const [disabledNotifTypes, setDisabledNotifTypes] = useState(new Set()); // Pour désactiver des types de notifications
+  const [activeMenuId, setActiveMenuId] = useState(null); // Pour gérer l'ouverture du menu des options de notification
   const loadNotifs = async () => {
-    try { setNotifLoading(true); const data = await listNotifications(10); const items = Array.isArray(data?.items) ? data.items : (Array.isArray(data) ? data : []); setNotifs(items); setUnreadCount(items.filter(n=>!n.read).length); } catch {} finally { setNotifLoading(false); }
+    try { 
+      setNotifLoading(true); 
+      const data = await listNotifications(10); 
+      const items = Array.isArray(data?.items) ? data.items : (Array.isArray(data) ? data : []); 
+      // Filtrer les notifications masquées ou désactivées
+      const filteredItems = items.filter(notif => 
+        !hiddenNotifs.has(notif.id) && 
+        !(notif.type && disabledNotifTypes.has(notif.type))
+      );
+      setNotifs(filteredItems); 
+      setUnreadCount(filteredItems.filter(n => !n.read).length); 
+    } catch (e) {
+      console.error('Erreur lors du chargement des notifications:', e);
+    } finally { 
+      setNotifLoading(false); 
+    }
   };
-  // Fermer le menu des notifications lors d'un clic en dehors
+
+  const hideNotification = (id) => {
+    setHiddenNotifs(prev => new Set([...prev, id]));
+    setNotifs(prev => prev.filter(notif => notif.id !== id));
+  };
+
+  const disableNotificationType = (type) => {
+    if (!type) return;
+    setDisabledNotifTypes(prev => new Set([...prev, type]));
+    setNotifs(prev => prev.filter(notif => notif.type !== type));
+  };
+
+  const shouldShowNotification = (notif) => {
+    return !hiddenNotifs.has(notif.id) && 
+           !(notif.type && disabledNotifTypes.has(notif.type));
+  };
+
+  const onMarkAll = async () => { 
+    try { 
+      await markAllNotificationsRead(); 
+      setNotifs(prev => { 
+        const next = prev.map(n => ({ ...n, read: true })); 
+        setUnreadCount(0); 
+        return next; 
+      }); 
+    } catch {} 
+  };
+
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (notifRef.current && !notifRef.current.contains(event.target)) {
@@ -154,6 +198,7 @@ const ClientDashboard = () => {
       }
     }
   };
+
   const onNotifClick = async (id) => {
     try {
       await markNotificationRead(id);
@@ -161,13 +206,13 @@ const ClientDashboard = () => {
         const item = prev.find(n => n.id === id);
         const next = prev.map(n => n.id === id ? { ...n, read: true } : n);
         setUnreadCount(next.filter(n=>!n.read).length);
-        // Router vers la ressource associÃ©e si connue
+        // Router vers la ressource associée si connue
         try {
           const data = item?.data || {};
           if (data.devisId) {
             window.location.hash = `#/detail-devis-client?id=${encodeURIComponent(data.devisId)}`;
           } else if (data.translataireId) {
-            // Ouvrir les avis du transitaire ciblÃ
+            // Ouvrir les avis du transitaire ciblé
             const params = new URLSearchParams({ transId: String(data.translataireId), open: 'reviews' });
             window.location.hash = `#/recherche-transitaire?${params.toString()}`;
           }
@@ -176,35 +221,20 @@ const ClientDashboard = () => {
       });
     } catch {}
   };
-  // Masquer une notification spÃcifique
-  const hideNotification = (id) => {
-    setHiddenNotifs(prev => new Set([...prev, id]));
-    setMenuOpen(null);
-  };
 
-  // DÃsactiver un type de notification
-  const disableNotificationType = (type) => {
-    setDisabledNotifTypes(prev => new Set([...prev, type]));
-    setMenuOpen(null);
-    // Ici, vous devriez Ãgalement appeler une API pour enregistrer cette prÃfÃrence
-  };
-
-  // VÃrifier si une notification doit Ãªtre affichÃe
-  const shouldShowNotification = (notif) => {
-    return !hiddenNotifs.has(notif.id) && 
-           !(notif.type && disabledNotifTypes.has(notif.type));
-  };
-
-  const onMarkAll = async () => { 
-    try { 
-      await markAllNotificationsRead(); 
+  const markAllNotificationsRead = async () => {
+    try {
+      await markAllNotificationsRead();
       setNotifs(prev => { 
         const next = prev.map(n => ({ ...n, read: true })); 
         setUnreadCount(0); 
         return next; 
       }); 
-    } catch {} 
+    } catch (error) {
+      console.error('Erreur lors du marquage des notifications comme lues:', error);
+    }
   };
+
   useEffect(() => {
     let timer;
     let backoff = 90000; // start at 90s
@@ -782,17 +812,84 @@ useEffect(() => {
                     {notifs.map((notif, index) => (
                       <div 
                         key={`api-${index}`}
-                        className={`list-group-item list-group-item-action ${!notif.read ? 'bg-light' : ''}`}
-                        style={{ borderLeft: 'none', borderRight: 'none' }}
-                        onClick={() => onNotifClick(notif.id)}
+                        className={`list-group-item list-group-item-action position-relative ${!notif.read ? 'bg-light' : ''}`}
+                        style={{ borderLeft: 'none', borderRight: 'none', paddingRight: '40px' }}
                       >
                         <div className="d-flex justify-content-between">
-                          <h6 className="mb-1">{notif.title}</h6>
-                          <small className="text-muted">
-                            {new Date(notif.date).toLocaleDateString()}
-                          </small>
+                          <div onClick={() => onNotifClick(notif.id)} style={{ flex: 1, cursor: 'pointer' }}>
+                            <h6 className="mb-1">{notif.title}</h6>
+                            <p className="mb-1 small">{notif.message}</p>
+                          </div>
+                          <div className="d-flex align-items-start">
+                            <small className="text-muted me-2">
+                              {new Date(notif.date).toLocaleDateString()}
+                            </small>
+                            <Menu as="div" className="position-relative">
+                              <div>
+                                <MenuButton 
+                                  className="btn btn-sm btn-link text-muted p-0"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setActiveMenuId(activeMenuId === notif.id ? null : notif.id);
+                                  }}
+                                >
+                                  <MoreVertical size={16} />
+                                </MenuButton>
+                              </div>
+                              <Transition
+                                show={activeMenuId === notif.id}
+                                enter="transition ease-out duration-100"
+                                enterFrom="transform opacity-0 scale-95"
+                                enterTo="transform opacity-100 scale-100"
+                                leave="transition ease-in duration-75"
+                                leaveFrom="transform opacity-100 scale-100"
+                                leaveTo="transform opacity-0 scale-95"
+                              >
+                                <MenuItems 
+                                  className="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+                                  static
+                                >
+                                  <MenuItem>
+                                    {({ active }) => (
+                                      <button
+                                        className={`${
+                                          active ? 'bg-gray-100' : ''
+                                        } flex w-full items-center px-4 py-2 text-sm text-gray-700`}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setHiddenNotifs(prev => new Set([...prev, notif.id]));
+                                          setActiveMenuId(null);
+                                        }}
+                                      >
+                                        <EyeOff className="mr-2 h-4 w-4" />
+                                        Masquer cette notification
+                                      </button>
+                                    )}
+                                  </MenuItem>
+                                  <MenuItem>
+                                    {({ active }) => (
+                                      <button
+                                        className={`${
+                                          active ? 'bg-gray-100' : ''
+                                        } flex w-full items-center px-4 py-2 text-sm text-gray-700`}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          if (notif.type) {
+                                            setDisabledNotifTypes(prev => new Set([...prev, notif.type]));
+                                          }
+                                          setActiveMenuId(null);
+                                        }}
+                                      >
+                                        <BellOff className="mr-2 h-4 w-4" />
+                                        Désactiver les notifications de ce type
+                                      </button>
+                                    )}
+                                  </MenuItem>
+                                </MenuItems>
+                              </Transition>
+                            </Menu>
+                          </div>
                         </div>
-                        <p className="mb-1 small">{notif.message}</p>
                       </div>
                     ))}
                   </div>
