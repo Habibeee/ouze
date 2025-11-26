@@ -230,49 +230,72 @@ const ClientDashboard = () => {
 
   // Sync section with current hash for proper navigation between pages
   useEffect(() => {
-    // Guard: accÃ¨s client uniquement
+    // Guard: accès client uniquement
     try {
       const { token } = getAuth();
       if (!token) {
         window.location.hash = '#/connexion';
+        return;
       } else if (isAdminRole()) {
         window.location.hash = '#/tableau-bord-admin';
+        return;
       } else if (isTransRole()) {
         window.location.hash = '#/dashboard-transitaire';
+        return;
       }
     } catch {}
 
     const syncFromHash = () => {
       const hash = window.location.hash || '';
-      const p = hash.split('?');
-      if (p.length > 1) {
-        const params = new URLSearchParams(p[1]);
-        const goto = params.get('goto');
-        if (goto === 'nouveau-devis') return setSection('devis-admin');
-        if (goto === 'recherche-transitaire') return setSection('recherche');
-        if (goto === 'historique') return setSection('historique');
-        if (goto === 'envois') return setSection('envois');
-        if (goto === 'profil-client') return setSection('profil');
-        if (goto === 'fichiers') return setSection('fichiers');
+      const [path, queryString] = hash.split('?');
+      const params = new URLSearchParams(queryString);
+      
+      // Gestion des sections via le paramètre 'section' dans l'URL
+      const sectionParam = params.get('section');
+      if (sectionParam) {
+        setSection(sectionParam);
+        
+        // Si on accède à la section devis avec des paramètres, on les enregistre dans le localStorage
+        if (sectionParam === 'devis') {
+          const translataireId = params.get('translataireId');
+          const translataireName = params.get('translataireName');
+          
+          if (translataireId) {
+            try {
+              localStorage.setItem('pendingTranslataireId', translataireId);
+              if (translataireName) {
+                localStorage.setItem('pendingTranslataireName', translataireName);
+              }
+            } catch (e) {
+              console.error('Erreur lors de l\'enregistrement des données du transitaire:', e);
+            }
+          }
+        }
+        return;
       }
-      if (hash.startsWith('#/historique')) setSection('historique');
-      else if (hash.startsWith('#/dashboard-client')) setSection('dashboard');
-      else if (hash.startsWith('#/nouveau-devis-admin')) setSection('devis-admin');
-      else if (hash.startsWith('#/nouveau-devis')) setSection('devis');
-      else if (hash.startsWith('#/recherche-transitaire')) setSection('recherche');
-      else if (hash.startsWith('#/envois')) setSection('envois');
-      else if (hash.startsWith('#/profil-client')) setSection('profil');
-      else if (hash.startsWith('#/fichiers-recus')) setSection('fichiers');
+      
+      // Ancienne logique de routage pour la rétrocompatibilité
+      if (path.includes('historique')) return setSection('historique');
+      if (path.includes('dashboard-client')) return setSection('dashboard');
+      if (path.includes('nouveau-devis-admin')) return setSection('devis-admin');
+      if (path.includes('nouveau-devis')) return setSection('devis');
+      if (path.includes('recherche-transitaire')) return setSection('recherche');
+      if (path.includes('envois')) return setSection('envois');
+      if (path.includes('profil-client')) return setSection('profil');
+      if (path.includes('fichiers-recus')) return setSection('fichiers');
+      
+      // Si aucun match, on reste sur la section actuelle ou on met une valeur par défaut
+      setSection(prevSection => prevSection || 'dashboard');
     };
-    const onHash = () => syncFromHash();
-    window.addEventListener('hashchange', onHash);
-    // Synchronisation immÃdiate
+    
+    const onHashChange = () => syncFromHash();
+    
+    // Ajouter le listener et synchroniser immédiatement
+    window.addEventListener('hashchange', onHashChange);
     syncFromHash();
-    // Si dÃjÃ  sur goto=nouveau-devis, forcer la section
-    if ((window.location.hash || '').includes('goto=nouveau-devis')) {
-      setSection('devis');
-    }
-    return () => window.removeEventListener('hashchange', onHash);
+    
+    // Nettoyage
+    return () => window.removeEventListener('hashchange', onHashChange);
   }, []);
 
   // NOTE: Graph effect moved below state declarations to avoid TDZ on 'devis'

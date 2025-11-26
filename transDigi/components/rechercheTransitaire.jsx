@@ -333,10 +333,6 @@ const RechercheTransitaire = () => {
                   {/* Action Button */}
                   <div className="d-grid gap-2">
                     {(() => {
-                      const nameParam = `translataireName=${encodeURIComponent(transitaire.name || '')}`;
-                      const href = transitaire.id
-                        ? `#/nouveau-devis?translataireId=${encodeURIComponent(transitaire.id)}&${nameParam}`
-                        : `#/nouveau-devis?${nameParam}`;
                       return (
                         <button
                           className="btn text-white w-100"
@@ -344,11 +340,12 @@ const RechercheTransitaire = () => {
                           onClick={() => {
                             try {
                               if (transitaire.id) {
+                                // Stocker les informations du transitaire dans localStorage
                                 localStorage.setItem('pendingTranslataireId', String(transitaire.id));
                                 localStorage.setItem('pendingTranslataireName', String(transitaire.name || ''));
-                                setSelectedTransitaire(transitaire);
-                                success(`Transitaire sélectionné : ${transitaire.name}`);
-                                window.location.hash = '#/nouveau-devis';
+                                
+                                // Rediriger vers la page de création de devis avec les paramètres
+                                window.location.hash = `#/tableau-bord-client?section=devis&translataireId=${encodeURIComponent(transitaire.id)}&translataireName=${encodeURIComponent(transitaire.name || '')}`;
                               }
                             } catch (e) {
                               console.error('Erreur lors de la sélection du transitaire:', e);
