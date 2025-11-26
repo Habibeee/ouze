@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   LayoutGrid, Search, FileText, Truck, Clock, Settings, LogOut,
-  CheckCircle, Mail, XCircle, X, User, Bell, MoreVertical, EyeOff, BellOff,
-  Globe, BarChart2, ArrowUpRight, ArrowDownRight, DollarSign, Package, Activity, ArrowRight
+  CheckCircle, Mail, XCircle, X, User, Bell, MoreVertical, EyeOff, BellOff
 } from 'lucide-react';
 import { Menu, MenuButton, MenuItem, MenuItems, Transition } from '@headlessui/react';
 import { clientStyles, clientCss } from '../styles/tableauBordClientStyle.jsx';
@@ -18,64 +17,8 @@ import { get, post, logout, listNotifications, markNotificationRead, markAllNoti
 import { useToast } from './ui/ToastProvider.jsx';
 import { getAuth, isAdmin as isAdminRole, isTrans as isTransRole } from '../services/authStore.js';
 import { useI18n } from '../src/i18n.jsx';
-import WorldMap from './WorldMap';
-import ActivityChart from './ActivityChart';
-
-// Données pour les cartes de statistiques
-const statsCards = [
-  {
-    title: 'Devis ce mois',
-    value: '12',
-    change: '+12%',
-    isPositive: true,
-    icon: <FileText className="w-6 h-6 text-blue-500" />
-  },
-  {
-    title: 'Expéditions',
-    value: '8',
-    change: '+5%',
-    isPositive: true,
-    icon: <Truck className="w-6 h-6 text-green-500" />
-  },
-  {
-    title: 'Dépenses',
-    value: '15,240 €',
-    change: '-2%',
-    isPositive: false,
-    icon: <DollarSign className="w-6 h-6 text-purple-500" />
-  },
-  {
-    title: 'Pays desservis',
-    value: '24',
-    change: '+4',
-    isPositive: true,
-    icon: <Globe className="w-6 h-6 text-amber-500" />
-  }
-];
-
-// Données pour la carte du monde
-const mapMarkers = [
-  { name: 'Paris', coordinates: [2.3522, 48.8566] },
-  { name: 'New York', coordinates: [-74.0060, 40.7128] },
-  { name: 'Tokyo', coordinates: [139.6917, 35.6895] },
-  { name: 'Dakar', coordinates: [-17.4677, 14.7167] }
-];
-
-// Données pour le graphique d'activité
-const activityData = [
-  { name: 'Jan', devis: 3, expeditions: 2 },
-  { name: 'Fév', devis: 5, expeditions: 3 },
-  { name: 'Mar', devis: 7, expeditions: 4 },
-  { name: 'Avr', devis: 6, expeditions: 5 },
-  { name: 'Mai', devis: 8, expeditions: 6 },
-  { name: 'Juin', devis: 10, expeditions: 7 },
-  { name: 'Juil', devis: 9, expeditions: 8 },
-];
 
 const ClientDashboard = () => {
-  // État pour gérer le chargement et les erreurs
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
   const toast = useToast();
   const { t } = useI18n();
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
@@ -591,58 +534,55 @@ const fetchDevis = useCallback(async (opts) => {
   try {
     setDevisLoading(true);
     setDevisError('');
-    setIsLoading(true);
-    setError(null);
-    
     const curPage = opts?.page || page;
     const curLimit = opts?.limit || limit;
-    
     const res = await listMesDevisApi({ page: curPage, limit: curLimit });
-    
-    if (!res) {
-      throw new Error('Aucune réponse du serveur');
-    }
-    
     const list = (res?.devis || res?.items || res || []);
-    
     const rows = list.map(d => {
       const raw = (d.statut || d.status || '').toString().toLowerCase();
       const norm = raw.includes('appr') || raw.includes('accept') ? 'accepte'
                 : raw.includes('refus') ? 'refuse'
                 : raw.includes('annul') ? 'annule'
                 : 'attente';
-      return {
+      const quote = {
         id: d.id || d._id || '',
         reference: d.reference || `DEVIS-${d.id || ''}`,
         clientName: d.clientName || d.client?.name || 'N/A',
         status: norm,
-        statusLabel: norm === 'accepte' ? 'Accepté' : 
-                    norm === 'refuse' ? 'Refusé' : 
-                    norm === 'annule' ? 'Annulé' : 'En attente',
+        statusLabel: norm === 'accepte' ? 'Accepté' : norm === 'refuse' ? 'Refusé' : norm === 'annule' ? 'Annulé' : 'En attente',
         createdAt: d.createdAt || d.date || Date.now(),
         date: new Date(d.createdAt || d.date || Date.now()).toLocaleDateString('fr-FR'),
         routeLabel: d.route || d.itineraire || d.trajet || '-',
         ...d
       };
+      return quote;
     });
     
     setDevis(rows);
+    // Mettre à jour recentQuotes avec les données formatées
     setRecentQuotes(rows);
     setTotal(Number(res?.total || res?.count || 0) || (Array.isArray(res?.devis) ? Number(res.devis.length) : rows.length * (curPage || 1)));
-    
-    return rows;
+    return rows; // Retourner les données pour une utilisation ultérieure si nécessaire
   } catch (e) {
-    console.error('Erreur lors du chargement des devis:', e);
-    const errorMessage = e?.response?.data?.message || e?.message || 'Une erreur est survenue lors du chargement des devis';
-    setDevisError(errorMessage);
-    setError(errorMessage);
-    toast.error(errorMessage);
+    if (e?.status === 429) {
+      setDevisError('');
+      setTimeout(() => { fetchDevis({ page, limit }); }, 3000);
+    } else {
+      console.error('Erreur lors du chargement des devis:', e);
+      setDevisError(e?.message || 'Erreur de chargement des devis');
+      // Mettre à jour avec un tableau vide en cas d'erreur
+      setRecentQuotes([]);
+    }
     return [];
   } finally { 
-    setDevisLoading(false);
-    setIsLoading(false);
+    setDevisLoading(false); 
   }
 }, [page, limit]);
+
+// Fonction pour forcer le rafraîchissement des devis
+const refreshDevis = useCallback(() => {
+  return fetchDevis({ page: 1, limit });
+}, [fetchDevis, limit]);
 
 // Chargement initial des devis
 useEffect(() => { 
@@ -1097,71 +1037,19 @@ useEffect(() => {
             <div className="row">
               {/* Section principale - Gauche */}
               <div className="col-12 col-lg-8">
-                {/* Cartes de statistiques */}
-                <div className="row g-4 mb-4">
-                  {statsCards.map((stat, index) => (
-                    <div key={index} className="col-12 col-sm-6 col-md-6 col-lg-6">
-                      <div className="card h-100 border-0 shadow-sm">
-                        <div className="card-body">
-                          <div className="d-flex justify-content-between align-items-center">
-                            <div>
-                              <h6 className="text-muted mb-2">{stat.title}</h6>
-                              <h3 className="mb-0">{stat.value}</h3>
-                              <div className={`small mt-2 ${stat.isPositive ? 'text-success' : 'text-danger'}`}>
-                                {stat.isPositive ? (
-                                  <ArrowUpRight className="me-1" size={14} />
-                                ) : (
-                                  <ArrowDownRight className="me-1" size={14} />
-                                )}
-                                {stat.change} vs mois dernier
-                              </div>
-                            </div>
-                            <div className="bg-light rounded p-3">
-                              {stat.icon}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Graphique d'activité */}
+                {/* Carte de bienvenue */}
                 <div className="card border-0 shadow-sm mb-4">
                   <div className="card-body">
-                    <div className="d-flex justify-content-between align-items-center mb-4">
-                      <h5 className="card-title mb-0">Activité récente</h5>
-                      <div className="btn-group" role="group">
-                        <button 
-                          type="button" 
-                          className={`btn btn-sm ${chartFilter === 'tous' ? 'btn-primary' : 'btn-outline-secondary'}`}
-                          onClick={() => setChartFilter('tous')}
-                        >
-                          Tous
-                        </button>
-                        <button 
-                          type="button" 
-                          className={`btn btn-sm ${chartFilter === 'accepte' ? 'btn-primary' : 'btn-outline-secondary'}`}
-                          onClick={() => setChartFilter('accepte')}
-                        >
-                          Acceptés
-                        </button>
-                        <button 
-                          type="button" 
-                          className={`btn btn-sm ${chartFilter === 'en_attente' ? 'btn-primary' : 'btn-outline-secondary'}`}
-                          onClick={() => setChartFilter('en_attente')}
-                        >
-                          En attente
-                        </button>
-                      </div>
-                    </div>
-                    <div style={{ height: '300px' }}>
-                      <ActivityChart data={activityData} />
-                    </div>
+                    <h2 className="h4 fw-bold mb-3">
+                      {t('client.dashboard.welcome')}, {userDisplayName} !
+                    </h2>
+                    <p className="text-muted mb-0">
+                      {t('client.dashboard.subtitle')}
+                    </p>
                   </div>
                 </div>
 
-                {/* Section Mes devis récents */}
+                {/* Mes devis récents */}
                 <div className="card border-0 shadow-sm mb-4">
                   <div className="card-body">
                     <div className="d-flex justify-content-between align-items-center mb-3">
@@ -1217,103 +1105,30 @@ useEffect(() => {
                 </div>
               </div>
 
-              {/* Section de droite */}
+              {/* Section de droite - Statistiques */}
               <div className="col-12 col-lg-4">
-                {/* Carte de bienvenue */}
-                <div className="card border-0 shadow-sm mb-4">
-                  <div className="card-body">
-                    <h2 className="h4 fw-bold mb-3">
-                      Bonjour, {getUserDisplayName()} !
-                    </h2>
-                    <p className="text-muted mb-3">
-                      Voici un aperçu de votre activité récente.
-                    </p>
-                    <div className="alert alert-info">
-                      <small>
-                        Vous avez <strong>3 nouveaux messages</strong> et <strong>2 devis en attente</strong> de votre attention.
-                      </small>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Carte du monde */}
-                <div className="card border-0 shadow-sm mb-4">
-                  <div className="card-body">
-                    <div className="d-flex justify-content-between align-items-center mb-3">
-                      <h5 className="fw-bold mb-0">Vos expéditions actives</h5>
-                      <Globe className="text-primary" />
-                    </div>
-                    <div style={{ height: '200px' }}>
-                      <WorldMap markers={mapMarkers} />
-                    </div>
-                    <div className="mt-3">
-                      <div className="d-flex align-items-center mb-2">
-                        <div className="bg-success rounded-circle me-2" style={{ width: '10px', height: '10px' }}></div>
-                        <div>
-                          <div className="small fw-bold">Envoi #SH5829</div>
-                          <div className="small text-muted">Paris → New York • 2j restants</div>
-                        </div>
-                      </div>
-                      <div className="d-flex align-items-center">
-                        <div className="bg-warning rounded-circle me-2" style={{ width: '10px', height: '10px' }}></div>
-                        <div>
-                          <div className="small fw-bold">Envoi #SH5830</div>
-                          <div className="small text-muted">Dakar → Paris • En attente</div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
                 {/* Statistiques rapides */}
                 <div className="card border-0 shadow-sm">
                   <div className="card-body">
                     <h5 className="fw-bold mb-3">Statistiques</h5>
-                    <div className="d-flex flex-column gap-3">
+                    <div className="d-flex flex-column gap-2">
                       <div className="d-flex justify-content-between align-items-center">
-                        <div className="d-flex align-items-center">
-                          <div className="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center me-3" style={{ width: '40px', height: '40px' }}>
-                            <FileText size={18} />
-                          </div>
-                          <div>
-                            <div className="small text-muted">Devis ce mois</div>
-                            <div className="fw-bold">12</div>
-                          </div>
-                        </div>
-                        <div className="text-success small d-flex align-items-center">
-                          <ArrowUpRight className="me-1" size={14} />
-                          12%
-                        </div>
+                        <span>Devis en attente</span>
+                        <span className="badge bg-warning text-dark">
+                          {stats?.pendingQuotes || 0}
+                        </span>
                       </div>
                       <div className="d-flex justify-content-between align-items-center">
-                        <div className="d-flex align-items-center">
-                          <div className="bg-success bg-opacity-10 text-success rounded-circle d-flex align-items-center justify-content-center me-3" style={{ width: '40px', height: '40px' }}>
-                            <Truck size={18} />
-                          </div>
-                          <div>
-                            <div className="small text-muted">Expéditions</div>
-                            <div className="fw-bold">8</div>
-                          </div>
-                        </div>
-                        <div className="text-success small d-flex align-items-center">
-                          <ArrowUpRight className="me-1" size={14} />
-                          5%
-                        </div>
+                        <span>Devis acceptés</span>
+                        <span className="badge bg-success">
+                          {stats?.acceptedQuotes || 0}
+                        </span>
                       </div>
                       <div className="d-flex justify-content-between align-items-center">
-                        <div className="d-flex align-items-center">
-                          <div className="bg-purple bg-opacity-10 text-purple rounded-circle d-flex align-items-center justify-content-center me-3" style={{ width: '40px', height: '40px' }}>
-                            <DollarSign size={18} />
-                          </div>
-                          <div>
-                            <div className="small text-muted">Dépenses</div>
-                            <div className="fw-bold">15,240 €</div>
-                          </div>
-                        </div>
-                        <div className="text-danger small d-flex align-items-center">
-                          <ArrowDownRight className="me-1" size={14} />
-                          2%
-                        </div>
+                        <span>Devis refusés</span>
+                        <span className="badge bg-danger">
+                          {stats?.rejectedQuotes || 0}
+                        </span>
                       </div>
                     </div>
                   </div>
