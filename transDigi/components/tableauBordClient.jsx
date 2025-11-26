@@ -530,7 +530,7 @@ const ClientDashboard = () => {
     ctx.fill();
   }, [section, devis, chartFilter]);
 
-const fetchDevis = async (opts) => {
+const fetchDevis = useCallback(async (opts) => {
   try {
     setDevisLoading(true);
     setDevisError('');
@@ -562,6 +562,7 @@ const fetchDevis = async (opts) => {
     // Mettre à jour recentQuotes avec les données formatées
     setRecentQuotes(rows);
     setTotal(Number(res?.total || res?.count || 0) || (Array.isArray(res?.devis) ? Number(res.devis.length) : rows.length * (curPage || 1)));
+    return rows; // Retourner les données pour une utilisation ultérieure si nécessaire
   } catch (e) {
     if (e?.status === 429) {
       setDevisError('');
@@ -572,12 +573,21 @@ const fetchDevis = async (opts) => {
       // Mettre à jour avec un tableau vide en cas d'erreur
       setRecentQuotes([]);
     }
+    return [];
   } finally { 
     setDevisLoading(false); 
   }
-};
+}, [page, limit]);
 
-useEffect(() => { fetchDevis({ page: 1, limit }); }, []);
+// Fonction pour forcer le rafraîchissement des devis
+const refreshDevis = useCallback(() => {
+  return fetchDevis({ page: 1, limit });
+}, [fetchDevis, limit]);
+
+// Chargement initial des devis
+useEffect(() => { 
+  fetchDevis({ page: 1, limit }); 
+}, [fetchDevis, limit]);
 
 const onOpenEdit = async (d) => {
   setEditId(d.id);
