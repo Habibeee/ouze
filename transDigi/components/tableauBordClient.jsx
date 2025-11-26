@@ -541,12 +541,19 @@ useEffect(() => {
   (async () => {
     try {
       const items = await listNotifications(5);
-      const arr = Array.isArray(items?.items) ? items.items : (Array.isArray(items) ? items : []);
+      const arr = Array.isArray(items?.items)
+        ? items.items
+        : Array.isArray(items)
+        ? items
+        : [];
+
       const mapped = arr
-        .filter(n => shouldShowNotification({
-          id: n.id || n._id || String(Math.random()),
-          type: n.type || 'general'
-        }))
+        .filter(n =>
+          shouldShowNotification({
+            id: n.id || n._id || String(Math.random()),
+            type: n.type || 'general',
+          })
+        )
         .slice(0, 5)
         .map(n => ({
           id: n.id || n._id || String(Math.random()),
@@ -555,8 +562,15 @@ useEffect(() => {
           date: n.createdAt ? new Date(n.createdAt) : new Date(),
           read: n.read || false,
           type: n.type || 'general',
-          data: n.data || {}
+          data: n.data || {},
         }));
+
+      setRecentActivities(mapped);
+    } catch (e) {
+      console.error("Erreur chargement notifications", e);
+    }
+  })();
+}, []);
 
   return (
     <div className="d-flex" style={{ ...clientStyles.layout, backgroundColor: 'var(--bg)' }}>
