@@ -810,98 +810,6 @@ useEffect(() => {
             </div>
           </div>
         </div>
-        <div className="card shadow-sm mb-4">
-          <div className="card-header bg-white border-0 d-flex justify-content-between align-items-center">
-            <h5 className="mb-0">Activité récente</h5>
-            <button className="btn btn-link p-0" onClick={onMarkAll}>
-              <small>Marquer tout comme lu</small>
-            </button>
-          </div>
-          <div className="list-group list-group-flush" style={{ maxHeight: '300px', overflowY: 'auto' }}>
-            {recentActivities.map((activity, index) => (
-              <div 
-                key={index} 
-                className={`list-group-item list-group-item-action ${!activity.read ? 'fw-bold' : ''}`}
-                style={{ cursor: 'pointer', position: 'relative' }}
-              >
-                <div 
-                  className="d-flex w-100 justify-content-between"
-                  onClick={() => onNotifClick(activity.id)}
-                >
-                  <h6 className="mb-1">{activity.title}</h6>
-                  <div className="d-flex align-items-center">
-                    <small className="text-muted me-2">
-                      {activity.date.toLocaleDateString()}
-                    </small>
-                    <div className="dropdown">
-                      <button 
-                        className="btn btn-link p-0 text-muted" 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setMenuOpen(menuOpen === activity.id ? null : activity.id);
-                        }}
-                      >
-                        <MoreVertical size={16} />
-                      </button>
-                      {menuOpen === activity.id && (
-                        <div 
-                          className="dropdown-menu show" 
-                          style={{
-                            position: 'absolute',
-                            right: '10px',
-                            top: '30px',
-                            backgroundColor: 'var(--bs-gray-800)',
-                            border: '1px solid var(--bs-gray-700)',
-                            borderRadius: '8px',
-                            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-                            zIndex: 1000,
-                            minWidth: '220px'
-                          }}
-                        >
-                          <button 
-                            className="dropdown-item text-white d-flex align-items-center gap-2"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              hideNotification(activity.id);
-                            }}
-                            style={{ backgroundColor: 'transparent' }}
-                          >
-                            <EyeOff size={16} />
-                            <span>Masquer cette notification</span>
-                          </button>
-                          <button 
-                            className="dropdown-item text-white d-flex align-items-center gap-2"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (activity.type) {
-                                disableNotificationType(activity.type);
-                              }
-                            }}
-                            style={{ backgroundColor: 'transparent' }}
-                          >
-                            <BellOff size={16} />
-                            <span>Désactiver ce type de notification</span>
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-                <p 
-                  className="mb-1"
-                  onClick={() => onNotifClick(activity.id)}
-                >
-                  {activity.message}
-                </p>
-              </div>
-            ))}
-            {recentActivities.length === 0 && (
-              <div className="text-center py-4 text-muted">
-                Aucune activité récente
-              </div>
-            )}
-          </div>
-        </div>
         
         <style jsx>{`
           .dropdown-menu {
@@ -991,48 +899,8 @@ useEffect(() => {
                 </div>
               </div>
 
-              {/* Section de droite - Activité récente et statistiques */}
+              {/* Section de droite - Statistiques */}
               <div className="col-12 col-lg-4">
-                {/* Activité récente */}
-                <div className="card border-0 shadow-sm mb-4">
-                  <div className="card-body">
-                    <div className="d-flex justify-content-between align-items-center mb-3">
-                      <h5 className="fw-bold mb-0">Activité récente</h5>
-                      <button 
-                        className="btn btn-link p-0" 
-                        onClick={onBellClick}
-                        title="Voir toutes les notifications"
-                      >
-                        <Bell size={18} />
-                      </button>
-                    </div>
-                    <div className="d-flex flex-column gap-3" style={{ maxHeight: '400px', overflowY: 'auto' }}>
-                      {recentActivities && recentActivities.length > 0 ? (
-                        recentActivities.map((activity, index) => (
-                          <div key={index} className="d-flex gap-2 p-2 rounded" style={{ backgroundColor: 'var(--bs-gray-100)' }}>
-                            <div className="flex-shrink-0">
-                              <div className="rounded-circle bg-primary bg-opacity-10 d-flex align-items-center justify-content-center" style={{ width: '36px', height: '36px' }}>
-                                <Bell size={18} className="text-primary" />
-                              </div>
-                            </div>
-                            <div className="flex-grow-1">
-                              <div className="small fw-medium">{activity.title}</div>
-                              <div className="small text-muted">{activity.text}</div>
-                              <div className="text-muted" style={{ fontSize: '0.75rem' }}>
-                                {new Date(activity.createdAt).toLocaleString()}
-                              </div>
-                            </div>
-                          </div>
-                        ))
-                      ) : (
-                        <div className="text-center py-3 text-muted">
-                          Aucune activité récente
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
                 {/* Statistiques rapides */}
                 <div className="card border-0 shadow-sm">
                   <div className="card-body">
