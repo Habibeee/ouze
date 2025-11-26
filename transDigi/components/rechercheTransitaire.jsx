@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { 
   MapPin, Wrench, Building2, Search, Star,
-  CheckCircle, Clock, AlertCircle
+  CheckCircle, Clock, AlertCircle, ArrowUpDown
 } from 'lucide-react';
 import { transitaireStyles, transitaireCss } from '../styles/rechercheTransitaireStyle.jsx';
 import { searchTranslatairesClient } from '../services/apiClient.js';
@@ -12,7 +12,42 @@ const RechercheTransitaire = () => {
   const [searchFilters, setSearchFilters] = useState({ location: '', service: '', company: '' });
   const [page, setPage] = useState(1);
   const pageSize = 6;
-  const [items, setItems] = useState([]);
+  const [items, setItems] = useState([
+    // Données de test (à supprimer en production)
+    {
+      id: '1',
+      name: 'Transitaire Express',
+      location: 'Paris, France',
+      verified: true,
+      rating: 4.5,
+      ratingsCount: 12,
+      description: 'Service rapide et professionnel',
+      services: ['Transport maritime', 'Dédouanement', 'Logistique'],
+      logoUrl: 'https://via.placeholder.com/80x80?text=TE'
+    },
+    {
+      id: '2',
+      name: 'Global Logistics',
+      location: 'Lyon, France',
+      verified: true,
+      rating: 4.2,
+      ratingsCount: 8,
+      description: 'Spécialiste du transport international',
+      services: ['Transport aérien', 'Transport routier'],
+      logoUrl: 'https://via.placeholder.com/80x80?text=GL'
+    },
+    {
+      id: '3',
+      name: 'Cargo Plus',
+      location: 'Marseille, France',
+      verified: false,
+      rating: 3.8,
+      ratingsCount: 5,
+      description: 'Votre partenaire logistique',
+      services: ['Transport maritime', 'Entreposage'],
+      logoUrl: 'https://via.placeholder.com/80x80?text=CP'
+    }
+  ]);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState('');
   // Sélection locale simple pour "Voir les avis" côté client
@@ -21,9 +56,34 @@ const RechercheTransitaire = () => {
 
   const fetchTrans = async () => {
     try {
-      setLoading(true); setErr('');
-      const data = await searchTranslatairesClient({ typeService: searchFilters.service || undefined, ville: searchFilters.location || undefined, recherche: searchFilters.company || undefined });
-      const rows = Array.isArray(data?.translataires) ? data.translataires : (Array.isArray(data) ? data : []);
+      setLoading(true); 
+      setErr('');
+      console.log('Recherche des transitaires avec les filtres:', searchFilters);
+      
+      const data = await searchTranslatairesClient({ 
+        typeService: searchFilters.service || undefined, 
+        ville: searchFilters.location || undefined, 
+        recherche: searchFilters.company || undefined 
+      });
+      
+      console.log('Réponse de l\'API:', data);
+      
+      // Vérifier si la réponse est vide ou invalide
+      if (!data) {
+        console.error('Aucune donnée reçue de l\'API');
+        setErr('Aucune donnée reçue du serveur');
+        setItems([]);
+        return;
+      }
+      
+      // Gérer différents formats de réponse
+      const rows = Array.isArray(data) 
+        ? data 
+        : (Array.isArray(data.translataires) 
+            ? data.translataires 
+            : []);
+            
+      console.log('Transitaires trouvés:', rows.length);
       const mapped = rows.map(t => {
         const avgRating = typeof t.avgRating === 'number' ? t.avgRating : (t.avgRating ? Number(t.avgRating) : 0);
         const adminRating = typeof t.adminRating === 'number' ? t.adminRating : (t.adminRating ? Number(t.adminRating) : 0);
@@ -114,6 +174,36 @@ const RechercheTransitaire = () => {
   const total = filtered.length;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const pageItems = filtered.slice((page - 1) * pageSize, page * pageSize);
+
+  // Afficher un message d'erreur s'il y en a un
+  if (err) {
+    return (
+      <div className="container py-5">
+        <div className="alert alert-danger">
+          <h5 className="alert-heading">Erreur lors du chargement des transitaires</h5>
+          <p className="mb-0">{err}</p>
+          <button 
+            className="btn btn-outline-secondary mt-3" 
+            onClick={fetchTrans}
+          >
+            Réessayer
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Afficher un indicateur de chargement
+  if (loading) {
+    return (
+      <div className="d-flex justify-content-center align-items-center py-5">
+        <div className="spinner-border text-primary" role="status">
+          <span className="visually-hidden">Chargement...</span>
+        </div>
+        <span className="ms-3">Recherche des transitaires en cours...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-body" style={{ ...transitaireStyles.app, backgroundColor: 'var(--bg)', width: '100%', maxWidth: '100vw', overflowX: 'hidden' }}>
