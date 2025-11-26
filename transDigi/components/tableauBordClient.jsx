@@ -544,25 +544,37 @@ const fetchDevis = async (opts) => {
                 : raw.includes('refus') ? 'refuse'
                 : raw.includes('annul') ? 'annule'
                 : 'attente';
-      return {
+      const quote = {
         id: d.id || d._id || '',
-        routeLabel: d.route || d.itineraire || d.trajet || '-',
+        reference: d.reference || `DEVIS-${d.id || ''}`,
+        clientName: d.clientName || d.client?.name || 'N/A',
         status: norm,
         statusLabel: norm === 'accepte' ? 'Accepté' : norm === 'refuse' ? 'Refusé' : norm === 'annule' ? 'Annulé' : 'En attente',
         createdAt: d.createdAt || d.date || Date.now(),
-        date: new Date(d.createdAt || d.date || Date.now()).toLocaleDateString('fr-FR')
+        date: new Date(d.createdAt || d.date || Date.now()).toLocaleDateString('fr-FR'),
+        routeLabel: d.route || d.itineraire || d.trajet || '-',
+        ...d
       };
+      return quote;
     });
+    
     setDevis(rows);
+    // Mettre à jour recentQuotes avec les données formatées
+    setRecentQuotes(rows);
     setTotal(Number(res?.total || res?.count || 0) || (Array.isArray(res?.devis) ? Number(res.devis.length) : rows.length * (curPage || 1)));
   } catch (e) {
     if (e?.status === 429) {
       setDevisError('');
       setTimeout(() => { fetchDevis({ page, limit }); }, 3000);
     } else {
+      console.error('Erreur lors du chargement des devis:', e);
       setDevisError(e?.message || 'Erreur de chargement des devis');
+      // Mettre à jour avec un tableau vide en cas d'erreur
+      setRecentQuotes([]);
     }
-  } finally { setDevisLoading(false); }
+  } finally { 
+    setDevisLoading(false); 
+  }
 };
 
 useEffect(() => { fetchDevis({ page: 1, limit }); }, []);
