@@ -47,15 +47,36 @@ const ClientDashboard = () => {
 
   const [section, setSection] = useState(() => {
     if (typeof window === 'undefined') return 'dashboard';
-    const h = (window.location.hash || '').split('?')[0];
-    if (h.startsWith('#/recherche-transitaire')) return 'recherche';
-    if (h.startsWith('#/nouveau-devis-admin')) return 'devis-admin';
-    if (h.startsWith('#/nouveau-devis')) return 'devis';
-    if (h.startsWith('#/historique')) return 'historique';
-    if (h.startsWith('#/profil-client')) return 'profil';
-    if (h.startsWith('#/envois')) return 'envois';
-    if (h.startsWith('#/fichiers-recus')) return 'fichiers';
-    if (h.startsWith('#/dashboard-client')) return 'dashboard';
+    
+    // Récupérer le hash et les paramètres de l'URL
+    const [path, queryString] = (window.location.hash || '').split('?');
+    const params = new URLSearchParams(queryString || '');
+    
+    // Vérifier si la section est spécifiée dans les paramètres
+    const sectionParam = params.get('section');
+    
+    // Gérer la section 'devis' provenant de la recherche de transitaire
+    if (sectionParam === 'devis' || path.startsWith('#/nouveau-devis')) {
+      return 'devis';
+    }
+    
+    // Gérer les autres sections basées sur le chemin
+    if (path.startsWith('#/recherche-transitaire')) return 'recherche';
+    if (path.startsWith('#/nouveau-devis-admin')) return 'devis-admin';
+    if (path.startsWith('#/historique')) return 'historique';
+    if (path.startsWith('#/profil-client')) return 'profil';
+    if (path.startsWith('#/envois')) return 'envois';
+    if (path.startsWith('#/fichiers-recus')) return 'fichiers';
+    if (path.startsWith('#/dashboard-client') || path === '#/tableau-bord-client' || path === '#/') return 'dashboard';
+    
+    // Si aucune section ne correspond, essayer de déterminer en fonction du chemin
+    if (path.includes('nouveau-devis')) return 'devis';
+    if (path.includes('recherche')) return 'recherche';
+    if (path.includes('historique')) return 'historique';
+    if (path.includes('profil')) return 'profil';
+    if (path.includes('envois')) return 'envois';
+    if (path.includes('fichiers')) return 'fichiers';
+    
     return 'dashboard';
   });
   const chartId = 'clientActivityChart';
@@ -285,13 +306,13 @@ const ClientDashboard = () => {
     const syncFromHash = () => {
       const hash = window.location.hash || '';
       const [path, queryString] = hash.split('?');
-      const params = new URLSearchParams(queryString);
+      const params = new URLSearchParams(queryString || '');
       
       // Gestion des sections via le paramètre 'section' dans l'URL
       const sectionParam = params.get('section');
       
+      // Si on a un paramètre section, on l'utilise en priorité
       if (sectionParam) {
-        // Mettre à jour la section courante
         setSection(sectionParam);
         
         // Si on accède à la section devis avec des paramètres
@@ -319,11 +340,34 @@ const ClientDashboard = () => {
         return;
       }
       
+      // Si pas de paramètre section, essayer de déterminer la section à partir du chemin
+      if (path.startsWith('#/nouveau-devis') || path.includes('nouveau-devis')) {
+        // Si on accède directement à /nouveau-devis avec des paramètres dans le hash
+        const translataireId = params.get('translataireId');
+        const translataireName = params.get('translataireName');
+        
+        if (translataireId) {
+          try {
+            localStorage.setItem('pendingTranslataireId', translataireId);
+            if (translataireName) {
+              localStorage.setItem('pendingTranslataireName', translataireName);
+            }
+            // Nettoyer l'URL après avoir traité les paramètres
+            const cleanUrl = window.location.pathname + '#/nouveau-devis';
+            window.history.replaceState({}, document.title, cleanUrl);
+          } catch (e) {
+            console.error('Erreur lors de l\'enregistrement des données du transitaire:', e);
+          }
+        }
+        
+        setSection('devis');
+        return;
+      }
+      
       // Ancienne logique de routage pour la rétrocompatibilité
       if (path.includes('historique')) return setSection('historique');
-      if (path.includes('dashboard-client') || path === '#/tableau-bord-client') return setSection('dashboard');
+      if (path.includes('dashboard-client') || path === '#/tableau-bord-client' || path === '#/') return setSection('dashboard');
       if (path.includes('nouveau-devis-admin')) return setSection('devis-admin');
-      if (path.includes('nouveau-devis')) return setSection('devis');
       if (path.includes('recherche-transitaire')) return setSection('recherche');
       if (path.includes('envois')) return setSection('envois');
       if (path.includes('profil-client')) return setSection('profil');

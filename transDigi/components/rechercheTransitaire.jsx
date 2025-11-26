@@ -23,7 +23,7 @@ const RechercheTransitaire = () => {
       ratingsCount: 12,
       description: 'Service rapide et professionnel',
       services: ['Transport maritime', 'Dédouanement', 'Logistique'],
-      logoUrl: 'https://via.placeholder.com/80x80?text=TE'
+      logoUrl: 'data:image/svg+xml;utf8,<svg width="80" height="80" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><rect width="80" height="80" fill="%23f0f0f0"/><text x="50%" y="50%" font-family="Arial" font-size="30" text-anchor="middle" dy=".3em" fill="%23666">TE</text></svg>'
     },
     {
       id: '2',
@@ -34,7 +34,7 @@ const RechercheTransitaire = () => {
       ratingsCount: 8,
       description: 'Spécialiste du transport international',
       services: ['Transport aérien', 'Transport routier'],
-      logoUrl: 'https://via.placeholder.com/80x80?text=GL'
+      logoUrl: 'data:image/svg+xml;utf8,<svg width="80" height="80" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><rect width="80" height="80" fill="%23f0f0f0"/><text x="50%" y="50%" font-family="Arial" font-size="30" text-anchor="middle" dy=".3em" fill="%23666">GL</text></svg>'
     },
     {
       id: '3',
@@ -45,7 +45,7 @@ const RechercheTransitaire = () => {
       ratingsCount: 5,
       description: 'Votre partenaire logistique',
       services: ['Transport maritime', 'Entreposage'],
-      logoUrl: 'https://via.placeholder.com/80x80?text=CP'
+      logoUrl: 'data:image/svg+xml;utf8,<svg width="80" height="80" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><rect width="80" height="80" fill="%23f0f0f0"/><text x="50%" y="50%" font-family="Arial" font-size="30" text-anchor="middle" dy=".3em" fill="%23666">CP</text></svg>'
     }
   ]);
   const [loading, setLoading] = useState(false);
@@ -91,7 +91,7 @@ const RechercheTransitaire = () => {
         const ratingsCount = typeof t.ratingsCount === 'number' ? t.ratingsCount : (t.ratingsCount ? Number(t.ratingsCount) : 0);
         const name = t.nomEntreprise || t.name || 'Transitaire';
         const logoRaw = t.logo || t.photoProfil || t.profileImage || t.logoUrl || t.avatar;
-        const defaultLogo = 'https://via.placeholder.com/80x80?text=Logo';
+        const defaultLogo = 'data:image/svg+xml;utf8,<svg width="80" height="80" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><rect width="80" height="80" fill="%23f0f0f0"/><text x="50%" y="50%" font-family="Arial" font-size="20" text-anchor="middle" dy=".3em" fill="%23666">Logo</text></svg>';
         const logoUrl = (typeof logoRaw === 'string' && logoRaw.trim()) ? logoRaw : defaultLogo;
         const rawServices = (Array.isArray(t.services) && t.services.length)
           ? t.services
