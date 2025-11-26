@@ -323,9 +323,14 @@ const ClientDashboard = () => {
   const onLogout = async () => {
     try {
       await logout();
-      window.location.href = '/';
+      // Redirection vers la page de connexion
+      window.location.hash = '#/connexion';
+      // Rechargement pour s'assurer que l'état est bien réinitialisé
+      window.location.reload();
     } catch (error) {
       console.error('Erreur lors de la déconnexion:', error);
+      // En cas d'erreur, on redirige quand même vers la page de connexion
+      window.location.hash = '#/connexion';
     }
   };
 
