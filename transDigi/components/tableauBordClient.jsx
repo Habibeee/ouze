@@ -18,6 +18,8 @@ const ClientDashboard = () => {
   const toast = useToast();
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [showWelcome, setShowWelcome] = useState(false);
+  const [userName, setUserName] = useState('');
   const [isLgUp, setIsLgUp] = useState(() => (typeof window !== 'undefined' ? window.innerWidth >= 992 : true));
   
   useEffect(() => {
@@ -126,6 +128,30 @@ const ClientDashboard = () => {
     document.addEventListener('visibilitychange', onVisibility);
     poll();
     return () => { document.removeEventListener('visibilitychange', onVisibility); if (timer) clearInterval(timer); };
+  }, []);
+
+  // Afficher le message de bienvenue après la connexion
+  useEffect(() => {
+    // Vérifier si c'est une nouvelle session (premier chargement après connexion)
+    const isNewSession = sessionStorage.getItem('isNewSession') === 'true';
+    
+    if (isNewSession) {
+      // Récupérer le nom d'utilisateur depuis localStorage
+      const name = localStorage.getItem('userName') || 
+                  localStorage.getItem('name') || 
+                  localStorage.getItem('prenom') || 
+                  'Client';
+      setUserName(name);
+      setShowWelcome(true);
+      
+      // Cacher le message après 10 secondes
+      const timer = setTimeout(() => {
+        setShowWelcome(false);
+        sessionStorage.removeItem('isNewSession');
+      }, 10000);
+      
+      return () => clearTimeout(timer);
+    }
   }, []);
 
   // Sync section with current hash for proper navigation between pages
@@ -514,6 +540,30 @@ return (
   
     {/* Main Content */}
     <div className="flex-grow-1" style={{ marginLeft: isLgUp ? (sidebarOpen ? '240px' : '56px') : '0 !important', transition: 'margin-left .25s ease', paddingLeft: 0, minWidth: 0, width: '100%', maxWidth: '100vw', overflowX: 'hidden', position: 'relative', backgroundColor: 'var(--bg)' }}>
+      {/* Message de bienvenue */}
+      {showWelcome && (
+        <div style={{
+          position: 'fixed',
+          top: '20px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          backgroundColor: '#4CAF50',
+          color: 'white',
+          padding: '12px 24px',
+          borderRadius: '4px',
+          boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
+          zIndex: 1000,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '10px',
+          animation: 'fadeIn 0.3s ease-in-out',
+          fontWeight: 500
+        }}>
+          <CheckCircle size={20} />
+          <span>Bonjour {userName}, Bienvenue !</span>
+        </div>
+      )}
+      
       <div className="w-100 d-flex align-items-center gap-2 px-2 px-md-3 py-2">
         {/* Hamburger menu button - visible only on mobile */}
         {!isLgUp && (
