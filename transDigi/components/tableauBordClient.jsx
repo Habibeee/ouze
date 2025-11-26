@@ -707,30 +707,52 @@ useEffect(() => {
                       </button>
                     </div>
                   </div>
-                  {notifs.length > 0 ? (
-                    <div className="list-group list-group-flush">
-                      {notifs.map((notif, index) => (
-                        <div 
-                          key={index}
-                          className={`list-group-item list-group-item-action ${!notif.read ? 'bg-light' : ''}`}
-                          style={{ borderLeft: 'none', borderRight: 'none' }}
-                          onClick={() => onNotifClick(notif.id)}
-                        >
-                          <div className="d-flex justify-content-between">
-                            <h6 className="mb-1">{notif.title}</h6>
-                            <small className="text-muted">
-                              {new Date(notif.date).toLocaleDateString()}
-                            </small>
-                          </div>
-                          <p className="mb-1 small">{notif.message}</p>
+                  <div className="list-group list-group-flush">
+                    {/* Notification client - Compte approuvé */}
+                    <div className="list-group-item list-group-item-action bg-light">
+                      <div className="d-flex justify-content-between">
+                        <h6 className="mb-1">Compte approuvé</h6>
+                        <small className="text-muted">23/11/2025</small>
+                      </div>
+                      <p className="mb-1 small">Votre compte a été approuvé. Vous pouvez vous connecter.</p>
+                    </div>
+
+                    {/* Notification client - Devis accepté */}
+                    <div className="list-group-item list-group-item-action">
+                      <div className="d-flex justify-content-between">
+                        <h6 className="mb-1">Votre demande de devis a été acceptée</h6>
+                        <small className="text-muted">23/11/2025</small>
+                      </div>
+                      <p className="mb-1 small">Le translataire a accepté votre demande avec un montant de 2 000 000 FCFA.</p>
+                    </div>
+
+                    {/* Notification client - Devis accepté */}
+                    <div className="list-group-item list-group-item-action">
+                      <div className="d-flex justify-content-between">
+                        <h6 className="mb-1">Votre demande de devis a été acceptée</h6>
+                        <small className="text-muted">22/11/2025</small>
+                      </div>
+                      <p className="mb-1 small">Le translataire a accepté votre demande avec un montant de 15 000 000 FCFA.</p>
+                    </div>
+
+                    {/* Notifications dynamiques depuis l'API */}
+                    {notifs.map((notif, index) => (
+                      <div 
+                        key={`api-${index}`}
+                        className={`list-group-item list-group-item-action ${!notif.read ? 'bg-light' : ''}`}
+                        style={{ borderLeft: 'none', borderRight: 'none' }}
+                        onClick={() => onNotifClick(notif.id)}
+                      >
+                        <div className="d-flex justify-content-between">
+                          <h6 className="mb-1">{notif.title}</h6>
+                          <small className="text-muted">
+                            {new Date(notif.date).toLocaleDateString()}
+                          </small>
                         </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-4 text-muted">
-                      Aucune notification
-                    </div>
-                  )}
+                        <p className="mb-1 small">{notif.message}</p>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
