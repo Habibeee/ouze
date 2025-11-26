@@ -119,13 +119,41 @@ const ClientDashboard = () => {
   const [notifs, setNotifs] = useState([]);
   const [notifLoading, setNotifLoading] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const notifRef = React.createRef(null);
   const [menuOpen, setMenuOpen] = useState(null); // Pour gÃ©rer l'ouverture du menu d'options
   const [hiddenNotifs, setHiddenNotifs] = useState(new Set()); // Pour suivre les notifications masquÃ©es
   const [disabledNotifTypes, setDisabledNotifTypes] = useState(new Set()); // Pour dÃ©sactiver des types de notifications
   const loadNotifs = async () => {
     try { setNotifLoading(true); const data = await listNotifications(10); const items = Array.isArray(data?.items) ? data.items : (Array.isArray(data) ? data : []); setNotifs(items); setUnreadCount(items.filter(n=>!n.read).length); } catch {} finally { setNotifLoading(false); }
   };
-  const onBellClick = async () => { setNotifOpen((o)=>!o); if (!notifOpen) await loadNotifs(); };
+  // Fermer le menu des notifications lors d'un clic en dehors
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (notifRef.current && !notifRef.current.contains(event.target)) {
+        setNotifOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  const onBellClick = async (e) => {
+    e.stopPropagation();
+    const newState = !notifOpen;
+    setNotifOpen(newState);
+    if (newState) {
+      await loadNotifs();
+    } else {
+      // Marquer les notifications comme lues lorsqu'on ferme le menu
+      if (notifs.some(n => !n.read)) {
+        const unreadIds = notifs.filter(n => !n.read).map(n => n.id);
+        unreadIds.forEach(id => markNotificationRead(id));
+      }
+    }
+  };
   const onNotifClick = async (id) => {
     try {
       await markNotificationRead(id);
@@ -139,7 +167,7 @@ const ClientDashboard = () => {
           if (data.devisId) {
             window.location.hash = `#/detail-devis-client?id=${encodeURIComponent(data.devisId)}`;
           } else if (data.translataireId) {
-            // Ouvrir les avis du transitaire ciblÃ©
+            // Ouvrir les avis du transitaire ciblÃ
             const params = new URLSearchParams({ transId: String(data.translataireId), open: 'reviews' });
             window.location.hash = `#/recherche-transitaire?${params.toString()}`;
           }
@@ -148,20 +176,20 @@ const ClientDashboard = () => {
       });
     } catch {}
   };
-  // Masquer une notification spÃ©cifique
+  // Masquer une notification spÃcifique
   const hideNotification = (id) => {
     setHiddenNotifs(prev => new Set([...prev, id]));
     setMenuOpen(null);
   };
 
-  // DÃ©sactiver un type de notification
+  // DÃsactiver un type de notification
   const disableNotificationType = (type) => {
     setDisabledNotifTypes(prev => new Set([...prev, type]));
     setMenuOpen(null);
-    // Ici, vous devriez Ã©galement appeler une API pour enregistrer cette prÃ©fÃ©rence
+    // Ici, vous devriez Ãgalement appeler une API pour enregistrer cette prÃfÃrence
   };
 
-  // VÃ©rifier si une notification doit Ãªtre affichÃ©e
+  // VÃrifier si une notification doit Ãªtre affichÃe
   const shouldShowNotification = (notif) => {
     return !hiddenNotifs.has(notif.id) && 
            !(notif.type && disabledNotifTypes.has(notif.type));
@@ -238,9 +266,9 @@ const ClientDashboard = () => {
     };
     const onHash = () => syncFromHash();
     window.addEventListener('hashchange', onHash);
-    // Synchronisation immÃ©diate
+    // Synchronisation immÃdiate
     syncFromHash();
-    // Si dÃ©jÃ  sur goto=nouveau-devis, forcer la section
+    // Si dÃjÃ  sur goto=nouveau-devis, forcer la section
     if ((window.location.hash || '').includes('goto=nouveau-devis')) {
       setSection('devis');
     }
@@ -635,19 +663,80 @@ useEffect(() => {
             </h1>
           </div>
           <div className="d-flex align-items-center gap-2">
-            <button
-              className={`btn btn-light position-relative p-2 ${notifOpen ? 'active' : ''}`}
-              onClick={onBellClick}
-              style={{ borderRadius: '50%', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-            >
-              <Bell size={20} />
-              {unreadCount > 0 && (
-                <span className="position-absolute top-0 end-0 translate-middle badge rounded-pill bg-danger" style={{ fontSize: '10px', padding: '4px 6px' }}>
-                  {unreadCount > 9 ? '9+' : unreadCount}
-                </span>
+            {/* Bouton de notification */}
+            <div className="position-relative" ref={notifRef}>
+              <button
+                className={`btn btn-light position-relative p-2 ${notifOpen ? 'active' : ''}`}
+                onClick={onBellClick}
+                style={{ borderRadius: '50%', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              >
+                <Bell size={20} />
+                {unreadCount > 0 && (
+                  <span className="position-absolute top-0 end-0 translate-middle badge rounded-pill bg-danger" style={{ fontSize: '10px', padding: '4px 6px' }}>
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
+              </button>
+              {notifOpen && (
+                <div 
+                  className="dropdown-menu show" 
+                  style={{
+                    position: 'absolute',
+                    right: 0,
+                    top: '100%',
+                    marginTop: '8px',
+                    backgroundColor: 'var(--bs-gray-800)',
+                    border: '1px solid var(--bs-gray-700)',
+                    borderRadius: '8px',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                    zIndex: 1000,
+                    minWidth: '320px',
+                    maxHeight: '400px',
+                    overflowY: 'auto',
+                    padding: '0.5rem 0'
+                  }}
+                >
+                  <div className="px-3 py-2 border-bottom">
+                    <div className="d-flex justify-content-between align-items-center">
+                      <h6 className="mb-0">Notifications</h6>
+                      <button 
+                        className="btn btn-link p-0 text-muted"
+                        onClick={onMarkAll}
+                      >
+                        <small>Marquer tout comme lu</small>
+                      </button>
+                    </div>
+                  </div>
+                  {notifs.length > 0 ? (
+                    <div className="list-group list-group-flush">
+                      {notifs.map((notif, index) => (
+                        <div 
+                          key={index}
+                          className={`list-group-item list-group-item-action ${!notif.read ? 'bg-light' : ''}`}
+                          style={{ borderLeft: 'none', borderRight: 'none' }}
+                          onClick={() => onNotifClick(notif.id)}
+                        >
+                          <div className="d-flex justify-content-between">
+                            <h6 className="mb-1">{notif.title}</h6>
+                            <small className="text-muted">
+                              {new Date(notif.date).toLocaleDateString()}
+                            </small>
+                          </div>
+                          <p className="mb-1 small">{notif.message}</p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-4 text-muted">
+                      Aucune notification
+                    </div>
+                  )}
+                </div>
               )}
-            </button>
-            <div className="dropdown">
+            </div>
+
+            {/* Menu profil */}
+            <div className="position-relative">
               <button
                 className="btn btn-link text-decoration-none p-0"
                 onClick={() => setProfileMenuOpen(!profileMenuOpen)}
