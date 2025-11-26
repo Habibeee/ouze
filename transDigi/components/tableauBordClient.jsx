@@ -268,6 +268,25 @@ const ClientDashboard = () => {
   const [editTemperature, setEditTemperature] = useState(false);
   const [editFragile, setEditFragile] = useState(false);
 
+  // Fonction pour gérer le clic sur le profil
+  const onProfileClick = () => {
+    setSection('profil');
+    window.location.hash = '#/profil-client';
+  };
+
+  // Fonction pour gérer la déconnexion
+  const onLogout = async () => {
+    try {
+      await logout();
+      window.location.href = '/';
+    } catch (error) {
+      console.error('Erreur lors de la déconnexion:', error);
+    }
+  };
+
+  // Récupérer l'email de l'utilisateur
+  const userEmail = getAuth()?.user?.email || '';
+
   // Fonction pour obtenir le nom d'affichage de l'utilisateur
   const getUserDisplayName = () => {
     try {
@@ -278,112 +297,89 @@ const ClientDashboard = () => {
       }
       return auth?.user?.email || 'Utilisateur';
     } catch {
-  try {
-    const auth = getAuth();
-    if (auth?.user?.displayName) return auth.user.displayName;
-    if (auth?.user?.prenom || auth?.user?.nom) {
-      return `${auth.user.prenom || ''} ${auth.user.nom || ''}`.trim();
+      return 'Utilisateur';
     }
-    return auth?.user?.email || 'Utilisateur';
-  } catch {
-    return 'Utilisateur';
-  }
-};
+  };
 
-const onProfileClick = () => {
-  setSection('profil');
-  window.location.hash = '#/profil-client';
-};
+  // Dessin de la courbe sur canvas (basÃ©e sur les devis rÃ©els des 12 derniers mois)
+  useEffect(() => {
+    if (section !== 'dashboard') return;
+    const canvas = document.getElementById(chartId);
+    if (!canvas) return;
 
-const onLogout = async () => {
-  try {
-    await logout();
-    window.location.href = '/';
-  } catch (error) {
-    console.error('Erreur lors de la déconnexion:', error);
-  }
-};
+    // Construire les 12 derniers mois et compter selon filtre
+    const now = new Date();
+    const months = [];
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      months.push({ y: d.getFullYear(), m: d.getMonth() });
+    }
+    const matchFilter = (st) => chartFilter === 'tous' ? true : st === chartFilter;
+    const counts = months.map(({ y, m }) => {
+      return devis.filter(d => {
+        const dt = new Date(d.date || d.createdAt || Date.now());
+        const st = (d.status || '').toString().toLowerCase();
+        return dt.getFullYear() === y && dt.getMonth() === m && matchFilter(st);
+      }).length;
+    });
 
-const userEmail = getAuth()?.user?.email || '';
+    const dpr = window.devicePixelRatio || 1;
+    const parent = canvas.parentElement;
+    const width = parent ? parent.clientWidth : 800;
+    const height = 300;
+    canvas.width = width * dpr;
+    canvas.height = height * dpr;
+    canvas.style.width = width + 'px';
+    canvas.style.height = height + 'px';
+    const ctx = canvas.getContext('2d');
+    ctx.setTransform(1,0,0,1,0,0);
+    ctx.scale(dpr, dpr);
 
-useEffect(() => {
-  if (section !== 'dashboard') return;
-  const canvas = document.getElementById(chartId);
-  if (!canvas) return;
+    const padding = 40;
+    const maxVal = Math.max(1, Math.max(...counts)) * 1.2;
+    const stepX = (width - padding * 2) / (counts.length - 1);
 
-  // Construire les 12 derniers mois et compter selon filtre
-  const now = new Date();
-  const months = [];
-  for (let i = 11; i >= 0; i--) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    months.push({ y: d.getFullYear(), m: d.getMonth() });
-  }
-  const matchFilter = (st) => chartFilter === 'tous' ? true : st === chartFilter;
-  const counts = months.map(({ y, m }) => {
-    return devis.filter(d => {
-      const dt = new Date(d.date || d.createdAt || Date.now());
-      const st = (d.status || '').toString().toLowerCase();
-      return dt.getFullYear() === y && dt.getMonth() === m && matchFilter(st);
-    }).length;
-  });
+    // Fond (suivre le thÃ¨me)
+    ctx.clearRect(0, 0, width, height);
+    const cssVars = getComputedStyle(document.documentElement);
+    const cardBg = (cssVars.getPropertyValue('--card') || '#ffffff').trim();
+    ctx.fillStyle = cardBg || '#ffffff';
+    ctx.fillRect(0, 0, width, height);
 
-  const dpr = window.devicePixelRatio || 1;
-  const parent = canvas.parentElement;
-  const width = parent ? parent.clientWidth : 800;
-  const height = 300;
-  canvas.width = width * dpr;
-  canvas.height = height * dpr;
-  canvas.style.width = width + 'px';
-  canvas.style.height = height + 'px';
-  const ctx = canvas.getContext('2d');
-  ctx.setTransform(1,0,0,1,0,0);
-  ctx.scale(dpr, dpr);
+    // Grille horizontale
+    ctx.strokeStyle = '#E5E7EB';
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= 5; i++) {
+      const y = padding + ((height - padding * 2) * i) / 5;
+      ctx.beginPath();
+      ctx.moveTo(padding, y);
+      ctx.lineTo(width - padding, y);
+      ctx.stroke();
+    }
 
-  const padding = 40;
-  const maxVal = Math.max(1, Math.max(...counts)) * 1.2;
-  const stepX = (width - padding * 2) / (counts.length - 1);
-
-  // Fond (suivre le thème)
-  ctx.clearRect(0, 0, width, height);
-  const cssVars = getComputedStyle(document.documentElement);
-  const cardBg = (cssVars.getPropertyValue('--card') || '#ffffff').trim();
-  ctx.fillStyle = cardBg || '#ffffff';
-  ctx.fillRect(0, 0, width, height);
-
-  // Grille horizontale
-  ctx.strokeStyle = '#E5E7EB';
-  ctx.lineWidth = 1;
-  for (let i = 0; i <= 5; i++) {
-    const y = padding + ((height - padding * 2) * i) / 5;
+    // Courbe
+    const toY = (v) => height - padding - (v / maxVal) * (height - padding * 2);
+    ctx.strokeStyle = clientStyles.primary;
+    ctx.lineWidth = 3;
     ctx.beginPath();
-    ctx.moveTo(padding, y);
-    ctx.lineTo(width - padding, y);
+    counts.forEach((v, i) => {
+      const x = padding + i * stepX;
+      const y = toY(v);
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
     ctx.stroke();
-  }
 
-  // Courbe
-  const toY = (v) => height - padding - (v / maxVal) * (height - padding * 2);
-  ctx.strokeStyle = clientStyles.primary;
-  ctx.lineWidth = 3;
-  ctx.beginPath();
-  counts.forEach((v, i) => {
-    const x = padding + i * stepX;
-    const y = toY(v);
-    if (i === 0) ctx.moveTo(x, y);
-    else ctx.lineTo(x, y);
-  });
-  ctx.stroke();
-
-  // Zone sous la courbe
-  const gradient = ctx.createLinearGradient(0, padding, 0, height - padding);
-  gradient.addColorStop(0, 'rgba(14,165,233,0.25)');
-  gradient.addColorStop(1, 'rgba(14,165,233,0)');
-  ctx.fillStyle = gradient;
-  ctx.lineTo(padding + (counts.length - 1) * stepX, height - padding);
-  ctx.lineTo(padding, height - padding);
-  ctx.closePath();
-  ctx.fill();
-}, [section, devis, chartFilter]);
+    // Zone sous la courbe
+    const gradient = ctx.createLinearGradient(0, padding, 0, height - padding);
+    gradient.addColorStop(0, 'rgba(14,165,233,0.25)');
+    gradient.addColorStop(1, 'rgba(14,165,233,0)');
+    ctx.fillStyle = gradient;
+    ctx.lineTo(padding + (counts.length - 1) * stepX, height - padding);
+    ctx.lineTo(padding, height - padding);
+    ctx.closePath();
+    ctx.fill();
+  }, [section, devis, chartFilter]);
 
 const fetchDevis = async (opts) => {
   try {
@@ -403,7 +399,7 @@ const fetchDevis = async (opts) => {
         id: d.id || d._id || '',
         routeLabel: d.route || d.itineraire || d.trajet || '-',
         status: norm,
-        statusLabel: norm === 'accepte' ? 'Accepté' : norm === 'refuse' ? 'Refusé' : norm === 'annule' ? 'Annulé' : 'En attente',
+        statusLabel: norm === 'accepte' ? 'AcceptÃ©' : norm === 'refuse' ? 'RefusÃ©' : norm === 'annule' ? 'AnnulÃ©' : 'En attente',
         createdAt: d.createdAt || d.date || Date.now(),
         date: new Date(d.createdAt || d.date || Date.now()).toLocaleDateString('fr-FR')
       };
@@ -513,9 +509,9 @@ const onSubmitEdit = async () => {
     await updateMonDevis(editId, fd);
     setEditOpen(false);
     await fetchDevis({ page: 1, limit });
-    toast.success('Demande mise à jour');
+    toast.success('Demande mise Ã  jour');
   } catch (e) {
-    toast.error(e?.message || 'Échec de la mise à jour');
+    toast.error(e?.message || 'Ã‰chec de la mise Ã  jour');
   } finally { setEditLoading(false); }
 };
 
@@ -529,14 +525,14 @@ const cancelDevis = async (id) => {
     await cancelDevisApi(id);
     setConfirmCancelId(null);
     await fetchDevis();
-    toast.success('Devis annulé avec succès.');
+    toast.success('Devis annulÃ© avec succÃ¨s.');
   } catch (e) {
     setConfirmCancelId(null);
     toast.error(e?.message || 'Erreur lors de l\'annulation');
   }
 };
 
-// Charger 5 notifications récentes pour la colonne "Activité récente"
+// Charger 5 notifications rÃ©centes pour la colonne "ActivitÃ© rÃ©cente"
 useEffect(() => {
   (async () => {
     try {
@@ -599,7 +595,7 @@ useEffect(() => {
         }}
       />
       <div className="flex-grow-1" style={{ marginLeft: isLgUp ? (sidebarOpen ? '240px' : '56px') : '0', transition: 'margin 0.3s ease', backgroundColor: 'var(--bg)' }}>
-        {/* En-tête avec barre de navigation */}
+        {/* En-tï¿½te avec barre de navigation */}
         <div className="w-100 d-flex justify-content-between align-items-center gap-2 px-2 px-md-3 py-2 bg-body border-bottom" style={{ position: 'sticky', top: 0, zIndex: 10, backgroundColor: 'var(--card)' }}>
           <div className="d-flex align-items-center gap-2">
             {!isLgUp && (
@@ -689,7 +685,7 @@ useEffect(() => {
         </div>
         <div className="card shadow-sm mb-4">
           <div className="card-header bg-white border-0 d-flex justify-content-between align-items-center">
-            <h5 className="mb-0">Activité récente</h5>
+            <h5 className="mb-0">ActivitÃ© rÃ©cente</h5>
             <button className="btn btn-link p-0" onClick={onMarkAll}>
               <small>Marquer tout comme lu</small>
             </button>
@@ -757,7 +753,7 @@ useEffect(() => {
                             style={{ backgroundColor: 'transparent' }}
                           >
                             <BellOff size={16} />
-                            <span>Désactiver ce type de notification</span>
+                            <span>DÃ©sactiver ce type de notification</span>
                           </button>
                         </div>
                       )}
@@ -774,7 +770,7 @@ useEffect(() => {
             ))}
             {recentActivities.length === 0 && (
               <div className="text-center py-4 text-muted">
-                Aucune activité récente
+                Aucune activitÃ© rÃ©cente
               </div>
             )}
           </div>
@@ -812,11 +808,11 @@ useEffect(() => {
                   </div>
                 </div>
 
-                {/* Mes devis récents */}
+                {/* Mes devis rÃ©cents */}
                 <div className="card border-0 shadow-sm mb-4">
                   <div className="card-body">
                     <div className="d-flex justify-content-between align-items-center mb-3">
-                      <h5 className="fw-bold mb-0">Mes devis récents</h5>
+                      <h5 className="fw-bold mb-0">Mes devis rÃ©cents</h5>
                       <a href="#/historique" className="btn btn-sm btn-link">
                         Voir tout
                       </a>
@@ -825,7 +821,7 @@ useEffect(() => {
                       <table className="table table-hover align-middle">
                         <thead>
                           <tr>
-                            <th>Référénce</th>
+                            <th>RÃ©fÃ©rence</th>
                             <th>Client</th>
                             <th>Statut</th>
                             <th>Date</th>
@@ -857,7 +853,7 @@ useEffect(() => {
                           ) : (
                             <tr>
                               <td colSpan="5" className="text-center py-4 text-muted">
-                                Aucun devis récent
+                                Aucun devis rÃ©cent
                               </td>
                             </tr>
                           )}
@@ -868,13 +864,13 @@ useEffect(() => {
                 </div>
               </div>
 
-              {/* Section de droite - Activité récente et statistiques */}
+              {/* Section de droite - ActivitÃ© rÃ©cente et statistiques */}
               <div className="col-12 col-lg-4">
-                {/* Activité récente */}
+                {/* ActivitÃ© rÃ©cente */}
                 <div className="card border-0 shadow-sm mb-4">
                   <div className="card-body">
                     <div className="d-flex justify-content-between align-items-center mb-3">
-                      <h5 className="fw-bold mb-0">Activité récente</h5>
+                      <h5 className="fw-bold mb-0">ActivitÃ© rÃ©cente</h5>
                       <button 
                         className="btn btn-link p-0" 
                         onClick={onBellClick}
@@ -903,7 +899,7 @@ useEffect(() => {
                         ))
                       ) : (
                         <div className="text-center py-3 text-muted">
-                          Aucune activité récente
+                          Aucune activitÃ© rÃ©cente
                         </div>
                       )}
                     </div>
@@ -922,13 +918,13 @@ useEffect(() => {
                         </span>
                       </div>
                       <div className="d-flex justify-content-between align-items-center">
-                        <span>Devis acceptés</span>
+                        <span>Devis acceptÃ©s</span>
                         <span className="badge bg-success">
                           {stats?.acceptedQuotes || 0}
                         </span>
                       </div>
                       <div className="d-flex justify-content-between align-items-center">
-                        <span>Devis refusés</span>
+                        <span>Devis refusÃ©s</span>
                         <span className="badge bg-danger">
                           {stats?.rejectedQuotes || 0}
                         </span>
