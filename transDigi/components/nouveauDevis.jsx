@@ -45,34 +45,57 @@ const NouveauDevis = () => {
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
-    try {
-      const hash = typeof window !== 'undefined' ? window.location.hash : '';
-      const parts = hash.split('?');
-      if (parts.length > 1) {
-        const params = new URLSearchParams(parts[1]);
-        const tId = params.get('translataireId');
-        const tName = params.get('translataireName');
-        setFormData(prev => ({ ...prev, translataireId: tId || prev.translataireId, translataireName: tName || prev.translataireName }));
-      }
-      // Fallback: lire depuis localStorage si le hash n'a pas de paramètres
-      if (typeof window !== 'undefined') {
-        if (!formData.translataireId) {
+    const loadTransitaireData = () => {
+      try {
+        // Lire d'abord depuis l'URL
+        const hash = typeof window !== 'undefined' ? window.location.hash : '';
+        const parts = hash.split('?');
+        let tId = '';
+        let tName = '';
+        
+        if (parts.length > 1) {
+          const params = new URLSearchParams(parts[1]);
+          tId = params.get('translataireId') || '';
+          tName = params.get('translataireName') || '';
+        }
+        
+        // Si pas dans l'URL, essayer le localStorage
+        if (!tId && typeof window !== 'undefined') {
           try {
-            const lsId = localStorage.getItem('pendingTranslataireId');
-            if (lsId) setFormData(prev => ({ ...prev, translataireId: lsId }));
+            tId = localStorage.getItem('pendingTranslataireId') || '';
+            tName = localStorage.getItem('pendingTranslataireName') || '';
           } catch {}
         }
-        if (!formData.translataireName) {
-          try {
-            const lsName = localStorage.getItem('pendingTranslataireName');
-            if (lsName) setFormData(prev => ({ ...prev, translataireName: lsName }));
-          } catch {}
+        
+        // Mettre à jour le formulaire si on a des données
+        if (tId) {
+          setFormData(prev => ({
+            ...prev,
+            translataireId: tId,
+            translataireName: tName || prev.translataireName
+          }));
         }
-        // Nettoyage après lecture
-        try { localStorage.removeItem('pendingTranslataireId'); } catch {}
-        try { localStorage.removeItem('pendingTranslataireName'); } catch {}
+        
+        // Nettoyer le localStorage après lecture
+        if (typeof window !== 'undefined') {
+          try { localStorage.removeItem('pendingTranslataireId'); } catch {}
+          try { localStorage.removeItem('pendingTranslataireName'); } catch {}
+        }
+        
+      } catch (error) {
+        console.error('Erreur lors du chargement des données du transitaire:', error);
       }
-    } catch {}
+    };
+    
+    loadTransitaireData();
+    
+    // Écouter les changements de hash pour les mises à jour dynamiques
+    const handleHashChange = () => loadTransitaireData();
+    window.addEventListener('hashchange', handleHashChange);
+    
+    return () => {
+      window.removeEventListener('hashchange', handleHashChange);
+    };
   }, []);
 
   // Progress computation based on filled fields
