@@ -231,19 +231,26 @@ const ClientDashboard = () => {
   // Sync section with current hash for proper navigation between pages
   useEffect(() => {
     // Guard: accès client uniquement
-    try {
-      const { token } = getAuth();
-      if (!token) {
-        window.location.hash = '#/connexion';
-        return;
-      } else if (isAdminRole()) {
-        window.location.hash = '#/tableau-bord-admin';
-        return;
-      } else if (isTransRole()) {
-        window.location.hash = '#/dashboard-transitaire';
-        return;
+    const checkAuth = () => {
+      try {
+        const { token } = getAuth();
+        if (!token) {
+          window.location.hash = '#/connexion';
+          return false;
+        } else if (isAdminRole()) {
+          window.location.hash = '#/tableau-bord-admin';
+          return false;
+        } else if (isTransRole()) {
+          window.location.hash = '#/dashboard-transitaire';
+          return false;
+        }
+        return true;
+      } catch {
+        return false;
       }
-    } catch {}
+    };
+
+    if (!checkAuth()) return;
 
     const syncFromHash = () => {
       const hash = window.location.hash || '';
@@ -252,20 +259,28 @@ const ClientDashboard = () => {
       
       // Gestion des sections via le paramètre 'section' dans l'URL
       const sectionParam = params.get('section');
+      
       if (sectionParam) {
+        // Mettre à jour la section courante
         setSection(sectionParam);
         
-        // Si on accède à la section devis avec des paramètres, on les enregistre dans le localStorage
+        // Si on accède à la section devis avec des paramètres
         if (sectionParam === 'devis') {
           const translataireId = params.get('translataireId');
           const translataireName = params.get('translataireName');
           
+          // Stocker les informations du transitaire dans le localStorage
           if (translataireId) {
             try {
               localStorage.setItem('pendingTranslataireId', translataireId);
               if (translataireName) {
                 localStorage.setItem('pendingTranslataireName', translataireName);
               }
+              
+              // Nettoyer les paramètres de l'URL après les avoir traités
+              const cleanUrl = window.location.pathname + '#' + path;
+              window.history.replaceState({}, document.title, cleanUrl);
+              
             } catch (e) {
               console.error('Erreur lors de l\'enregistrement des données du transitaire:', e);
             }
@@ -276,7 +291,7 @@ const ClientDashboard = () => {
       
       // Ancienne logique de routage pour la rétrocompatibilité
       if (path.includes('historique')) return setSection('historique');
-      if (path.includes('dashboard-client')) return setSection('dashboard');
+      if (path.includes('dashboard-client') || path === '#/tableau-bord-client') return setSection('dashboard');
       if (path.includes('nouveau-devis-admin')) return setSection('devis-admin');
       if (path.includes('nouveau-devis')) return setSection('devis');
       if (path.includes('recherche-transitaire')) return setSection('recherche');
@@ -676,7 +691,7 @@ useEffect(() => {
                 onClick={() => setSidebarOpen(!sidebarOpen)}
                 style={{ color: 'var(--text)' }}
               >
-                <Menu size={24} />
+                <LayoutGrid size={24} />
               </button>
             )}
             <h1 className="h5 mb-0 d-none d-md-block">

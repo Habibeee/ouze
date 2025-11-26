@@ -344,8 +344,19 @@ const RechercheTransitaire = () => {
                                 localStorage.setItem('pendingTranslataireId', String(transitaire.id));
                                 localStorage.setItem('pendingTranslataireName', String(transitaire.name || ''));
                                 
-                                // Rediriger vers la page de création de devis avec les paramètres
-                                window.location.hash = `#/tableau-bord-client?section=devis&translataireId=${encodeURIComponent(transitaire.id)}&translataireName=${encodeURIComponent(transitaire.name || '')}`;
+                                // Mettre à jour l'URL sans recharger la page
+                                const newHash = `#/tableau-bord-client?section=devis&translataireId=${encodeURIComponent(transitaire.id)}&translataireName=${encodeURIComponent(transitaire.name || '')}`;
+                                
+                                // Forcer la mise à jour de la section dans le composant parent
+                                if (window.location.hash !== newHash) {
+                                  window.location.hash = newHash;
+                                } else {
+                                  // Si le hash est le même, forcer le rechargement du composant
+                                  window.dispatchEvent(new HashChangeEvent('hashchange'));
+                                }
+                                
+                                // Faire défiler vers le haut de la page
+                                window.scrollTo(0, 0);
                               }
                             } catch (e) {
                               console.error('Erreur lors de la sélection du transitaire:', e);
