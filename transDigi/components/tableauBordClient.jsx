@@ -1,106 +1,57 @@
 import React, { useState, useEffect } from 'react';
 import { 
   LayoutGrid, Search, FileText, Truck, Clock, Settings, LogOut,
-  CheckCircle, Mail, XCircle, X, User, Bell, MoreVertical, EyeOff, BellOff
+  CheckCircle, Mail, XCircle, X, User, Bell
 } from 'lucide-react';
-import { Menu, MenuButton, MenuItem, MenuItems, Transition } from '@headlessui/react';
 import { clientStyles, clientCss } from '../styles/tableauBordClientStyle.jsx';
 import SideBare from './sideBare.jsx';
 import RechercheTransitaire from './rechercheTransitaire.jsx';
 import NouveauDevis from './nouveauDevis.jsx';
-import NouveauDevisAdmin from './nouveauDevisAdmin.jsx';
 import TrackingApp from './suiviEnvoi.jsx';
 import ModofierProfClient from './modofierProfClient.jsx';
 import HistoriqueDevis from './historiqueDevis.jsx';
-import MesFichiersRecus from './mesFichiersRecus.jsx';
 import { get, post, logout, listNotifications, markNotificationRead, markAllNotificationsRead, getUnreadNotificationsCount, cancelDevis as cancelDevisApi, listMesDevis as listMesDevisApi, updateMonDevis, getMonDevisById } from '../services/apiClient.js';
 import { useToast } from './ui/ToastProvider.jsx';
 import { getAuth, isAdmin as isAdminRole, isTrans as isTransRole } from '../services/authStore.js';
-import { useI18n } from '../src/i18n.jsx';
 
 const ClientDashboard = () => {
   const toast = useToast();
-  const { t } = useI18n();
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isLgUp, setIsLgUp] = useState(() => (typeof window !== 'undefined' ? window.innerWidth >= 992 : true));
-
-  // Fonction pour obtenir le nom d'affichage de l'utilisateur
-  const getUserDisplayName = () => {
-    try {
-      const auth = getAuth();
-      if (auth?.user?.displayName) return auth.user.displayName;
-      if (auth?.user?.prenom || auth?.user?.nom) {
-        return `${auth.user.prenom || ''} ${auth.user.nom || ''}`.trim();
-      }
-      return auth?.user?.email || 'Utilisateur';
-    } catch {
-      return 'Utilisateur';
-    }
-  };
-
+  
   useEffect(() => {
     const onResize = () => setIsLgUp(window.innerWidth >= 992);
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
   }, []);
-
   const [section, setSection] = useState(() => {
     if (typeof window === 'undefined') return 'dashboard';
-    
-    // Récupérer le hash et les paramètres de l'URL
-    const [path, queryString] = (window.location.hash || '').split('?');
-    const params = new URLSearchParams(queryString || '');
-    
-    // Vérifier si la section est spécifiée dans les paramètres
-    const sectionParam = params.get('section');
-    
-    // Gérer la section 'devis' provenant de la recherche de transitaire
-    if (sectionParam === 'devis' || path.startsWith('#/nouveau-devis')) {
-      return 'devis';
+    const h = (window.location.hash || '').split('?')[0];
+    switch (h) {
+      case '#/recherche-transitaire': return 'recherche';
+      case '#/nouveau-devis': return 'devis';
+      case '#/historique': return 'historique';
+      case '#/profil-client': return 'profil';
+      case '#/envois': return 'envois';
+      case '#/dashboard-client': return 'dashboard';
+      default: return 'dashboard';
     }
-    
-    // Gérer les autres sections basées sur le chemin
-    if (path.startsWith('#/recherche-transitaire')) return 'recherche';
-    if (path.startsWith('#/nouveau-devis-admin')) return 'devis-admin';
-    if (path.startsWith('#/historique')) return 'historique';
-    if (path.startsWith('#/profil-client')) return 'profil';
-    if (path.startsWith('#/envois')) return 'envois';
-    if (path.startsWith('#/fichiers-recus')) return 'fichiers';
-    if (path.startsWith('#/dashboard-client') || path === '#/tableau-bord-client' || path === '#/') return 'dashboard';
-    
-    // Si aucune section ne correspond, essayer de déterminer en fonction du chemin
-    if (path.includes('nouveau-devis')) return 'devis';
-    if (path.includes('recherche')) return 'recherche';
-    if (path.includes('historique')) return 'historique';
-    if (path.includes('profil')) return 'profil';
-    if (path.includes('envois')) return 'envois';
-    if (path.includes('fichiers')) return 'fichiers';
-    
+    if (h.startsWith('#/profil-client')) return 'profil';
     return 'dashboard';
   });
   const chartId = 'clientActivityChart';
   const [chartFilter, setChartFilter] = useState('tous'); // tous|accepte|annule|attente|refuse
-  const getStatusBadgeClass = (status) => {
-    if (!status) return 'secondary';
-    const s = status.toLowerCase();
-    if (s.includes('accept')) return 'success';
-    if (s.includes('refus') || s.includes('annul')) return 'danger';
-    if (s.includes('attent') || s.includes('en cours')) return 'warning';
-    return 'secondary';
-  };
   const isGotoDevis = (typeof window !== 'undefined') && (() => {
     const h = (window.location.hash || '');
-    return h.includes('goto=nouveau-devis') || h.startsWith('#/nouveau-devis?') || h.includes('translataireName=');
+    return h.includes('goto=nouveau-devis') || h.startsWith('#/nouveau-devis') || h.includes('translataireName=');
   })();
   const [avatarUrl, setAvatarUrl] = useState(() => {
-    try { return localStorage.getItem('avatarUrl') || ''; } catch { return ''; }
+    try { return localStorage.getItem('avatarUrl') || 'https://i.pravatar.cc/64?img=5'; } catch { return 'https://i.pravatar.cc/64?img=5'; }
   });
-  const [userName, setUserName] = useState('');
-  const [userInitials, setUserInitials] = useState('');
   useEffect(() => {
     const onStorage = () => {
-      try { setAvatarUrl(localStorage.getItem('avatarUrl') || ''); } catch {}
+      try { setAvatarUrl(localStorage.getItem('avatarUrl') || 'https://i.pravatar.cc/64?img=5'); } catch {}
     };
     window.addEventListener('storage', onStorage);
     return () => window.removeEventListener('storage', onStorage);
@@ -111,21 +62,7 @@ const ClientDashboard = () => {
     (async () => {
       try {
         const prof = await get('/users/profile');
-        const user = prof?.user || {};
-        const url = user.photoProfil;
-        const nom = (user.nom || '').toString().trim();
-        const prenom = (user.prenom || '').toString().trim();
-        const full = (prenom + ' ' + nom).trim() || (user.email || '');
-        if (full) {
-          setUserName(full);
-          try {
-            const parts = full.split(' ').filter(Boolean);
-            const first = (parts[0] || '').charAt(0) || '';
-            const last = (parts[1] || '').charAt(0) || '';
-            const initials = (first + last || first || '').toUpperCase();
-            setUserInitials(initials);
-          } catch {}
-        }
+        const url = prof?.user?.photoProfil;
         if (url && typeof url === 'string') {
           setAvatarUrl((prev) => {
             try { localStorage.setItem('avatarUrl', url); } catch {}
@@ -141,85 +78,10 @@ const ClientDashboard = () => {
   const [notifs, setNotifs] = useState([]);
   const [notifLoading, setNotifLoading] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
-  const notifRef = React.createRef(null);
-  const [menuOpen, setMenuOpen] = useState(null); // Pour gérer l'ouverture du menu d'options
-  const [hiddenNotifs, setHiddenNotifs] = useState(new Set()); // Pour suivre les notifications masquées
-  const [disabledNotifTypes, setDisabledNotifTypes] = useState(new Set()); // Pour désactiver des types de notifications
-  const [activeMenuId, setActiveMenuId] = useState(null); // Pour gérer l'ouverture du menu des options de notification
   const loadNotifs = async () => {
-    try { 
-      setNotifLoading(true); 
-      const data = await listNotifications(10); 
-      const items = Array.isArray(data?.items) ? data.items : (Array.isArray(data) ? data : []); 
-      // Filtrer les notifications masquées ou désactivées
-      const filteredItems = items.filter(notif => 
-        !hiddenNotifs.has(notif.id) && 
-        !(notif.type && disabledNotifTypes.has(notif.type))
-      );
-      setNotifs(filteredItems); 
-      setUnreadCount(filteredItems.filter(n => !n.read).length); 
-    } catch (e) {
-      console.error('Erreur lors du chargement des notifications:', e);
-    } finally { 
-      setNotifLoading(false); 
-    }
+    try { setNotifLoading(true); const data = await listNotifications(10); const items = Array.isArray(data?.items) ? data.items : (Array.isArray(data) ? data : []); setNotifs(items); setUnreadCount(items.filter(n=>!n.read).length); } catch {} finally { setNotifLoading(false); }
   };
-
-  const hideNotification = (id) => {
-    setHiddenNotifs(prev => new Set([...prev, id]));
-    setNotifs(prev => prev.filter(notif => notif.id !== id));
-  };
-
-  const disableNotificationType = (type) => {
-    if (!type) return;
-    setDisabledNotifTypes(prev => new Set([...prev, type]));
-    setNotifs(prev => prev.filter(notif => notif.type !== type));
-  };
-
-  const shouldShowNotification = (notif) => {
-    return !hiddenNotifs.has(notif.id) && 
-           !(notif.type && disabledNotifTypes.has(notif.type));
-  };
-
-  const onMarkAll = async () => { 
-    try { 
-      await markAllNotificationsRead(); 
-      setNotifs(prev => { 
-        const next = prev.map(n => ({ ...n, read: true })); 
-        setUnreadCount(0); 
-        return next; 
-      }); 
-    } catch {} 
-  };
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (notifRef.current && !notifRef.current.contains(event.target)) {
-        setNotifOpen(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
-
-  const onBellClick = async (e) => {
-    e.stopPropagation();
-    const newState = !notifOpen;
-    setNotifOpen(newState);
-    if (newState) {
-      await loadNotifs();
-    } else {
-      // Marquer les notifications comme lues lorsqu'on ferme le menu
-      if (notifs.some(n => !n.read)) {
-        const unreadIds = notifs.filter(n => !n.read).map(n => n.id);
-        unreadIds.forEach(id => markNotificationRead(id));
-      }
-    }
-  };
-
+  const onBellClick = async () => { setNotifOpen((o)=>!o); if (!notifOpen) await loadNotifs(); };
   const onNotifClick = async (id) => {
     try {
       await markNotificationRead(id);
@@ -242,20 +104,7 @@ const ClientDashboard = () => {
       });
     } catch {}
   };
-
-  const markAllNotificationsRead = async () => {
-    try {
-      await markAllNotificationsRead();
-      setNotifs(prev => { 
-        const next = prev.map(n => ({ ...n, read: true })); 
-        setUnreadCount(0); 
-        return next; 
-      }); 
-    } catch (error) {
-      console.error('Erreur lors du marquage des notifications comme lues:', error);
-    }
-  };
-
+  const onMarkAll = async () => { try { await markAllNotificationsRead(); setNotifs(prev => { const next = prev.map(n => ({ ...n, read: true })); setUnreadCount(0); return next; }); } catch {} };
   useEffect(() => {
     let timer;
     let backoff = 90000; // start at 90s
@@ -282,109 +131,45 @@ const ClientDashboard = () => {
   // Sync section with current hash for proper navigation between pages
   useEffect(() => {
     // Guard: accès client uniquement
-    const checkAuth = () => {
-      try {
-        const { token } = getAuth();
-        if (!token) {
-          window.location.hash = '#/connexion';
-          return false;
-        } else if (isAdminRole()) {
-          window.location.hash = '#/tableau-bord-admin';
-          return false;
-        } else if (isTransRole()) {
-          window.location.hash = '#/dashboard-transitaire';
-          return false;
-        }
-        return true;
-      } catch {
-        return false;
+    try {
+      const { token } = getAuth();
+      if (!token) {
+        window.location.hash = '#/connexion';
+      } else if (isAdminRole()) {
+        window.location.hash = '#/tableau-bord-admin';
+      } else if (isTransRole()) {
+        window.location.hash = '#/dashboard-transitaire';
       }
-    };
-
-    if (!checkAuth()) return;
+    } catch {}
 
     const syncFromHash = () => {
       const hash = window.location.hash || '';
-      const [path, queryString] = hash.split('?');
-      const params = new URLSearchParams(queryString || '');
-      
-      // Gestion des sections via le paramètre 'section' dans l'URL
-      const sectionParam = params.get('section');
-      
-      // Si on a un paramètre section, on l'utilise en priorité
-      if (sectionParam) {
-        setSection(sectionParam);
-        
-        // Si on accède à la section devis avec des paramètres
-        if (sectionParam === 'devis') {
-          const translataireId = params.get('translataireId');
-          const translataireName = params.get('translataireName');
-          
-          // Stocker les informations du transitaire dans le localStorage
-          if (translataireId) {
-            try {
-              localStorage.setItem('pendingTranslataireId', translataireId);
-              if (translataireName) {
-                localStorage.setItem('pendingTranslataireName', translataireName);
-              }
-              
-              // Nettoyer les paramètres de l'URL après les avoir traités
-              const cleanUrl = window.location.pathname + '#' + path;
-              window.history.replaceState({}, document.title, cleanUrl);
-              
-            } catch (e) {
-              console.error('Erreur lors de l\'enregistrement des données du transitaire:', e);
-            }
-          }
-        }
-        return;
+      const p = hash.split('?');
+      if (p.length > 1) {
+        const params = new URLSearchParams(p[1]);
+        const goto = params.get('goto');
+        if (goto === 'nouveau-devis') return setSection('devis');
+        if (goto === 'recherche-transitaire') return setSection('recherche');
+        if (goto === 'historique') return setSection('historique');
+        if (goto === 'envois') return setSection('envois');
+        if (goto === 'profil-client') return setSection('profil');
       }
-      
-      // Si pas de paramètre section, essayer de déterminer la section à partir du chemin
-      if (path.startsWith('#/nouveau-devis') || path.includes('nouveau-devis')) {
-        // Si on accède directement à /nouveau-devis avec des paramètres dans le hash
-        const translataireId = params.get('translataireId');
-        const translataireName = params.get('translataireName');
-        
-        if (translataireId) {
-          try {
-            localStorage.setItem('pendingTranslataireId', translataireId);
-            if (translataireName) {
-              localStorage.setItem('pendingTranslataireName', translataireName);
-            }
-            // Nettoyer l'URL après avoir traité les paramètres
-            const cleanUrl = window.location.pathname + '#/nouveau-devis';
-            window.history.replaceState({}, document.title, cleanUrl);
-          } catch (e) {
-            console.error('Erreur lors de l\'enregistrement des données du transitaire:', e);
-          }
-        }
-        
-        setSection('devis');
-        return;
-      }
-      
-      // Ancienne logique de routage pour la rétrocompatibilité
-      if (path.includes('historique')) return setSection('historique');
-      if (path.includes('dashboard-client') || path === '#/tableau-bord-client' || path === '#/') return setSection('dashboard');
-      if (path.includes('nouveau-devis-admin')) return setSection('devis-admin');
-      if (path.includes('recherche-transitaire')) return setSection('recherche');
-      if (path.includes('envois')) return setSection('envois');
-      if (path.includes('profil-client')) return setSection('profil');
-      if (path.includes('fichiers-recus')) return setSection('fichiers');
-      
-      // Si aucun match, on reste sur la section actuelle ou on met une valeur par défaut
-      setSection(prevSection => prevSection || 'dashboard');
+      if (hash.startsWith('#/historique')) setSection('historique');
+      else if (hash.startsWith('#/dashboard-client')) setSection('dashboard');
+      else if (hash.startsWith('#/nouveau-devis')) setSection('devis');
+      else if (hash.startsWith('#/recherche-transitaire')) setSection('recherche');
+      else if (hash.startsWith('#/envois')) setSection('envois');
+      else if (hash.startsWith('#/profil-client')) setSection('profil');
     };
-    
-    const onHashChange = () => syncFromHash();
-    
-    // Ajouter le listener et synchroniser immédiatement
-    window.addEventListener('hashchange', onHashChange);
+    const onHash = () => syncFromHash();
+    window.addEventListener('hashchange', onHash);
+    // Synchronisation immédiate
     syncFromHash();
-    
-    // Nettoyage
-    return () => window.removeEventListener('hashchange', onHashChange);
+    // Si déjà sur goto=nouveau-devis, forcer la section
+    if ((window.location.hash || '').includes('goto=nouveau-devis')) {
+      setSection('devis');
+    }
+    return () => window.removeEventListener('hashchange', onHash);
   }, []);
 
   // NOTE: Graph effect moved below state declarations to avoid TDZ on 'devis'
@@ -398,8 +183,6 @@ const ClientDashboard = () => {
   const [successMsg, setSuccessMsg] = useState('');
   const [acceptedShipments, setAcceptedShipments] = useState([]);
   const [recentActivities, setRecentActivities] = useState([]);
-  const [recentQuotes, setRecentQuotes] = useState([]);
-  const [stats, setStats] = useState({});
   const [confirmCancelId, setConfirmCancelId] = useState(null);
   const [devisFilter, setDevisFilter] = useState('tous');
   const [editOpen, setEditOpen] = useState(false);
@@ -425,30 +208,6 @@ const ClientDashboard = () => {
   const [editTemperature, setEditTemperature] = useState(false);
   const [editFragile, setEditFragile] = useState(false);
 
-  // Fonction pour gérer le clic sur le profil
-  const onProfileClick = () => {
-    setSection('profil');
-    window.location.hash = '#/profil-client';
-  };
-
-  // Fonction pour gérer la déconnexion
-  const onLogout = async () => {
-    try {
-      await logout();
-      // Redirection vers la page de connexion
-      window.location.hash = '#/connexion';
-      // Rechargement pour s'assurer que l'état est bien réinitialisé
-      window.location.reload();
-    } catch (error) {
-      console.error('Erreur lors de la déconnexion:', error);
-      // En cas d'erreur, on redirige quand même vers la page de connexion
-      window.location.hash = '#/connexion';
-    }
-  };
-
-  // Récupérer l'email de l'utilisateur
-  const userEmail = getAuth()?.user?.email || '';
-  const userDisplayName = getUserDisplayName();
 
   // Dessin de la courbe sur canvas (basée sur les devis réels des 12 derniers mois)
   useEffect(() => {
@@ -530,7 +289,7 @@ const ClientDashboard = () => {
     ctx.fill();
   }, [section, devis, chartFilter]);
 
-const fetchDevis = useCallback(async (opts) => {
+const fetchDevis = async (opts) => {
   try {
     setDevisLoading(true);
     setDevisError('');
@@ -544,50 +303,28 @@ const fetchDevis = useCallback(async (opts) => {
                 : raw.includes('refus') ? 'refuse'
                 : raw.includes('annul') ? 'annule'
                 : 'attente';
-      const quote = {
+      return {
         id: d.id || d._id || '',
-        reference: d.reference || `DEVIS-${d.id || ''}`,
-        clientName: d.clientName || d.client?.name || 'N/A',
+        routeLabel: d.route || d.itineraire || d.trajet || '-',
         status: norm,
         statusLabel: norm === 'accepte' ? 'Accepté' : norm === 'refuse' ? 'Refusé' : norm === 'annule' ? 'Annulé' : 'En attente',
         createdAt: d.createdAt || d.date || Date.now(),
-        date: new Date(d.createdAt || d.date || Date.now()).toLocaleDateString('fr-FR'),
-        routeLabel: d.route || d.itineraire || d.trajet || '-',
-        ...d
+        date: new Date(d.createdAt || d.date || Date.now()).toLocaleDateString('fr-FR')
       };
-      return quote;
     });
-    
     setDevis(rows);
-    // Mettre à jour recentQuotes avec les données formatées
-    setRecentQuotes(rows);
     setTotal(Number(res?.total || res?.count || 0) || (Array.isArray(res?.devis) ? Number(res.devis.length) : rows.length * (curPage || 1)));
-    return rows; // Retourner les données pour une utilisation ultérieure si nécessaire
   } catch (e) {
     if (e?.status === 429) {
       setDevisError('');
       setTimeout(() => { fetchDevis({ page, limit }); }, 3000);
     } else {
-      console.error('Erreur lors du chargement des devis:', e);
       setDevisError(e?.message || 'Erreur de chargement des devis');
-      // Mettre à jour avec un tableau vide en cas d'erreur
-      setRecentQuotes([]);
     }
-    return [];
-  } finally { 
-    setDevisLoading(false); 
-  }
-}, [page, limit]);
+  } finally { setDevisLoading(false); }
+};
 
-// Fonction pour forcer le rafraîchissement des devis
-const refreshDevis = useCallback(() => {
-  return fetchDevis({ page: 1, limit });
-}, [fetchDevis, limit]);
-
-// Chargement initial des devis
-useEffect(() => { 
-  fetchDevis({ page: 1, limit }); 
-}, [fetchDevis, limit]);
+useEffect(() => { fetchDevis({ page: 1, limit }); }, []);
 
 const onOpenEdit = async (d) => {
   setEditId(d.id);
@@ -708,448 +445,393 @@ useEffect(() => {
   (async () => {
     try {
       const items = await listNotifications(5);
-      const arr = Array.isArray(items?.items)
-        ? items.items
-        : Array.isArray(items)
-        ? items
-        : [];
-
-      const mapped = arr
-        .filter(n =>
-          shouldShowNotification({
-            id: n.id || n._id || String(Math.random()),
-            type: n.type || 'general',
-          })
-        )
-        .slice(0, 5)
-        .map(n => ({
-          id: n.id || n._id || String(Math.random()),
-          title: n.title || 'Nouvelle notification',
-          message: n.body || n.message || '',
-          date: n.createdAt ? new Date(n.createdAt) : new Date(),
-          read: n.read || false,
-          type: n.type || 'general',
-          data: n.data || {},
-        }));
-
+      const arr = Array.isArray(items?.items) ? items.items : (Array.isArray(items) ? items : []);
+      const mapped = arr.slice(0,5).map(n => ({
+        id: n.id || n._id || String(Math.random()),
+        type: (n.type || '').toString().toLowerCase(),
+        title: n.title || 'Notification',
+        text: n.body || n.message || '',
+        time: n.createdAt ? new Date(n.createdAt).toLocaleString() : '',
+        data: n.data || {},
+        read: !!n.read,
+      }));
       setRecentActivities(mapped);
-    } catch (e) {
-      console.error("Erreur chargement notifications", e);
-    }
+    } catch {}
   })();
 }, []);
 
-  return (
-    <div className="d-flex" style={{ ...clientStyles.layout, backgroundColor: 'var(--bg)' }}>
-      <style>{clientCss}</style>
-      <SideBare
-        defaultOpen={true}
-        open={sidebarOpen}
-        hideItemsWhenCollapsed={true}
-        disableMobileOverlay={true}
-        onOpenChange={(o)=>setSidebarOpen(!!o)}
-        activeId={section}
-        items={[
-          { id: 'dashboard', label: t('client.sidebar.dashboard'), icon: LayoutGrid },
-          { id: 'recherche', label: t('client.sidebar.search_forwarder'), icon: Search },
-          { id: 'devis-admin', label: t('client.sidebar.new_quote'), icon: FileText },
-          { id: 'historique', label: t('client.sidebar.history'), icon: Clock },
-          { id: 'envois', label: t('client.sidebar.shipments'), icon: Truck },
-          { id: 'fichiers', label: t('client.sidebar.files_received'), icon: FileText },
-          { id: 'profil', label: t('client.sidebar.profile'), icon: User }
-        ]}
-        onNavigate={(id) => {
-          setSection(id);
-          if (id === 'dashboard') {
-            window.location.hash = '#/dashboard-client';
-          } else if (id === 'recherche') {
-            window.location.hash = '#/recherche-transitaire';
-          } else if (id === 'devis-admin') {
-            window.location.hash = '#/nouveau-devis-admin';
-          } else if (id === 'historique') {
-            window.location.hash = '#/historique';
-          } else if (id === 'envois') {
-            window.location.hash = '#/envois';
-          } else if (id === 'fichiers') {
-            window.location.hash = '#/fichiers-recus';
-          } else if (id === 'profil') {
-            window.location.hash = '#/profil-client';
-          }
-        }}
-      />
-      <div className="flex-grow-1" style={{ marginLeft: isLgUp ? (sidebarOpen ? '240px' : '56px') : '0', transition: 'margin 0.3s ease', backgroundColor: 'var(--bg)' }}>
-        {/* En-tête avec barre de navigation */}
-        <div className="w-100 d-flex justify-content-between align-items-center gap-2 px-2 px-md-3 py-2 bg-body border-bottom" style={{ position: 'sticky', top: 0, zIndex: 10, backgroundColor: 'var(--card)' }}>
-          <div className="d-flex align-items-center gap-2">
-            {!isLgUp && (
-              <button
-                className="btn btn-link p-1 me-1"
-                onClick={() => setSidebarOpen(!sidebarOpen)}
-                style={{ color: 'var(--text)' }}
-              >
-                <LayoutGrid size={24} />
-              </button>
+const getUserDisplayName = () => {
+  try {
+    const candidates = [
+      'userName','username','name','prenom','firstName','fullName','displayName','email'
+    ];
+    for (const k of candidates) {
+      const v = localStorage.getItem(k);
+      if (v && v.trim()) return v.trim();
+    }
+  } catch {}
+  return 'Bienvenue';
+};
+const userDisplayName = getUserDisplayName();
+
+return (
+  <div className="d-flex" style={{ ...clientStyles.layout, backgroundColor: 'var(--bg)' }}>
+    <style>{clientCss}</style>
+    
+    {/* Sidebar */}
+    <SideBare
+      topOffset={96}
+      closeOnNavigate={!isLgUp}
+      defaultOpen={true}
+      open={sidebarOpen}
+      onOpenChange={(o)=>setSidebarOpen(!!o)}
+      activeId={section}
+      items={[
+        { id: 'dashboard', label: 'Tableau de bord', icon: LayoutGrid },
+        { id: 'recherche', label: 'Trouver un transitaire', icon: Search },
+        { id: 'devis', label: 'Nouveau devis', icon: FileText },
+        { id: 'historique', label: 'Historique', icon: Clock },
+        { id: 'envois', label: 'Suivi des envois', icon: Truck },
+        { id: 'profil', label: 'Mon profil', icon: User },
+      ]}
+      onNavigate={(id) => {
+        setSection(id);
+        if (id === 'dashboard') {
+          window.location.hash = '#/dashboard-client';
+        } else if (id === 'recherche') {
+          window.location.hash = '#/recherche-transitaire';
+        } else if (id === 'devis') {
+          window.location.hash = '#/nouveau-devis';
+        } else if (id === 'historique') {
+          window.location.hash = '#/historique';
+        } else if (id === 'envois') {
+          window.location.hash = '#/envois';
+        } else if (id === 'profil') {
+          window.location.hash = '#/profil-client';
+        }
+      }}
+    />
+  
+    {/* Main Content */}
+    <div className="flex-grow-1" style={{ marginLeft: isLgUp ? (sidebarOpen ? '240px' : '56px') : '0 !important', transition: 'margin-left .25s ease', paddingLeft: 0, minWidth: 0, width: '100%', maxWidth: '100vw', overflowX: 'hidden', position: 'relative', backgroundColor: 'var(--bg)' }}>
+      <div className="w-100 d-flex align-items-center gap-2 px-2 px-md-3 py-2">
+        {/* Hamburger menu button - visible only on mobile */}
+        {!isLgUp && (
+          <button 
+            className="btn btn-link p-1" 
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            aria-label="Toggle menu"
+            style={{ marginRight: 'auto' }}
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="3" y1="12" x2="21" y2="12"></line>
+              <line x1="3" y1="6" x2="21" y2="6"></line>
+              <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+          </button>
+        )}
+        <div className="ms-auto d-flex align-items-center gap-2 position-relative">
+          <button className="btn btn-link position-relative" onClick={onBellClick} aria-label="Notifications">
+            <Bell size={20} />
+            {unreadCount > 0 && (
+              <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">{unreadCount}</span>
             )}
-            <h1 className="h5 mb-0 d-none d-md-block">
-              {section === 'dashboard' && t('client.dashboard.title')}
-              {section === 'recherche' && t('client.search.title')}
-              {section === 'devis' && t('client.quotes.new')}
-              {section === 'devis-admin' && t('client.quotes.new')}
-              {section === 'historique' && t('client.history.title')}
-              {section === 'envois' && t('client.shipments.title')}
-              {section === 'fichiers' && t('client.files.title')}
-              {section === 'profil' && t('client.profile.title')}
-            </h1>
-          </div>
-          <div className="d-flex align-items-center gap-2">
-            {/* Bouton de notification */}
-            <div className="position-relative" ref={notifRef}>
-              <button
-                className={`btn btn-light position-relative p-2 ${notifOpen ? 'active' : ''}`}
-                onClick={onBellClick}
-                style={{ borderRadius: '50%', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-              >
-                <Bell size={20} />
-                {unreadCount > 0 && (
-                  <span className="position-absolute top-0 end-0 translate-middle badge rounded-pill bg-danger" style={{ fontSize: '10px', padding: '4px 6px' }}>
-                    {unreadCount > 9 ? '9+' : unreadCount}
-                  </span>
-                )}
-              </button>
-              {notifOpen && (
-                <div 
-                  className="dropdown-menu show" 
-                  style={{
-                    position: 'absolute',
-                    right: 0,
-                    top: '100%',
-                    marginTop: '8px',
-                    backgroundColor: 'var(--bs-gray-800)',
-                    border: '1px solid var(--bs-gray-700)',
-                    borderRadius: '8px',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-                    zIndex: 1000,
-                    minWidth: '320px',
-                    maxHeight: '400px',
-                    overflowY: 'auto',
-                    padding: '0.5rem 0'
-                  }}
-                >
-                  <div className="px-3 py-2 border-bottom">
-                    <div className="d-flex justify-content-between align-items-center">
-                      <h6 className="mb-0">Notifications</h6>
-                      <button 
-                        className="btn btn-link p-0 text-muted"
-                        onClick={onMarkAll}
-                      >
-                        <small>Marquer tout comme lu</small>
-                      </button>
-                    </div>
-                  </div>
-                  <div className="list-group list-group-flush">
-                    {/* Notification client - Compte approuvé */}
-                    <div className="list-group-item list-group-item-action bg-light">
-                      <div className="d-flex justify-content-between">
-                        <h6 className="mb-1">Compte approuvé</h6>
-                        <small className="text-muted">23/11/2025</small>
-                      </div>
-                      <p className="mb-1 small">Votre compte a été approuvé. Vous pouvez vous connecter.</p>
-                    </div>
-
-                    {/* Notification client - Devis accepté */}
-                    <div className="list-group-item list-group-item-action">
-                      <div className="d-flex justify-content-between">
-                        <h6 className="mb-1">Votre demande de devis a été acceptée</h6>
-                        <small className="text-muted">23/11/2025</small>
-                      </div>
-                      <p className="mb-1 small">Le translataire a accepté votre demande avec un montant de 2 000 000 FCFA.</p>
-                    </div>
-
-                    {/* Notification client - Devis accepté */}
-                    <div className="list-group-item list-group-item-action">
-                      <div className="d-flex justify-content-between">
-                        <h6 className="mb-1">Votre demande de devis a été acceptée</h6>
-                        <small className="text-muted">22/11/2025</small>
-                      </div>
-                      <p className="mb-1 small">Le translataire a accepté votre demande avec un montant de 15 000 000 FCFA.</p>
-                    </div>
-
-                    {/* Notifications dynamiques depuis l'API */}
-                    {notifs.map((notif, index) => (
-                      <div 
-                        key={`api-${index}`}
-                        className={`list-group-item list-group-item-action position-relative ${!notif.read ? 'bg-light' : ''}`}
-                        style={{ borderLeft: 'none', borderRight: 'none', paddingRight: '40px' }}
-                      >
-                        <div className="d-flex justify-content-between">
-                          <div onClick={() => onNotifClick(notif.id)} style={{ flex: 1, cursor: 'pointer' }}>
-                            <h6 className="mb-1">{notif.title}</h6>
-                            <p className="mb-1 small">{notif.message}</p>
-                          </div>
-                          <div className="d-flex align-items-start">
-                            <small className="text-muted me-2">
-                              {new Date(notif.date).toLocaleDateString()}
-                            </small>
-                            <Menu as="div" className="position-relative">
-                              <div>
-                                <MenuButton 
-                                  className="btn btn-sm btn-link text-muted p-0"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setActiveMenuId(activeMenuId === notif.id ? null : notif.id);
-                                  }}
-                                >
-                                  <MoreVertical size={16} />
-                                </MenuButton>
-                              </div>
-                              <Transition
-                                show={activeMenuId === notif.id}
-                                enter="transition ease-out duration-100"
-                                enterFrom="transform opacity-0 scale-95"
-                                enterTo="transform opacity-100 scale-100"
-                                leave="transition ease-in duration-75"
-                                leaveFrom="transform opacity-100 scale-100"
-                                leaveTo="transform opacity-0 scale-95"
-                              >
-                                <MenuItems 
-                                  className="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
-                                  static
-                                >
-                                  <MenuItem>
-                                    {({ active }) => (
-                                      <button
-                                        className={`${
-                                          active ? 'bg-gray-100' : ''
-                                        } flex w-full items-center px-4 py-2 text-sm text-gray-700`}
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          setHiddenNotifs(prev => new Set([...prev, notif.id]));
-                                          setActiveMenuId(null);
-                                        }}
-                                      >
-                                        <EyeOff className="mr-2 h-4 w-4" />
-                                        Masquer cette notification
-                                      </button>
-                                    )}
-                                  </MenuItem>
-                                  <MenuItem>
-                                    {({ active }) => (
-                                      <button
-                                        className={`${
-                                          active ? 'bg-gray-100' : ''
-                                        } flex w-full items-center px-4 py-2 text-sm text-gray-700`}
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          if (notif.type) {
-                                            setDisabledNotifTypes(prev => new Set([...prev, notif.type]));
-                                          }
-                                          setActiveMenuId(null);
-                                        }}
-                                      >
-                                        <BellOff className="mr-2 h-4 w-4" />
-                                        Désactiver les notifications de ce type
-                                      </button>
-                                    )}
-                                  </MenuItem>
-                                </MenuItems>
-                              </Transition>
-                            </Menu>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+          </button>
+          {notifOpen && (
+            <div className="card shadow-sm" style={{ position: 'absolute', top: '100%', right: 0, zIndex: 1050, minWidth: 320 }}>
+              <div className="card-body p-0">
+                <div className="d-flex justify-content-between align-items-center px-3 py-2 border-bottom">
+                  <div className="fw-semibold">Notifications</div>
+                  <button className="btn btn-sm btn-link" onClick={onMarkAll}>Tout marquer lu</button>
                 </div>
-              )}
-            </div>
-
-            {/* Menu profil */}
-            <div className="position-relative">
-              <button
-                className="btn btn-link text-decoration-none p-0"
-                onClick={() => setProfileMenuOpen(!profileMenuOpen)}
-                style={{ color: 'var(--text)' }}
-              >
-                {avatarUrl ? (
-                  <img
-                    src={avatarUrl}
-                    alt="Profile"
-                    className="rounded-circle"
-                    style={{ width: '40px', height: '40px', objectFit: 'cover' }}
-                  />
+                {notifLoading ? (
+                  <div className="p-3 small text-muted">Chargement...</div>
                 ) : (
-                  <div className="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" style={{ width: '40px', height: '40px' }}>
-                    {userInitials || <User size={20} />}
+                  <div className="list-group list-group-flush">
+                    {(notifs.length ? notifs : []).map(n => (
+                      <button key={n.id || n._id} className={`list-group-item list-group-item-action d-flex justify-content-between ${n.read ? '' : 'fw-semibold'}`} onClick={() => onNotifClick(n.id || n._id, n)}>
+                        <div className="me-2" style={{ whiteSpace: 'normal', textAlign: 'left' }}>
+                          <div>{n.title || 'Notification'}</div>
+                          {n.body && <div className="small text-muted">{n.body}</div>}
+                        </div>
+                        {!n.read && <span className="badge bg-primary">Nouveau</span>}
+                      </button>
+                    ))}
+                    {!notifs.length && <div className="p-3 small text-muted">Aucune notification</div>}
                   </div>
                 )}
-              </button>
-              {profileMenuOpen && (
-                <div className="dropdown-menu dropdown-menu-end show" style={{ position: 'absolute', right: 0, marginTop: '8px', zIndex: 1000, minWidth: '200px' }}>
-                  <div className="dropdown-header d-flex flex-column align-items-center py-3">
-                    {avatarUrl ? (
-                      <img
-                        src={avatarUrl}
-                        alt="Profile"
-                        className="rounded-circle mb-2"
-                        style={{ width: '64px', height: '64px', objectFit: 'cover' }}
-                      />
-                    ) : (
-                      <div className="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center mb-2" style={{ width: '64px', height: '64px' }}>
-                        {userInitials || <User size={28} />}
-                      </div>
-                    )}
-                    <div className="text-center">
-                      <div className="fw-bold">{getUserDisplayName()}</div>
-                      <div className="text-muted small">{userEmail || ''}</div>
-                    </div>
-                  </div>
-                  <div className="dropdown-divider"></div>
-                  <button className="dropdown-item d-flex align-items-center gap-2" onClick={onProfileClick}>
-                    <User size={16} /> {t('client.profile.title')}
-                  </button>
-                  <div className="dropdown-divider"></div>
-                  <button className="dropdown-item d-flex align-items-center gap-2 text-danger" onClick={onLogout}>
-                    <LogOut size={16} /> {t('client.logout')}
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-        
-        <style jsx>{`
-          .dropdown-menu {
-            --bs-dropdown-bg: var(--bs-gray-800);
-            --bs-dropdown-link-color: var(--bs-white);
-            --bs-dropdown-link-hover-color: var(--bs-white);
-            --bs-dropdown-link-hover-bg: var(--bs-gray-700);
-          }
-          .dropdown-item {
-            padding: 0.5rem 1rem;
-          }
-          .dropdown-item:hover {
-            background-color: var(--bs-gray-700);
-          }
-        `}</style> 
-        {/* Contenu principal */}
-        <div className="container-fluid px-3 px-md-4 py-3">
-          {section === 'dashboard' ? (
-            <div className="row">
-              {/* Section principale - Gauche */}
-              <div className="col-12 col-lg-8">
-                {/* Carte de bienvenue */}
-                <div className="card border-0 shadow-sm mb-4">
-                  <div className="card-body">
-                    <h2 className="h4 fw-bold mb-3">
-                      {t('client.dashboard.welcome')}, {userDisplayName} !
-                    </h2>
-                    <p className="text-muted mb-0">
-                      {t('client.dashboard.subtitle')}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Mes devis récents */}
-                <div className="card border-0 shadow-sm mb-4">
-                  <div className="card-body">
-                    <div className="d-flex justify-content-between align-items-center mb-3">
-                      <h5 className="fw-bold mb-0">Mes devis récents</h5>
-                      <a href="#/historique" className="btn btn-sm btn-link">
-                        Voir tout
-                      </a>
-                    </div>
-                    <div className="table-responsive">
-                      <table className="table table-hover align-middle">
-                        <thead>
-                          <tr>
-                            <th>Référence</th>
-                            <th>Client</th>
-                            <th>Statut</th>
-                            <th>Date</th>
-                            <th className="text-end">Actions</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {recentQuotes && recentQuotes.length > 0 ? (
-                            recentQuotes.map((quote, index) => (
-                              <tr key={index}>
-                                <td>{quote.reference || `DEVIS-${quote.id}`}</td>
-                                <td>{quote.clientName || 'N/A'}</td>
-                                <td>
-                                  <span className={`badge bg-${getStatusBadgeClass(quote.status)}`}>
-                                    {quote.status}
-                                  </span>
-                                </td>
-                                <td>{new Date(quote.createdAt).toLocaleDateString()}</td>
-                                <td className="text-end">
-                                  <button 
-                                    className="btn btn-sm btn-outline-primary"
-                                    onClick={() => onOpenEdit(quote)}
-                                  >
-                                    Voir
-                                  </button>
-                                </td>
-                              </tr>
-                            ))
-                          ) : (
-                            <tr>
-                              <td colSpan="5" className="text-center py-4 text-muted">
-                                Aucun devis récent
-                              </td>
-                            </tr>
-                          )}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Section de droite - Statistiques */}
-              <div className="col-12 col-lg-4">
-                {/* Statistiques rapides */}
-                <div className="card border-0 shadow-sm">
-                  <div className="card-body">
-                    <h5 className="fw-bold mb-3">Statistiques</h5>
-                    <div className="d-flex flex-column gap-2">
-                      <div className="d-flex justify-content-between align-items-center">
-                        <span>Devis en attente</span>
-                        <span className="badge bg-warning text-dark">
-                          {stats?.pendingQuotes || 0}
-                        </span>
-                      </div>
-                      <div className="d-flex justify-content-between align-items-center">
-                        <span>Devis acceptés</span>
-                        <span className="badge bg-success">
-                          {stats?.acceptedQuotes || 0}
-                        </span>
-                      </div>
-                      <div className="d-flex justify-content-between align-items-center">
-                        <span>Devis refusés</span>
-                        <span className="badge bg-danger">
-                          {stats?.rejectedQuotes || 0}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
               </div>
             </div>
-          ) : (
-            <>
-              {section === 'recherche' && <RechercheTransitaire />}
-              {section === 'devis' && <NouveauDevis />}
-              {section === 'devis-admin' && <NouveauDevisAdmin />}
-              {section === 'historique' && <HistoriqueDevis />}
-              {section === 'envois' && <TrackingApp />}
-              {section === 'fichiers' && <MesFichiersRecus />}
-              {section === 'profil' && <ModofierProfClient />}
-            </>
+          )}
+          <button className="btn p-0 border-0 bg-transparent" onClick={() => setProfileMenuOpen(!profileMenuOpen)} aria-label="Ouvrir menu profil">
+            <img src={avatarUrl} alt="Profil" className="rounded-circle" style={{ width: 36, height: 36, objectFit: 'cover', border: '2px solid #e9ecef' }} />
+          </button>
+          {profileMenuOpen && (
+            <div className="card shadow-sm" style={{ position: 'absolute', top: '100%', right: 0, zIndex: 1050, minWidth: '200px' }}>
+              <div className="list-group list-group-flush">
+                <button className="list-group-item list-group-item-action" onClick={() => { setProfileMenuOpen(false); setSection('profil'); }}>
+                  Modifier profil
+                </button>
+                <button className="list-group-item list-group-item-action" onClick={() => { setProfileMenuOpen(false); window.location.hash = '#/modifierModpss'; }}>
+                  Modifier mot de passe
+                </button>
+                <button className="list-group-item list-group-item-action text-danger" onClick={async () => { setProfileMenuOpen(false); try { await logout(); } finally { window.location.hash = '#/connexion'; } }}>
+                  Se déconnecter
+                </button>
+              </div>
+            </div>
           )}
         </div>
       </div>
+
+      {/* Main Content Area */}
+      <div className="container-fluid px-2 px-md-4 py-3 py-md-4" style={{ backgroundColor: 'var(--bg)' }}>
+        {/* Toasts globaux gèrent désormais les messages */}
+        {isGotoDevis ? (
+          <NouveauDevis />
+        ) : section === 'envois' ? (
+          <TrackingApp />
+        ) : section === 'profil' ? (
+          <ModofierProfClient />
+        ) : section === 'historique' ? (
+          <HistoriqueDevis />
+        ) : section === 'recherche' ? (
+          <RechercheTransitaire />
+        ) : section === 'devis' ? (
+          <NouveauDevis />
+        ) : (
+          <div className="default-wrap">
+            {/* Welcome Section */}
+            <div className="mb-4">
+              <h1 className="h2 fw-bold mb-2">Bonjour, {userDisplayName} !</h1>
+              <p className="text-muted">Voici un aperçu de votre activité récente.</p>
+            </div>
+
+            <div className="row g-2 g-md-3 g-lg-4">
+              {/* Left Column */}
+              <div className="col-12 col-lg-8">
+                {/* Mes Devis Section */}
+                <div className="card border-0 shadow-sm mb-4" style={{ backgroundColor: 'var(--card)' }}>
+                  <div className="card-body" style={{ backgroundColor: 'var(--card)' }}>
+                    <div className="d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between gap-2 mb-3">
+                      <h5 className="fw-bold mb-0">Mes devis</h5>
+                      <div className="btn-group btn-group-sm">
+                        <button className={`btn ${devisFilter==='tous'?'btn-primary text-white':'btn-light'}`} onClick={()=>setDevisFilter('tous')}>Tous</button>
+                        <button className={`btn ${devisFilter==='accepte'?'btn-primary text-white':'btn-light'}`} onClick={()=>setDevisFilter('accepte')}>Acceptés</button>
+                        <button className={`btn ${devisFilter==='attente'?'btn-primary text-white':'btn-light'}`} onClick={()=>setDevisFilter('attente')}>En attente</button>
+                      </div>
+                    </div>
+                    <div className="d-flex flex-column gap-3">
+                      {devis.filter(item => devisFilter==='tous' ? true : item.status===devisFilter).map((item) => (
+                        <div key={item.id} className="border rounded-3 p-2 p-md-3 shadow-sm" style={{ background:'var(--card)' }}>
+                          <div className="d-flex flex-column flex-sm-row justify-content-between align-items-start gap-2">
+                            <div className="d-flex flex-column flex-grow-1" style={{ minWidth: 0 }}>
+                              <div className="d-flex align-items-center gap-2 flex-wrap">
+                                <span className={`badge rounded-pill px-2 px-md-3 py-1 py-md-2 ${item.status === 'accepte' ? 'bg-success' : item.status === 'refuse' ? 'bg-danger' : item.status === 'annule' ? 'bg-secondary' : 'bg-warning text-dark' }`}>{item.statusLabel}</span>
+                                <span className="text-muted small text-truncate" title={item.id} style={{ fontFamily:'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace', maxWidth: '150px' }}>#{String(item.id).slice(0,10)}…</span>
+                              </div>
+                              <div className="mt-2 fw-semibold" style={{ fontSize: '15px' }}>{item.routeLabel && item.routeLabel !== '-' ? item.routeLabel : 'Itinéraire non renseigné'}</div>
+                              <div className="text-muted small">{item.date}</div>
+                            </div>
+                            <div className="d-flex flex-row flex-sm-row align-items-start gap-1 gap-sm-2 flex-shrink-0">
+                              <a className="btn btn-sm btn-outline-secondary" href={`#/detail-devis-client?id=${encodeURIComponent(item.id)}`}>Détail</a>
+                              {item.status === 'attente' && (
+                                confirmCancelId === item.id ? (
+                                  <button className="btn btn-sm btn-danger" onClick={() => cancelDevis(item.id)}>Confirmer</button>
+                                ) : (
+                                  <>
+                                    <button className="btn btn-sm btn-outline-secondary" onClick={() => onOpenEdit(item)}>Modifier</button>
+                                    <button className="btn btn-sm btn-outline-danger" onClick={() => cancelDevis(item.id)}>Annuler</button>
+                                  </>
+                                )
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="d-flex flex-column flex-sm-row justify-content-between align-items-center gap-2 p-2 p-md-3 border-top">
+                      <p className="text-muted small mb-0 text-center text-sm-start">Page {page} {total ? `sur ${Math.max(1, Math.ceil(total / limit))}` : ''}</p>
+                      <div className="d-flex align-items-center gap-2 flex-wrap">
+                        <select className="form-select form-select-sm" style={{ width: 80 }} value={limit} onChange={(e) => { const l = Number(e.target.value)||10; setLimit(l); setPage(1); fetchDevis({ page: 1, limit: l }); }}>
+                          {[5,10,20,50].map(n => <option key={n} value={n}>{n}/p</option>)}
+                        </select>
+                        <nav>
+                          <ul className="pagination pagination-sm mb-0">
+                            <li className={`page-item ${page <= 1 ? 'disabled' : ''}`}>
+                              <button className="page-link" onClick={() => { if (page>1) { const p=page-1; setPage(p); fetchDevis({ page: p, limit }); window.scrollTo({ top: 0, behavior: 'smooth' }); } }}>Précédent</button>
+                            </li>
+                            <li className={`page-item ${total && page >= Math.ceil(total/limit) ? 'disabled' : ''}`}>
+                              <button className="page-link" onClick={() => { const max = total ? Math.ceil(total/limit) : page+1; if (!total || page < max) { const p=page+1; setPage(p); fetchDevis({ page: p, limit }); window.scrollTo({ top: 0, behavior: 'smooth' }); } }}>Suivant</button>
+                            </li>
+                          </ul>
+                        </nav>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                
+              </div>
+
+              {/* Right Column */}
+              <div className="col-12 col-lg-4">
+                {/* Recent Activity */}
+                <div className="card border-0 shadow-sm" style={{ backgroundColor: 'var(--card)' }}>
+                  <div className="card-body" style={{ backgroundColor: 'var(--card)' }}>
+                    <div className="d-flex justify-content-between align-items-center mb-3">
+                      <h5 className="fw-bold mb-0">Activité récente</h5>
+                      <button className="btn btn-sm btn-link" onClick={onBellClick}>Voir tout</button>
+                    </div>
+                    <div className="d-flex flex-column gap-3">
+                      {recentActivities.length === 0 && (
+                        <div className="text-muted small">Aucune activité récente.</div>
+                      )}
+                      {recentActivities.map((a) => {
+                        const isSuccess = a.type.includes('approve') || a.type.includes('appr') || a.type.includes('success');
+                        const bgColor = isSuccess ? '#E8F5E9' : '#E3F2FD';
+                        const iconColor = isSuccess ? '#28A745' : '#2196F3';
+                        const Icon = isSuccess ? CheckCircle : Mail;
+                        return (
+                          <div key={a.id} className="d-flex gap-3">
+                            <div className="rounded-circle p-2 flex-shrink-0" style={{ backgroundColor: bgColor, width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              <Icon size={20} style={{ color: iconColor }} />
+                            </div>
+                            <div className="flex-grow-1">
+                              <div className="small">{a.title}</div>
+                              {a.text && <div className="text-muted small" style={{ whiteSpace: 'normal' }}>{a.text}</div>}
+                              <div className="text-muted" style={{ fontSize: '12px' }}>{a.time}</div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        {editOpen && (
+          <>
+            <div className="modal fade show" style={{ display:'block' }} tabIndex="-1" role="dialog" aria-modal="true">
+              <div className="modal-dialog">
+                <div className="modal-content">
+                  <div className="modal-header">
+                    <h5 className="modal-title">Modifier la demande</h5>
+                    <button type="button" className="btn-close" onClick={()=>setEditOpen(false)} aria-label="Fermer"></button>
+                  </div>
+                  <div className="modal-body">
+                    <div className="mb-3">
+                      <label className="form-label">Type de service</label>
+                      <select className="form-select" value={editTypeService} onChange={(e)=>setEditTypeService(e.target.value)}>
+                        <option value="">(inchangé)</option>
+                        <option value="aerien">Aérien</option>
+                        <option value="maritime">Maritime</option>
+                        <option value="routier">Routier</option>
+                        <option value="ferroviaire">Ferroviaire</option>
+                      </select>
+                    </div>
+                    <div className="row g-3">
+                      <div className="col-12 col-md-6">
+                        <label className="form-label">Origine</label>
+                        <input type="text" className="form-control" placeholder="Adresse d'enlèvement" value={editOrigin} onChange={(e)=>setEditOrigin(e.target.value)} />
+                      </div>
+                      <div className="col-12 col-md-6">
+                        <label className="form-label">Destination</label>
+                        <input type="text" className="form-control" placeholder="Adresse de livraison" value={editDestination} onChange={(e)=>setEditDestination(e.target.value)} />
+                      </div>
+                      <div className="col-12 col-md-6">
+                        <label className="form-label">Date d'expiration</label>
+                        <input type="date" className="form-control" value={editDateExpiration} onChange={(e)=>setEditDateExpiration(e.target.value)} />
+                      </div>
+                      <div className="col-6 col-md-3">
+                        <label className="form-label">Poids total (kg)</label>
+                        <input type="number" className="form-control" value={editWeight} onChange={(e)=>setEditWeight(e.target.value)} />
+                      </div>
+                      <div className="col-6 col-md-3">
+                        <label className="form-label">Type d'emballage</label>
+                        <select className="form-select" value={editPackageType} onChange={(e)=>setEditPackageType(e.target.value)}>
+                          <option value="">(inchangé)</option>
+                          <option value="palettes">Palettes</option>
+                          <option value="cartons">Cartons</option>
+                          <option value="caisses">Caisses</option>
+                          <option value="containers">Containers</option>
+                        </select>
+                      </div>
+                      <div className="col-4 col-md-2">
+                        <label className="form-label">Longueur (cm)</label>
+                        <input type="number" className="form-control" value={editLength} onChange={(e)=>setEditLength(e.target.value)} />
+                      </div>
+                      <div className="col-4 col-md-2">
+                        <label className="form-label">Largeur (cm)</label>
+                        <input type="number" className="form-control" value={editWidth} onChange={(e)=>setEditWidth(e.target.value)} />
+                      </div>
+                      <div className="col-4 col-md-2">
+                        <label className="form-label">Hauteur (cm)</label>
+                        <input type="number" className="form-control" value={editHeight} onChange={(e)=>setEditHeight(e.target.value)} />
+                      </div>
+                      <div className="col-12 col-md-6">
+                        <label className="form-label">Adresse d'enlèvement</label>
+                        <input type="text" className="form-control" value={editPickupAddress} onChange={(e)=>setEditPickupAddress(e.target.value)} />
+                      </div>
+                      <div className="col-12 col-md-6">
+                        <label className="form-label">Date d'enlèvement</label>
+                        <input type="date" className="form-control" value={editPickupDate} onChange={(e)=>setEditPickupDate(e.target.value)} />
+                      </div>
+                      <div className="col-12 col-md-6">
+                        <label className="form-label">Adresse de livraison</label>
+                        <input type="text" className="form-control" value={editDeliveryAddress} onChange={(e)=>setEditDeliveryAddress(e.target.value)} />
+                      </div>
+                      <div className="col-12 col-md-6">
+                        <label className="form-label">Date de livraison</label>
+                        <input type="date" className="form-control" value={editDeliveryDate} onChange={(e)=>setEditDeliveryDate(e.target.value)} />
+                      </div>
+                    </div>
+                    <div className="mb-3">
+                      <label className="form-label">Description</label>
+                      <textarea className="form-control" rows="4" placeholder="Détaillez votre demande" value={editDescription} onChange={(e)=>setEditDescription(e.target.value)} />
+                    </div>
+                    <div className="mb-3">
+                      <label className="form-label">Exigences supplémentaires</label>
+                      <div className="d-flex gap-3 flex-wrap">
+                        <div className="form-check">
+                          <input className="form-check-input" type="checkbox" id="editDangerous" checked={editDangerous} onChange={(e)=>setEditDangerous(e.target.checked)} />
+                          <label className="form-check-label" htmlFor="editDangerous">Matières dangereuses</label>
+                        </div>
+                        <div className="form-check">
+                          <input className="form-check-input" type="checkbox" id="editTemperature" checked={editTemperature} onChange={(e)=>setEditTemperature(e.target.checked)} />
+                          <label className="form-check-label" htmlFor="editTemperature">Contrôle de température</label>
+                        </div>
+                        <div className="form-check">
+                          <input className="form-check-input" type="checkbox" id="editFragile" checked={editFragile} onChange={(e)=>setEditFragile(e.target.checked)} />
+                          <label className="form-check-label" htmlFor="editFragile">Fragile</label>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="mb-3">
+                      <label className="form-label">Notes additionnelles</label>
+                      <textarea className="form-control" rows="3" placeholder="Notes optionnelles" value={editNotes} onChange={(e)=>setEditNotes(e.target.value)} />
+                    </div>
+                    <div className="mb-3">
+                      <label className="form-label">Pièces jointes (optionnel)</label>
+                      <input className="form-control" type="file" multiple onChange={(e)=>setEditFiles(e.target.files)} />
+                    </div>
+                  </div>
+                  <div className="modal-footer">
+                    <button type="button" className="btn btn-outline-secondary" onClick={()=>setEditOpen(false)} disabled={editLoading}>Annuler</button>
+                    <button type="button" className="btn btn-primary" onClick={onSubmitEdit} disabled={editLoading || !editId}>{editLoading ? 'Enregistrement…' : 'Enregistrer'}</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="modal-backdrop fade show" onClick={()=>setEditOpen(false)}></div>
+          </>
+        )}
+      </div>
     </div>
-  );
+  </div>
+);
 };
 
 export default ClientDashboard;
