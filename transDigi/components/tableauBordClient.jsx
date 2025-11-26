@@ -23,12 +23,27 @@ const ClientDashboard = () => {
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isLgUp, setIsLgUp] = useState(() => (typeof window !== 'undefined' ? window.innerWidth >= 992 : true));
-  
+
+  // Fonction pour obtenir le nom d'affichage de l'utilisateur
+  const getUserDisplayName = () => {
+    try {
+      const auth = getAuth();
+      if (auth?.user?.displayName) return auth.user.displayName;
+      if (auth?.user?.prenom || auth?.user?.nom) {
+        return `${auth.user.prenom || ''} ${auth.user.nom || ''}`.trim();
+      }
+      return auth?.user?.email || 'Utilisateur';
+    } catch {
+      return 'Utilisateur';
+    }
+  };
+
   useEffect(() => {
     const onResize = () => setIsLgUp(window.innerWidth >= 992);
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
   }, []);
+
   const [section, setSection] = useState(() => {
     if (typeof window === 'undefined') return 'dashboard';
     const h = (window.location.hash || '').split('?')[0];
@@ -243,6 +258,8 @@ const ClientDashboard = () => {
   const [successMsg, setSuccessMsg] = useState('');
   const [acceptedShipments, setAcceptedShipments] = useState([]);
   const [recentActivities, setRecentActivities] = useState([]);
+  const [recentQuotes, setRecentQuotes] = useState([]);
+  const [stats, setStats] = useState({});
   const [confirmCancelId, setConfirmCancelId] = useState(null);
   const [devisFilter, setDevisFilter] = useState('tous');
   const [editOpen, setEditOpen] = useState(false);
@@ -286,22 +303,9 @@ const ClientDashboard = () => {
 
   // Récupérer l'email de l'utilisateur
   const userEmail = getAuth()?.user?.email || '';
+  const userDisplayName = getUserDisplayName();
 
-  // Fonction pour obtenir le nom d'affichage de l'utilisateur
-  const getUserDisplayName = () => {
-    try {
-      const auth = getAuth();
-      if (auth?.user?.displayName) return auth.user.displayName;
-      if (auth?.user?.prenom || auth?.user?.nom) {
-        return `${auth.user.prenom || ''} ${auth.user.nom || ''}`.trim();
-      }
-      return auth?.user?.email || 'Utilisateur';
-    } catch {
-      return 'Utilisateur';
-    }
-  };
-
-  // Dessin de la courbe sur canvas (basÃ©e sur les devis rÃ©els des 12 derniers mois)
+  // Dessin de la courbe sur canvas (basée sur les devis réels des 12 derniers mois)
   useEffect(() => {
     if (section !== 'dashboard') return;
     const canvas = document.getElementById(chartId);
@@ -339,7 +343,7 @@ const ClientDashboard = () => {
     const maxVal = Math.max(1, Math.max(...counts)) * 1.2;
     const stepX = (width - padding * 2) / (counts.length - 1);
 
-    // Fond (suivre le thÃ¨me)
+    // Fond (suivre le thème)
     ctx.clearRect(0, 0, width, height);
     const cssVars = getComputedStyle(document.documentElement);
     const cardBg = (cssVars.getPropertyValue('--card') || '#ffffff').trim();
@@ -399,7 +403,7 @@ const fetchDevis = async (opts) => {
         id: d.id || d._id || '',
         routeLabel: d.route || d.itineraire || d.trajet || '-',
         status: norm,
-        statusLabel: norm === 'accepte' ? 'AcceptÃ©' : norm === 'refuse' ? 'RefusÃ©' : norm === 'annule' ? 'AnnulÃ©' : 'En attente',
+        statusLabel: norm === 'accepte' ? 'Accepté' : norm === 'refuse' ? 'Refusé' : norm === 'annule' ? 'Annulé' : 'En attente',
         createdAt: d.createdAt || d.date || Date.now(),
         date: new Date(d.createdAt || d.date || Date.now()).toLocaleDateString('fr-FR')
       };
@@ -509,9 +513,9 @@ const onSubmitEdit = async () => {
     await updateMonDevis(editId, fd);
     setEditOpen(false);
     await fetchDevis({ page: 1, limit });
-    toast.success('Demande mise Ã  jour');
+    toast.success('Demande mise à jour');
   } catch (e) {
-    toast.error(e?.message || 'Ã‰chec de la mise Ã  jour');
+    toast.error(e?.message || 'Échec de la mise à jour');
   } finally { setEditLoading(false); }
 };
 
@@ -525,14 +529,14 @@ const cancelDevis = async (id) => {
     await cancelDevisApi(id);
     setConfirmCancelId(null);
     await fetchDevis();
-    toast.success('Devis annulÃ© avec succÃ¨s.');
+    toast.success('Devis annulé avec succès.');
   } catch (e) {
     setConfirmCancelId(null);
     toast.error(e?.message || 'Erreur lors de l\'annulation');
   }
 };
 
-// Charger 5 notifications rÃ©centes pour la colonne "ActivitÃ© rÃ©cente"
+// Charger 5 notifications récentes pour la colonne "Activité récente"
 useEffect(() => {
   (async () => {
     try {
@@ -554,8 +558,6 @@ useEffect(() => {
           data: n.data || {}
         }));
 
-  const userDisplayName = getUserDisplayName();
-
   return (
     <div className="d-flex" style={{ ...clientStyles.layout, backgroundColor: 'var(--bg)' }}>
       <style>{clientCss}</style>
@@ -573,7 +575,7 @@ useEffect(() => {
           { id: 'historique', label: t('client.sidebar.history'), icon: Clock },
           { id: 'envois', label: t('client.sidebar.shipments'), icon: Truck },
           { id: 'fichiers', label: t('client.sidebar.files_received'), icon: FileText },
-          { id: 'profil', label: t('client.sidebar.profile'), icon: User },
+          { id: 'profil', label: t('client.sidebar.profile'), icon: User }
         ]}
         onNavigate={(id) => {
           setSection(id);
@@ -595,7 +597,7 @@ useEffect(() => {
         }}
       />
       <div className="flex-grow-1" style={{ marginLeft: isLgUp ? (sidebarOpen ? '240px' : '56px') : '0', transition: 'margin 0.3s ease', backgroundColor: 'var(--bg)' }}>
-        {/* En-tï¿½te avec barre de navigation */}
+        {/* En-tête avec barre de navigation */}
         <div className="w-100 d-flex justify-content-between align-items-center gap-2 px-2 px-md-3 py-2 bg-body border-bottom" style={{ position: 'sticky', top: 0, zIndex: 10, backgroundColor: 'var(--card)' }}>
           <div className="d-flex align-items-center gap-2">
             {!isLgUp && (
@@ -666,7 +668,7 @@ useEffect(() => {
                       </div>
                     )}
                     <div className="text-center">
-                      <div className="fw-bold">{userDisplayName}</div>
+                      <div className="fw-bold">{getUserDisplayName()}</div>
                       <div className="text-muted small">{userEmail || ''}</div>
                     </div>
                   </div>
@@ -685,7 +687,7 @@ useEffect(() => {
         </div>
         <div className="card shadow-sm mb-4">
           <div className="card-header bg-white border-0 d-flex justify-content-between align-items-center">
-            <h5 className="mb-0">ActivitÃ© rÃ©cente</h5>
+            <h5 className="mb-0">Activité récente</h5>
             <button className="btn btn-link p-0" onClick={onMarkAll}>
               <small>Marquer tout comme lu</small>
             </button>
@@ -753,7 +755,7 @@ useEffect(() => {
                             style={{ backgroundColor: 'transparent' }}
                           >
                             <BellOff size={16} />
-                            <span>DÃ©sactiver ce type de notification</span>
+                            <span>Désactiver ce type de notification</span>
                           </button>
                         </div>
                       )}
@@ -770,7 +772,7 @@ useEffect(() => {
             ))}
             {recentActivities.length === 0 && (
               <div className="text-center py-4 text-muted">
-                Aucune activitÃ© rÃ©cente
+                Aucune activité récente
               </div>
             )}
           </div>
@@ -808,11 +810,11 @@ useEffect(() => {
                   </div>
                 </div>
 
-                {/* Mes devis rÃ©cents */}
+                {/* Mes devis récents */}
                 <div className="card border-0 shadow-sm mb-4">
                   <div className="card-body">
                     <div className="d-flex justify-content-between align-items-center mb-3">
-                      <h5 className="fw-bold mb-0">Mes devis rÃ©cents</h5>
+                      <h5 className="fw-bold mb-0">Mes devis récents</h5>
                       <a href="#/historique" className="btn btn-sm btn-link">
                         Voir tout
                       </a>
@@ -821,7 +823,7 @@ useEffect(() => {
                       <table className="table table-hover align-middle">
                         <thead>
                           <tr>
-                            <th>RÃ©fÃ©rence</th>
+                            <th>Référence</th>
                             <th>Client</th>
                             <th>Statut</th>
                             <th>Date</th>
@@ -853,7 +855,7 @@ useEffect(() => {
                           ) : (
                             <tr>
                               <td colSpan="5" className="text-center py-4 text-muted">
-                                Aucun devis rÃ©cent
+                                Aucun devis récent
                               </td>
                             </tr>
                           )}
@@ -864,13 +866,13 @@ useEffect(() => {
                 </div>
               </div>
 
-              {/* Section de droite - ActivitÃ© rÃ©cente et statistiques */}
+              {/* Section de droite - Activité récente et statistiques */}
               <div className="col-12 col-lg-4">
-                {/* ActivitÃ© rÃ©cente */}
+                {/* Activité récente */}
                 <div className="card border-0 shadow-sm mb-4">
                   <div className="card-body">
                     <div className="d-flex justify-content-between align-items-center mb-3">
-                      <h5 className="fw-bold mb-0">ActivitÃ© rÃ©cente</h5>
+                      <h5 className="fw-bold mb-0">Activité récente</h5>
                       <button 
                         className="btn btn-link p-0" 
                         onClick={onBellClick}
@@ -899,7 +901,7 @@ useEffect(() => {
                         ))
                       ) : (
                         <div className="text-center py-3 text-muted">
-                          Aucune activitÃ© rÃ©cente
+                          Aucune activité récente
                         </div>
                       )}
                     </div>
@@ -918,13 +920,13 @@ useEffect(() => {
                         </span>
                       </div>
                       <div className="d-flex justify-content-between align-items-center">
-                        <span>Devis acceptÃ©s</span>
+                        <span>Devis acceptés</span>
                         <span className="badge bg-success">
                           {stats?.acceptedQuotes || 0}
                         </span>
                       </div>
                       <div className="d-flex justify-content-between align-items-center">
-                        <span>Devis refusÃ©s</span>
+                        <span>Devis refusés</span>
                         <span className="badge bg-danger">
                           {stats?.rejectedQuotes || 0}
                         </span>
