@@ -685,6 +685,13 @@ return (
                             </div>
                             <div className="d-flex flex-row flex-sm-row align-items-start gap-1 gap-sm-2 flex-shrink-0">
                               <a className="btn btn-sm btn-outline-secondary" href={`#/detail-devis-client?id=${encodeURIComponent(item.id)}`}>Détail</a>
+                              <button 
+                                className="btn btn-sm btn-outline-primary" 
+                                onClick={() => setSection('historique')}
+                                title="Voir l'historique des devis"
+                              >
+                                Archiver
+                              </button>
                               {item.status === 'attente' && (
                                 confirmCancelId === item.id ? (
                                   <button className="btn btn-sm btn-danger" onClick={() => cancelDevis(item.id)}>Confirmer</button>
