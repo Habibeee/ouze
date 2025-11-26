@@ -33,14 +33,13 @@ const ClientDashboard = () => {
     switch (h) {
       case '#/recherche-transitaire': return 'recherche';
       case '#/nouveau-devis': return 'devis';
-      case '#/historique': return 'historique';
+      case '#/historique':
+      case '#/historique-devis': return 'historique-devis';
       case '#/profil-client': return 'profil';
       case '#/envois': return 'envois';
       case '#/dashboard-client': return 'dashboard';
       default: return 'dashboard';
     }
-    if (h.startsWith('#/profil-client')) return 'profil';
-    return 'dashboard';
   });
   const chartId = 'clientActivityChart';
   const [chartFilter, setChartFilter] = useState('tous'); // tous|accepte|annule|attente|refuse
