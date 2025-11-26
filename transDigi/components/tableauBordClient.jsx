@@ -516,6 +516,7 @@ return (
         { id: 'dashboard', label: 'Tableau de bord', icon: LayoutGrid },
         { id: 'recherche', label: 'Trouver un transitaire', icon: Search },
         { id: 'devis', label: 'Nouveau devis', icon: FileText },
+        { id: 'historique-devis', label: 'Historique des devis', icon: FileText },
         { id: 'historique', label: 'Historique', icon: Clock },
         { id: 'envois', label: 'Suivi des envois', icon: Truck },
         { id: 'profil', label: 'Mon profil', icon: User },
@@ -528,6 +529,8 @@ return (
           window.location.hash = '#/recherche-transitaire';
         } else if (id === 'devis') {
           window.location.hash = '#/nouveau-devis';
+        } else if (id === 'historique-devis') {
+          window.location.hash = '#/historique-devis';
         } else if (id === 'historique') {
           window.location.hash = '#/historique';
         } else if (id === 'envois') {
@@ -643,7 +646,7 @@ return (
           <TrackingApp />
         ) : section === 'profil' ? (
           <ModofierProfClient />
-        ) : section === 'historique' ? (
+        ) : section === 'historique' || section === 'historique-devis' ? (
           <HistoriqueDevis />
         ) : section === 'recherche' ? (
           <RechercheTransitaire />
@@ -685,13 +688,6 @@ return (
                             </div>
                             <div className="d-flex flex-row flex-sm-row align-items-start gap-1 gap-sm-2 flex-shrink-0">
                               <a className="btn btn-sm btn-outline-secondary" href={`#/detail-devis-client?id=${encodeURIComponent(item.id)}`}>Détail</a>
-                              <button 
-                                className="btn btn-sm btn-outline-primary" 
-                                onClick={() => setSection('historique')}
-                                title="Voir l'historique des devis"
-                              >
-                                Archiver
-                              </button>
                               {item.status === 'attente' && (
                                 confirmCancelId === item.id ? (
                                   <button className="btn btn-sm btn-danger" onClick={() => cancelDevis(item.id)}>Confirmer</button>
@@ -702,6 +698,13 @@ return (
                                   </>
                                 )
                               )}
+                              <button 
+                                className="btn btn-sm btn-outline-primary" 
+                                onClick={() => setSection('historique')}
+                                title="Voir l'historique des devis"
+                              >
+                                Archiver
+                              </button>
                             </div>
                           </div>
                         </div>
