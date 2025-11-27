@@ -112,8 +112,10 @@ const HistoriqueDevis = () => {
         if (mapped.length === 0) {
           console.log('Aucun devis trouvé dans la réponse');
           setErr('Aucun devis trouvé dans votre historique');
+          setRows([]); // S'assurer que les lignes sont vides si pas de données
         } else {
           setErr('');
+          setRows(mapped); // Mettre à jour les lignes avec les données chargées
         }
       } catch (e) {
         setErr(e?.message || t('client.history.error'));
