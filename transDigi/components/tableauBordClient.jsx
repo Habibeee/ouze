@@ -10,7 +10,7 @@ import NouveauDevis from './nouveauDevis.jsx';
 import TrackingApp from './suiviEnvoi.jsx';
 import ModofierProfClient from './modofierProfClient.jsx';
 import HistoriqueDevis from './historiqueDevis.jsx';
-import { get, post, logout, listNotifications, markNotificationRead, markAllNotificationsRead, getUnreadNotificationsCount, cancelDevis as cancelDevisApi, listMesDevis as listMesDevisApi, updateMonDevis, getMonDevisById, archiveDevisTransitaire } from '../services/apiClient.js';
+import { get, post, logout, listNotifications, markNotificationRead, markAllNotificationsRead, getUnreadNotificationsCount, cancelDevis as cancelDevisApi, listMesDevis as listMesDevisApi, updateMonDevis, getMonDevisById } from '../services/apiClient.js';
 import { useToast } from './ui/ToastProvider.jsx';
 import { getAuth, isAdmin as isAdminRole, isTrans as isTransRole } from '../services/authStore.js';
 
@@ -18,8 +18,6 @@ const ClientDashboard = () => {
   const toast = useToast();
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [showWelcome, setShowWelcome] = useState(false);
-  const [userName, setUserName] = useState('');
   const [isLgUp, setIsLgUp] = useState(() => (typeof window !== 'undefined' ? window.innerWidth >= 992 : true));
   
   useEffect(() => {
@@ -30,44 +28,18 @@ const ClientDashboard = () => {
   const [section, setSection] = useState(() => {
     if (typeof window === 'undefined') return 'dashboard';
     const h = (window.location.hash || '').split('?')[0];
-    return getSectionFromHash(h);
-  });
-
-  // Fonction pour obtenir la section à partir du hash
-  const getSectionFromHash = (hash) => {
-    switch (hash) {
+    switch (h) {
       case '#/recherche-transitaire': return 'recherche';
       case '#/nouveau-devis': return 'devis';
-      case '#/historique':
-      case '#/historique-devis': return 'historique-devis';
+      case '#/historique': return 'historique';
       case '#/profil-client': return 'profil';
       case '#/envois': return 'envois';
-      case '#/dashboard-client':
-      case '':
-      case '#':
-        return 'dashboard';
+      case '#/dashboard-client': return 'dashboard';
       default: return 'dashboard';
     }
-  };
-
-  // Écouter les changements de hash dans l'URL
-  useEffect(() => {
-    const handleHashChange = () => {
-      const hash = window.location.hash.split('?')[0];
-      const newSection = getSectionFromHash(hash);
-      setSection(newSection);
-    };
-
-    // Ajouter l'écouteur d'événement
-    window.addEventListener('popstate', handleHashChange);
-    window.addEventListener('hashchange', handleHashChange);
-
-    // Nettoyer l'écouteur d'événement
-    return () => {
-      window.removeEventListener('popstate', handleHashChange);
-      window.removeEventListener('hashchange', handleHashChange);
-    };
-  }, []);
+    if (h.startsWith('#/profil-client')) return 'profil';
+    return 'dashboard';
+  });
   const chartId = 'clientActivityChart';
   const [chartFilter, setChartFilter] = useState('tous'); // tous|accepte|annule|attente|refuse
   const isGotoDevis = (typeof window !== 'undefined') && (() => {
@@ -154,30 +126,6 @@ const ClientDashboard = () => {
     document.addEventListener('visibilitychange', onVisibility);
     poll();
     return () => { document.removeEventListener('visibilitychange', onVisibility); if (timer) clearInterval(timer); };
-  }, []);
-
-  // Afficher le message de bienvenue après la connexion
-  useEffect(() => {
-    // Vérifier si c'est une nouvelle session (premier chargement après connexion)
-    const isNewSession = sessionStorage.getItem('isNewSession') === 'true';
-    
-    if (isNewSession) {
-      // Récupérer le nom d'utilisateur depuis localStorage
-      const name = localStorage.getItem('userName') || 
-                  localStorage.getItem('name') || 
-                  localStorage.getItem('prenom') || 
-                  'Client';
-      setUserName(name);
-      setShowWelcome(true);
-      
-      // Cacher le message après 10 secondes
-      const timer = setTimeout(() => {
-        setShowWelcome(false);
-        sessionStorage.removeItem('isNewSession');
-      }, 10000);
-      
-      return () => clearTimeout(timer);
-    }
   }, []);
 
   // Sync section with current hash for proper navigation between pages
@@ -476,60 +424,19 @@ const onSubmitEdit = async () => {
 };
 
 const cancelDevis = async (id) => {
-  try {
-    // Vérifier d'abord si l'utilisateur confirme l'annulation
-    if (confirmCancelId !== id) {
-      setConfirmCancelId(id);
-      setTimeout(() => {
-        setConfirmCancelId(prevId => prevId === id ? null : prevId);
-      }, 4000);
-      return;
-    }
-
-    const confirmCancel = window.confirm('Êtes-vous sûr de vouloir annuler ce devis ?');
-    if (!confirmCancel) {
-      setConfirmCancelId(null);
-      return;
-    }
-
-    // Réinitialiser l'ID de confirmation avant l'appel API
-    setConfirmCancelId(null);
-    
-    // Appel API
-    await cancelDevisApi(id);
-    
-    // Rafraîchir la liste des devis
-    await fetchDevis();
-    
-    // Afficher le message de succès
-    toast.success('Devis annulé avec succès.');
-  } catch (error) {
-    // En cas d'erreur, s'assurer que l'ID de confirmation est réinitialisé
-    setConfirmCancelId(null);
-    console.error('Erreur lors de l\'annulation du devis:', error);
-    toast.error(error?.message || 'Erreur lors de l\'annulation du devis');
+  if (confirmCancelId !== id) {
+    setConfirmCancelId(id);
+    setTimeout(() => { setConfirmCancelId(prev => prev === id ? null : prev); }, 4000);
+    return;
   }
-};
-
-// Fonction pour gérer l'archivage d'un devis
-const archiveDevis = async (id) => {
-  // Demande de confirmation avant l'archivage
-  const confirmArchive = window.confirm('Voulez-vous vraiment archiver ce devis ?');
-  if (!confirmArchive) return;
-  
   try {
-    // Appel de l'API pour archiver le devis
-    await archiveDevisTransitaire(id);
-    
-    // Redirection vers la page d'historique après l'archivage
-    window.location.hash = '#/historique-devis';
-    toast.success('Devis archivé avec succès.');
-    
-    // Rafraîchir la liste des devis
+    await cancelDevisApi(id);
+    setConfirmCancelId(null);
     await fetchDevis();
+    toast.success('Devis annulé avec succès.');
   } catch (e) {
-    console.error('Erreur lors de l\'archivage du devis:', e);
-    toast.error(e?.response?.data?.message || e?.message || 'Erreur lors de l\'archivage du devis');
+    setConfirmCancelId(null);
+    toast.error(e?.message || 'Erreur lors de l\'annulation');
   }
 };
 
@@ -583,7 +490,6 @@ return (
         { id: 'dashboard', label: 'Tableau de bord', icon: LayoutGrid },
         { id: 'recherche', label: 'Trouver un transitaire', icon: Search },
         { id: 'devis', label: 'Nouveau devis', icon: FileText },
-        { id: 'historique-devis', label: 'Historique des devis', icon: FileText, onClick: () => window.location.hash = '#/historique-devis' },
         { id: 'historique', label: 'Historique', icon: Clock },
         { id: 'envois', label: 'Suivi des envois', icon: Truck },
         { id: 'profil', label: 'Mon profil', icon: User },
@@ -596,8 +502,6 @@ return (
           window.location.hash = '#/recherche-transitaire';
         } else if (id === 'devis') {
           window.location.hash = '#/nouveau-devis';
-        } else if (id === 'historique-devis') {
-          window.location.hash = '#/historique-devis';
         } else if (id === 'historique') {
           window.location.hash = '#/historique';
         } else if (id === 'envois') {
@@ -610,30 +514,6 @@ return (
   
     {/* Main Content */}
     <div className="flex-grow-1" style={{ marginLeft: isLgUp ? (sidebarOpen ? '240px' : '56px') : '0 !important', transition: 'margin-left .25s ease', paddingLeft: 0, minWidth: 0, width: '100%', maxWidth: '100vw', overflowX: 'hidden', position: 'relative', backgroundColor: 'var(--bg)' }}>
-      {/* Message de bienvenue */}
-      {showWelcome && (
-        <div style={{
-          position: 'fixed',
-          top: '20px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          backgroundColor: '#4CAF50',
-          color: 'white',
-          padding: '12px 24px',
-          borderRadius: '4px',
-          boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
-          zIndex: 1000,
-          display: 'flex',
-          alignItems: 'center',
-          gap: '10px',
-          animation: 'fadeIn 0.3s ease-in-out',
-          fontWeight: 500
-        }}>
-          <CheckCircle size={20} />
-          <span>Bonjour {userName}, Bienvenue !</span>
-        </div>
-      )}
-      
       <div className="w-100 d-flex align-items-center gap-2 px-2 px-md-3 py-2">
         {/* Hamburger menu button - visible only on mobile */}
         {!isLgUp && (
@@ -713,7 +593,7 @@ return (
           <TrackingApp />
         ) : section === 'profil' ? (
           <ModofierProfClient />
-        ) : section === 'historique' || section === 'historique-devis' ? (
+        ) : section === 'historique' ? (
           <HistoriqueDevis />
         ) : section === 'recherche' ? (
           <RechercheTransitaire />
@@ -765,13 +645,6 @@ return (
                                   </>
                                 )
                               )}
-                              <button 
-                                className="btn btn-sm btn-outline-primary" 
-                                onClick={() => archiveDevis(item.id)}
-                                title="Archiver ce devis"
-                              >
-                                Archiver
-                              </button>
                             </div>
                           </div>
                         </div>
