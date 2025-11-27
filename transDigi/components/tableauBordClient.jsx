@@ -10,7 +10,7 @@ import NouveauDevis from './nouveauDevis.jsx';
 import TrackingApp from './suiviEnvoi.jsx';
 import ModofierProfClient from './modofierProfClient.jsx';
 import HistoriqueDevis from './historiqueDevis.jsx';
-import { get, post, logout, listNotifications, markNotificationRead, markAllNotificationsRead, getUnreadNotificationsCount, cancelDevis as cancelDevisApi, listMesDevis as listMesDevisApi, updateMonDevis, getMonDevisById } from '../services/apiClient.js';
+import { get, post, logout, listNotifications, markNotificationRead, markAllNotificationsRead, getUnreadNotificationsCount, cancelDevis as cancelDevisApi, listMesDevis as listMesDevisApi, updateMonDevis, getMonDevisById, archiveDevisTransitaire } from '../services/apiClient.js';
 import { useToast } from './ui/ToastProvider.jsx';
 import { getAuth, isAdmin as isAdminRole, isTrans as isTransRole } from '../services/authStore.js';
 
