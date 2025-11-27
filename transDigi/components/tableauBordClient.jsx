@@ -30,17 +30,44 @@ const ClientDashboard = () => {
   const [section, setSection] = useState(() => {
     if (typeof window === 'undefined') return 'dashboard';
     const h = (window.location.hash || '').split('?')[0];
-    switch (h) {
+    return getSectionFromHash(h);
+  });
+
+  // Fonction pour obtenir la section à partir du hash
+  const getSectionFromHash = (hash) => {
+    switch (hash) {
       case '#/recherche-transitaire': return 'recherche';
       case '#/nouveau-devis': return 'devis';
       case '#/historique':
       case '#/historique-devis': return 'historique-devis';
       case '#/profil-client': return 'profil';
       case '#/envois': return 'envois';
-      case '#/dashboard-client': return 'dashboard';
+      case '#/dashboard-client':
+      case '':
+      case '#':
+        return 'dashboard';
       default: return 'dashboard';
     }
-  });
+  };
+
+  // Écouter les changements de hash dans l'URL
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash.split('?')[0];
+      const newSection = getSectionFromHash(hash);
+      setSection(newSection);
+    };
+
+    // Ajouter l'écouteur d'événement
+    window.addEventListener('popstate', handleHashChange);
+    window.addEventListener('hashchange', handleHashChange);
+
+    // Nettoyer l'écouteur d'événement
+    return () => {
+      window.removeEventListener('popstate', handleHashChange);
+      window.removeEventListener('hashchange', handleHashChange);
+    };
+  }, []);
   const chartId = 'clientActivityChart';
   const [chartFilter, setChartFilter] = useState('tous'); // tous|accepte|annule|attente|refuse
   const isGotoDevis = (typeof window !== 'undefined') && (() => {
