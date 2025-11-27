@@ -476,27 +476,38 @@ const onSubmitEdit = async () => {
 };
 
 const cancelDevis = async (id) => {
-  if (confirmCancelId !== id) {
-    setConfirmCancelId(id);
-    setTimeout(() => { setConfirmCancelId(prev => prev === id ? null : prev); }, 4000);
-    return;
-  }
-  
-  // Demande de confirmation avant l'annulation
-  const confirmCancel = window.confirm('Êtes-vous sûr de vouloir annuler ce devis ?');
-  if (!confirmCancel) {
-    setConfirmCancelId(null);
-    return;
-  }
-  
   try {
+    // Vérifier d'abord si l'utilisateur confirme l'annulation
+    if (confirmCancelId !== id) {
+      setConfirmCancelId(id);
+      setTimeout(() => {
+        setConfirmCancelId(prevId => prevId === id ? null : prevId);
+      }, 4000);
+      return;
+    }
+
+    const confirmCancel = window.confirm('Êtes-vous sûr de vouloir annuler ce devis ?');
+    if (!confirmCancel) {
+      setConfirmCancelId(null);
+      return;
+    }
+
+    // Réinitialiser l'ID de confirmation avant l'appel API
+    setConfirmCancelId(null);
+    
+    // Appel API
     await cancelDevisApi(id);
-    setConfirmCancelId(null);
+    
+    // Rafraîchir la liste des devis
     await fetchDevis();
+    
+    // Afficher le message de succès
     toast.success('Devis annulé avec succès.');
-  } catch (e) {
+  } catch (error) {
+    // En cas d'erreur, s'assurer que l'ID de confirmation est réinitialisé
     setConfirmCancelId(null);
-    toast.error(e?.message || 'Erreur lors de l\'annulation');
+    console.error('Erreur lors de l\'annulation du devis:', error);
+    toast.error(error?.message || 'Erreur lors de l\'annulation du devis');
   }
 };
 
