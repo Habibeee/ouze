@@ -481,6 +481,14 @@ const cancelDevis = async (id) => {
     setTimeout(() => { setConfirmCancelId(prev => prev === id ? null : prev); }, 4000);
     return;
   }
+  
+  // Demande de confirmation avant l'annulation
+  const confirmCancel = window.confirm('Êtes-vous sûr de vouloir annuler ce devis ?');
+  if (!confirmCancel) {
+    setConfirmCancelId(null);
+    return;
+  }
+  
   try {
     await cancelDevisApi(id);
     setConfirmCancelId(null);
@@ -489,6 +497,28 @@ const cancelDevis = async (id) => {
   } catch (e) {
     setConfirmCancelId(null);
     toast.error(e?.message || 'Erreur lors de l\'annulation');
+  }
+};
+
+// Fonction pour gérer l'archivage d'un devis
+const archiveDevis = async (id) => {
+  // Demande de confirmation avant l'archivage
+  const confirmArchive = window.confirm('Voulez-vous vraiment archiver ce devis ?');
+  if (!confirmArchive) return;
+  
+  try {
+    // Appel de l'API pour archiver le devis
+    await archiveDevisTransitaire(id);
+    
+    // Redirection vers la page d'historique après l'archivage
+    window.location.hash = '#/historique-devis';
+    toast.success('Devis archivé avec succès.');
+    
+    // Rafraîchir la liste des devis
+    await fetchDevis();
+  } catch (e) {
+    console.error('Erreur lors de l\'archivage du devis:', e);
+    toast.error(e?.response?.data?.message || e?.message || 'Erreur lors de l\'archivage du devis');
   }
 };
 
@@ -542,7 +572,7 @@ return (
         { id: 'dashboard', label: 'Tableau de bord', icon: LayoutGrid },
         { id: 'recherche', label: 'Trouver un transitaire', icon: Search },
         { id: 'devis', label: 'Nouveau devis', icon: FileText },
-        { id: 'historique-devis', label: 'Historique des devis', icon: FileText },
+        { id: 'historique-devis', label: 'Historique des devis', icon: FileText, onClick: () => window.location.hash = '#/historique-devis' },
         { id: 'historique', label: 'Historique', icon: Clock },
         { id: 'envois', label: 'Suivi des envois', icon: Truck },
         { id: 'profil', label: 'Mon profil', icon: User },
@@ -726,8 +756,8 @@ return (
                               )}
                               <button 
                                 className="btn btn-sm btn-outline-primary" 
-                                onClick={() => setSection('historique')}
-                                title="Voir l'historique des devis"
+                                onClick={() => archiveDevis(item.id)}
+                                title="Archiver ce devis"
                               >
                                 Archiver
                               </button>
