@@ -237,7 +237,7 @@ export async function listMesDevis(params) {
 }
 
 export async function cancelDevis(devisId) {
-  return apiFetch(`/users/devis/${encodeURIComponent(devisId)}/cancel`, { method: 'PUT' });
+  return apiFetch(`/api/users/devis/${encodeURIComponent(devisId)}/cancel`, { method: 'PUT' });
 }
 
 export async function archiveDevis(devisId) {
