@@ -10,15 +10,41 @@ function Header({ showSidebarToggle = false, onToggleSidebar, hideNavbarToggler 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
+  // Ne pas afficher le header sur la page d'accueil
+  if (window.location.hash === '#/' || window.location.hash === '') {
+    return null;
+  }
+
   useEffect(() => {
     const saved = localStorage.getItem('theme') || 'light';
     setTheme(saved);
     document.documentElement.dataset.theme = saved;
     document.body.classList.toggle('theme-dark', saved === 'dark');
-    // Vérifier si l'utilisateur est connecté
-    const { token } = getAuth();
-    setIsLoggedIn(!!token);
+    
+    const checkAuth = () => {
+      const { token } = getAuth();
+      setIsLoggedIn(!!token);
+    };
+    
+    // Vérifier l'état de connexion au chargement
+    checkAuth();
+
+    // Écouter les changements d'état de connexion
+    const handleStorageChange = () => {
+      checkAuth();
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
   }, []);
+  
+  const handleLogout = () => {
+    clearAuth();
+    window.location.hash = '#/connexion';
+    window.location.reload();
+  };
 
   const toggleTheme = () => {
     const next = theme === 'light' ? 'dark' : 'light';
@@ -96,28 +122,24 @@ function Header({ showSidebarToggle = false, onToggleSidebar, hideNavbarToggler 
             </ul>
 
             <div className="d-flex align-items-center gap-2">
-              <button
-                type="button"
-                className={`btn fw-semibold px-4 ${isLoggedIn ? 'btn-outline-danger' : 'btn-success'}`}
-                onClick={() => {
-                  if (isLoggedIn) {
-                    clearAuth();
-                    window.location.hash = '#/';
-                    window.location.reload();
-                  } else {
-                    window.location.hash = '#/connexion';
-                  }
-                }}
-              >
-                {isLoggedIn ? (
-                  <>
-                    <LogOut size={16} className="me-1" />
-                    {t('nav.logout')}
-                  </>
-                ) : (
-                  t('nav.login')
-                )}
-              </button>
+              {isLoggedIn ? (
+                <button
+                  type="button"
+                  className="btn fw-semibold px-4 btn-outline-danger"
+                  onClick={handleLogout}
+                >
+                  <LogOut size={16} className="me-1" />
+                  {t('nav.logout')}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="btn fw-semibold px-4 btn-success"
+                  onClick={() => window.location.hash = '#/connexion'}
+                >
+                  {t('nav.login')}
+                </button>
+              )}
               <div className="ms-2 d-flex align-items-center" aria-label="Language switcher">
                 <span
                   onClick={() => setLang('fr')}

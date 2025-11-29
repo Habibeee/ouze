@@ -10,7 +10,7 @@ import NouveauDevis from './nouveauDevis.jsx';
 import TrackingApp from './suiviEnvoi.jsx';
 import ModofierProfClient from './modofierProfClient.jsx';
 import HistoriqueDevis from './historiqueDevis.jsx';
-import { get, post, logout, listNotifications, markNotificationRead, markAllNotificationsRead, getUnreadNotificationsCount, cancelDevis as cancelDevisApi, listMesDevis as listMesDevisApi, updateMonDevis, getMonDevisById } from '../services/apiClient.js';
+import { get, post, logout, listNotifications, markNotificationRead, markAllNotificationsRead, getUnreadNotificationsCount, cancelDevis as cancelDevisApi, listMesDevis as listMesDevisApi, updateMonDevis, getMonDevisById, archiveDevis } from '../services/apiClient.js';
 import { useToast } from './ui/ToastProvider.jsx';
 import { getAuth, isAdmin as isAdminRole, isTrans as isTransRole } from '../services/authStore.js';
 
@@ -431,12 +431,22 @@ const cancelDevis = async (id) => {
   }
   try {
     await cancelDevisApi(id);
-    setConfirmCancelId(null);
-    await fetchDevis();
-    toast.success('Devis annulé avec succès.');
+    await fetchDevis({ page, limit });
+    toast.success('Le devis a été annulé avec succès');
   } catch (e) {
+    toast.error(e?.message || 'Erreur lors de l\'annulation du devis');
+  } finally {
     setConfirmCancelId(null);
-    toast.error(e?.message || 'Erreur lors de l\'annulation');
+  }
+};
+
+const handleArchive = async (id) => {
+  try {
+    await archiveDevis(id);
+    await fetchDevis({ page, limit });
+    toast.success('Le devis a été archivé avec succès');
+  } catch (e) {
+    toast.error(e?.message || 'Erreur lors de l\'archivage du devis');
   }
 };
 
@@ -647,10 +657,22 @@ return (
                                 ) : (
                                   <>
                                     <button className="btn btn-sm btn-outline-secondary" onClick={() => onOpenEdit(item)}>Modifier</button>
-                                    <button className="btn btn-sm btn-outline-danger" onClick={() => cancelDevis(item.id)}>Annuler</button>
+                                    <button className="btn btn-sm btn-outline-danger" onClick={() => setConfirmCancelId(item.id)}>Annuler</button>
                                   </>
                                 )
                               )}
+                              <button 
+                                className="btn btn-sm btn-outline-secondary ms-1"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (window.confirm('Êtes-vous sûr de vouloir archiver ce devis ?')) {
+                                    handleArchive(item.id);
+                                  }
+                                }}
+                                title="Archiver ce devis"
+                              >
+                                Archiver
+                              </button>
                             </div>
                           </div>
                         </div>
