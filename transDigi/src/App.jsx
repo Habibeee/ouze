@@ -23,6 +23,7 @@ import DetailDevis from '../components/detailDevis.jsx';
 import DetailDevisClient from '../components/detailDevisClient.jsx';
 import NouveauDevis from '../components/nouveauDevis.jsx';
 import MesFichiersRecusTransitaire from '../components/mesFichiersRecusTransitaire.jsx';
+import MesFichiersRecus from '../components/mesFichiersRecus.jsx';
 import { themeCss } from '../styles/themeStyle.jsx';
 import Apropos from '../components/apropos.jsx';
 import ModifierModpss from '../components/modifierModpss.jsx';

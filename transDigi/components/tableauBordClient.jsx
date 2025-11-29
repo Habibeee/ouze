@@ -455,20 +455,42 @@ const handleArchive = async (id) => {
   setIsArchiving(true);
   try {
     const response = await archiveDevis(id);
+    
     if (response && response.success === false) {
       throw new Error(response.message || 'Échec de l\'archivage du devis');
     }
+    
+    // Rafraîchir la liste des devis
     await fetchDevis({ page, limit });
+    
     toast.success('Le devis a été archivé avec succès');
   } catch (error) {
     console.error('Erreur lors de l\'archivage du devis:', error);
-    const errorMessage = error?.response?.data?.message || error?.message || 'Erreur lors de l\'archivage du devis';
-    toast.error(errorMessage);
+    
+    // Gestion des erreurs spécifiques
+    if (error.response) {
+      // Erreur avec réponse du serveur (4xx, 5xx)
+      if (error.response.status === 404) {
+        toast.error('La ressource demandée est introuvable. Veuillez réessayer.');
+      } else if (error.response.status === 401) {
+        toast.error('Session expirée. Veuillez vous reconnecter.');
+        // Rediriger vers la page de connexion si nécessaire
+        window.location.href = '/connexion';
+      } else {
+        const errorMessage = error.response.data?.message || 'Une erreur est survenue lors de l\'archivage du devis';
+        toast.error(errorMessage);
+      }
+    } else if (error.request) {
+      // La requête a été faite mais aucune réponse n'a été reçue
+      toast.error('Pas de réponse du serveur. Vérifiez votre connexion internet.');
+    } else {
+      // Une erreur s'est produite lors de la configuration de la requête
+      toast.error(error.message || 'Erreur lors de la préparation de la requête');
+    }
   } finally {
     setIsArchiving(false);
   }
 };
-
 // Charger 5 notifications récentes pour la colonne "Activité récente"
 useEffect(() => {
   (async () => {
@@ -680,7 +702,7 @@ return (
                                   </>
                                 )
                               )}
-                              <button 
+                              <button
                                 className="btn btn-sm btn-outline-secondary ms-1"
                                 onClick={(e) => {
                                   e.stopPropagation();
@@ -692,7 +714,7 @@ return (
                                 {isArchiving ? (
                                   <span className="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
                                 ) : null}
-                                {isArchiving ? 'Archivement...' : 'Archiver'}
+                                {isArchiving ? 'Archivage...' : 'Archiver'}
                               </button>
                             </div>
                           </div>
