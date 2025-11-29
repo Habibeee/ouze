@@ -204,7 +204,7 @@ function App() {
       case '#/historique-devis':
         return <HistoriqueDevis />;
       case '#/mes-fichiers-recus':
-        return <ClientDashboard />;
+        return <MesFichiersRecus />;
       case '#/envois':
         return <ClientDashboard />;
       case '#/fichiers-recus':

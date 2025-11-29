@@ -301,8 +301,8 @@ const HistoriqueDevis = () => {
                             >
                               Voir
                             </button>
-                            {r.statut === 'attente' && (
-                              <>
+                            <>
+                              {r.statut === 'attente' && (
                                 <button 
                                   className="btn btn-sm btn-outline-danger"
                                   onClick={(e) => {
@@ -314,18 +314,18 @@ const HistoriqueDevis = () => {
                                 >
                                   Annuler
                                 </button>
-                                <button 
-                                  className="btn btn-sm btn-outline-secondary ms-1"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleArchive(r.id);
-                                  }}
-                                  title="Archiver ce devis"
-                                >
-                                  Archiver
-                                </button>
-                              </>
-                            )}
+                              )}
+                              <button 
+                                className="btn btn-sm btn-outline-secondary ms-1"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleArchive(r.id);
+                                }}
+                                title="Archiver ce devis"
+                              >
+                                Archiver
+                              </button>
+                            </>
                           </div>
                         ) : (
                           r[col.key] || '-'
