@@ -32,7 +32,9 @@ export async function apiFetch(path, { method = 'GET', body, headers } = {}) {
       const isForm = (typeof FormData !== 'undefined') && body instanceof FormData;
       if (hasBody && !isForm) defaultHeaders['Content-Type'] = 'application/json';
 
-      const res = await fetch(`${BASE_URL}${path}`, {
+      // Nettoyer le chemin pour éviter les doublons /api/
+      const cleanPath = path.startsWith('/api') ? path.substring(4) : path;
+      const res = await fetch(`${BASE_URL}${cleanPath}`, {
         method,
         headers: { ...defaultHeaders, ...(headers || {}) },
         credentials: 'include',
@@ -237,7 +239,7 @@ export async function listMesDevis(params) {
 }
 
 export async function cancelDevis(devisId) {
-  return apiFetch(`/api/users/devis/${encodeURIComponent(devisId)}/cancel`, { method: 'PUT' });
+  return apiFetch(`/users/devis/${encodeURIComponent(devisId)}/cancel`, { method: 'PUT' });
 }
 
 export async function archiveDevis(devisId) {
