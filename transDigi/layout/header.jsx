@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { headerStyles, headerCss } from './styles/headerStyle.jsx';
+import { headerStyles, headerCss } from '../styles/headerStyle.jsx';
 import { Menu, ArrowLeft, X, MoreVertical, LogOut } from 'lucide-react';
-import { getAuth, clearAuth } from './services/authStore';
-import { useI18n } from './i18n.jsx';
+import { getAuth, clearAuth } from '../src/services/authStore';
+import { useI18n } from '../src/i18n.jsx';
 
 function Header({ showSidebarToggle = false, onToggleSidebar, hideNavbarToggler = false }) {
   const [theme, setTheme] = useState('light');
