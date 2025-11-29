@@ -440,13 +440,32 @@ const cancelDevis = async (id) => {
   }
 };
 
+const [isArchiving, setIsArchiving] = useState(false);
+
 const handleArchive = async (id) => {
+  if (!id) {
+    toast.error('ID de devis manquant');
+    return;
+  }
+  
+  if (!window.confirm('Êtes-vous sûr de vouloir archiver ce devis ?')) {
+    return;
+  }
+  
+  setIsArchiving(true);
   try {
-    await archiveDevis(id);
+    const response = await archiveDevis(id);
+    if (response && response.success === false) {
+      throw new Error(response.message || 'Échec de l\'archivage du devis');
+    }
     await fetchDevis({ page, limit });
     toast.success('Le devis a été archivé avec succès');
-  } catch (e) {
-    toast.error(e?.message || 'Erreur lors de l\'archivage du devis');
+  } catch (error) {
+    console.error('Erreur lors de l\'archivage du devis:', error);
+    const errorMessage = error?.response?.data?.message || error?.message || 'Erreur lors de l\'archivage du devis';
+    toast.error(errorMessage);
+  } finally {
+    setIsArchiving(false);
   }
 };
 
@@ -665,13 +684,15 @@ return (
                                 className="btn btn-sm btn-outline-secondary ms-1"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  if (window.confirm('Êtes-vous sûr de vouloir archiver ce devis ?')) {
-                                    handleArchive(item.id);
-                                  }
+                                  handleArchive(item.id);
                                 }}
+                                disabled={isArchiving}
                                 title="Archiver ce devis"
                               >
-                                Archiver
+                                {isArchiving ? (
+                                  <span className="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                                ) : null}
+                                {isArchiving ? 'Archivement...' : 'Archiver'}
                               </button>
                             </div>
                           </div>
