@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { headerStyles, headerCss } from '../styles/headerStyle.jsx';
+import { headerStyles, headerCss } from './styles/headerStyle.jsx';
 import { Menu, ArrowLeft, X, MoreVertical, LogOut } from 'lucide-react';
-import { getAuth, clearAuth } from '../services/authStore';
-import { useI18n } from '../src/i18n.jsx';
+import { getAuth, clearAuth } from './services/authStore';
+import { useI18n } from './i18n.jsx';
 
 function Header({ showSidebarToggle = false, onToggleSidebar, hideNavbarToggler = false }) {
   const [theme, setTheme] = useState('light');
@@ -10,14 +10,10 @@ function Header({ showSidebarToggle = false, onToggleSidebar, hideNavbarToggler 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
-  // Ne pas afficher le header sur la page d'accueil
+  // Vérifier si c'est la page d'accueil pour appliquer un style différent
   const isHomePage = window.location.hash === '#' || 
                    window.location.hash === '#/' || 
                    window.location.hash === '';
-
-  if (isHomePage) {
-    return null;
-  }
 
   useEffect(() => {
     const saved = localStorage.getItem('theme') || 'light';
@@ -85,7 +81,7 @@ function Header({ showSidebarToggle = false, onToggleSidebar, hideNavbarToggler 
   }, [mobileMenuOpen]);
 
   return (
-    <nav className="navbar navbar-expand-lg navbar-light bg-white border-bottom shadow-sm fixed-top w-100 navbar-compact">
+    <nav className={`navbar navbar-expand-lg navbar-light ${isHomePage ? 'bg-transparent position-absolute top-0 start-0 end-0' : 'bg-white border-bottom shadow-sm fixed-top'} w-100 navbar-compact`} style={{ zIndex: 1030 }}>
       <style>{headerCss}</style>
       <div className="container-fluid px-1 py-0">
         <button
