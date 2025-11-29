@@ -490,8 +490,10 @@ return (
         { id: 'dashboard', label: 'Tableau de bord', icon: LayoutGrid },
         { id: 'recherche', label: 'Trouver un transitaire', icon: Search },
         { id: 'devis', label: 'Nouveau devis', icon: FileText },
+        { id: 'historique-devis', label: 'Historique de devis', icon: FileText },
         { id: 'historique', label: 'Historique', icon: Clock },
         { id: 'envois', label: 'Suivi des envois', icon: Truck },
+        { id: 'fichiers-recus', label: 'Mes fichiers reçus', icon: FileText },
         { id: 'profil', label: 'Mon profil', icon: User },
       ]}
       onNavigate={(id) => {
@@ -508,6 +510,10 @@ return (
           window.location.hash = '#/envois';
         } else if (id === 'profil') {
           window.location.hash = '#/profil-client';
+        } else if (id === 'historique-devis') {
+          window.location.hash = '#/historique-devis';
+        } else if (id === 'fichiers-recus') {
+          window.location.hash = '#/mes-fichiers-recus';
         }
       }}
     />

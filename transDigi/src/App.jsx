@@ -152,7 +152,9 @@ function App() {
     '#/detail-devis-client',
     '#/client',
     '#/transitaire',
-    '#/fichiers-recus'
+    '#/fichiers-recus',
+    '#/historique-devis',
+    '#/mes-fichiers-recus'
   ].includes(baseRoute);
 
   const clientActiveId = (() => {
@@ -163,8 +165,9 @@ function App() {
       case '#/nouveau-devis-admin': return 'devis-admin';
       case '#/historique': return 'historique';
       case '#/envois': return 'envois';
-      case '#/profil-client': return 'profile';
-      case '#/fichiers-recus': return 'dashboard';
+      case '#/profil-client': return 'profil';
+      case '#/fichiers-recus': return 'fichiers-recus';
+      case '#/historique-devis': return 'historique-devis';
       case '#/client': return 'dashboard';
       case '#/transitaire': return 'dashboard';
       default: return 'dashboard';
@@ -197,6 +200,10 @@ function App() {
       case '#/gestion-utilisateurs':
         return <GestionUtilisateurs />;
       case '#/historique':
+        return <ClientDashboard />;
+      case '#/historique-devis':
+        return <HistoriqueDevis />;
+      case '#/mes-fichiers-recus':
         return <ClientDashboard />;
       case '#/envois':
         return <ClientDashboard />;

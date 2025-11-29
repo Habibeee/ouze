@@ -122,18 +122,6 @@ const HistoriqueDevis = () => {
       } finally { setLoading(false); }
   };
 
-  const handleArchive = async (id) => {
-    if (!id) return;
-    if (!window.confirm(t('client.history.confirm.archive'))) return;
-    try {
-      await cancelDevis(id);
-      await load();
-      toast.success(t('client.history.toast.archived'));
-    } catch (e) {
-      toast.error(e?.message || t('client.history.toast.archive_error'));
-    }
-  };
-
   useEffect(() => { load(); }, []);
 
   const handleCancel = async (id) => {
@@ -145,6 +133,19 @@ const HistoriqueDevis = () => {
       toast.success(t('client.history.toast.canceled'));
     } catch (e) {
       toast.error(e?.message || t('client.history.toast.cancel_error'));
+    }
+  };
+
+  const handleArchive = async (id) => {
+    if (!id) return;
+    if (!window.confirm('Voulez-vous vraiment archiver ce devis ?')) return;
+    try {
+      await archiveDevis(id);
+      toast.success('Le devis a été archivé avec succès');
+      // Recharger les données
+      await load();
+    } catch (e) {
+      toast.error(e?.message || 'Erreur lors de l\'archivage du devis');
     }
   };
 
@@ -301,17 +302,29 @@ const HistoriqueDevis = () => {
                               Voir
                             </button>
                             {r.statut === 'attente' && (
-                              <button 
-                                className="btn btn-sm btn-outline-danger"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  if (window.confirm('Êtes-vous sûr de vouloir annuler ce devis ?')) {
-                                    handleCancel(r.id);
-                                  }
-                                }}
-                              >
-                                Annuler
-                              </button>
+                              <>
+                                <button 
+                                  className="btn btn-sm btn-outline-danger"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (window.confirm('Êtes-vous sûr de vouloir annuler ce devis ?')) {
+                                      handleCancel(r.id);
+                                    }
+                                  }}
+                                >
+                                  Annuler
+                                </button>
+                                <button 
+                                  className="btn btn-sm btn-outline-secondary ms-1"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleArchive(r.id);
+                                  }}
+                                  title="Archiver ce devis"
+                                >
+                                  Archiver
+                                </button>
+                              </>
                             )}
                           </div>
                         ) : (

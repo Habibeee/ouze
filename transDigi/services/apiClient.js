@@ -240,6 +240,10 @@ export async function cancelDevis(devisId) {
   return apiFetch(`/users/devis/${encodeURIComponent(devisId)}/cancel`, { method: 'PUT' });
 }
 
+export async function archiveDevis(devisId) {
+  return apiFetch(`/users/devis/${encodeURIComponent(devisId)}/archive`, { method: 'PUT' });
+}
+
 // Client - Supprimer définitivement un devis
 export async function deleteMonDevis(id) {
   if (!id) throw new Error('id requis');
