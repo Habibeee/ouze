@@ -729,21 +729,31 @@ return (
                               <div className="mt-2 fw-semibold" style={{ fontSize: '15px' }}>{item.routeLabel && item.routeLabel !== '-' ? item.routeLabel : 'Itinéraire non renseigné'}</div>
                               <div className="text-muted small">{item.date}</div>
                             </div>
-                            <div className="d-flex flex-row flex-wrap align-items-start gap-1 gap-sm-2 flex-shrink-0">
+                            <div className="d-flex flex-row flex-wrap align-items-start gap-2 flex-shrink-0">
                               <a 
                                 className="btn btn-sm" 
                                 href={`#/detail-devis-client?id=${encodeURIComponent(item.id)}`}
                                 style={{
-                                  backgroundColor: '#0d6efd',
-                                  color: 'white',
+                                  backgroundColor: 'transparent',
+                                  color: '#0d6efd',
+                                  border: '1px solid #0d6efd',
                                   borderRadius: '6px',
-                                  padding: '0.25rem 0.75rem',
-                                  border: 'none',
-                                  minWidth: '80px',
-                                  transition: 'all 0.2s',
+                                  padding: '0.375rem 0.75rem',
+                                  minWidth: '90px',
+                                  transition: 'all 0.2s ease-in-out',
+                                  height: '32px',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center'
                                 }}
-                                onMouseOver={(e) => e.currentTarget.style.opacity = '0.85'}
-                                onMouseOut={(e) => e.currentTarget.style.opacity = '1'}
+                                onMouseOver={(e) => {
+                                  e.currentTarget.style.backgroundColor = '#0d6efd';
+                                  e.currentTarget.style.color = 'white';
+                                }}
+                                onMouseOut={(e) => {
+                                  e.currentTarget.style.backgroundColor = 'transparent';
+                                  e.currentTarget.style.color = '#0d6efd';
+                                }}
                               >
                                 Détail
                               </a>
@@ -755,14 +765,22 @@ return (
                                     style={{
                                       backgroundColor: '#dc3545',
                                       color: 'white',
+                                      border: '1px solid #dc3545',
                                       borderRadius: '6px',
-                                      padding: '0.25rem 0.75rem',
-                                      border: 'none',
+                                      padding: '0.375rem 0.75rem',
                                       minWidth: '100px',
-                                      transition: 'all 0.2s',
+                                      height: '32px',
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      transition: 'all 0.2s ease-in-out'
                                     }}
-                                    onMouseOver={(e) => e.currentTarget.style.opacity = '0.85'}
-                                    onMouseOut={(e) => e.currentTarget.style.opacity = '1'}
+                                    onMouseOver={(e) => {
+                                      e.currentTarget.style.opacity = '0.85';
+                                    }}
+                                    onMouseOut={(e) => {
+                                      e.currentTarget.style.opacity = '1';
+                                    }}
                                   >
                                     Confirmer
                                   </button>
@@ -772,16 +790,26 @@ return (
                                       className="btn btn-sm" 
                                       onClick={() => onOpenEdit(item)}
                                       style={{
-                                        backgroundColor: '#0dcaf0',
-                                        color: 'white',
+                                        backgroundColor: 'transparent',
+                                        color: '#0dcaf0',
+                                        border: '1px solid #0dcaf0',
                                         borderRadius: '6px',
-                                        padding: '0.25rem 0.75rem',
-                                        border: 'none',
-                                        minWidth: '80px',
-                                        transition: 'all 0.2s',
+                                        padding: '0.375rem 0.75rem',
+                                        minWidth: '90px',
+                                        height: '32px',
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        transition: 'all 0.2s ease-in-out'
                                       }}
-                                      onMouseOver={(e) => e.currentTarget.style.opacity = '0.85'}
-                                      onMouseOut={(e) => e.currentTarget.style.opacity = '1'}
+                                      onMouseOver={(e) => {
+                                        e.currentTarget.style.backgroundColor = '#0dcaf0';
+                                        e.currentTarget.style.color = 'white';
+                                      }}
+                                      onMouseOut={(e) => {
+                                        e.currentTarget.style.backgroundColor = 'transparent';
+                                        e.currentTarget.style.color = '#0dcaf0';
+                                      }}
                                     >
                                       Modifier
                                     </button>
@@ -791,14 +819,22 @@ return (
                                       style={{
                                         backgroundColor: '#dc3545',
                                         color: 'white',
+                                        border: '1px solid #dc3545',
                                         borderRadius: '6px',
-                                        padding: '0.25rem 0.75rem',
-                                        border: 'none',
-                                        minWidth: '80px',
-                                        transition: 'all 0.2s',
+                                        padding: '0.375rem 0.75rem',
+                                        minWidth: '90px',
+                                        height: '32px',
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        transition: 'all 0.2s ease-in-out'
                                       }}
-                                      onMouseOver={(e) => e.currentTarget.style.opacity = '0.85'}
-                                      onMouseOut={(e) => e.currentTarget.style.opacity = '1'}
+                                      onMouseOver={(e) => {
+                                        e.currentTarget.style.opacity = '0.9';
+                                      }}
+                                      onMouseOut={(e) => {
+                                        e.currentTarget.style.opacity = '1';
+                                      }}
                                     >
                                       Annuler
                                     </button>
@@ -814,17 +850,32 @@ return (
                                 disabled={isArchiving}
                                 title="Archiver ce devis"
                                 style={{
-                                  backgroundColor: isArchiving ? '#6c757d' : '#fd7e14',
-                                  color: 'white',
+                                  backgroundColor: isArchiving ? 'transparent' : 'transparent',
+                                  color: isArchiving ? '#6c757d' : '#fd7e14',
+                                  border: isArchiving ? '1px solid #6c757d' : '1px solid #fd7e14',
                                   borderRadius: '6px',
-                                  padding: '0.25rem 0.75rem',
-                                  border: 'none',
-                                  minWidth: '80px',
-                                  transition: 'all 0.2s',
-                                  opacity: isArchiving ? '0.65' : '1'
+                                  padding: '0.375rem 0.75rem',
+                                  minWidth: '90px',
+                                  height: '32px',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  transition: 'all 0.2s ease-in-out',
+                                  opacity: isArchiving ? '0.7' : '1',
+                                  cursor: isArchiving ? 'not-allowed' : 'pointer'
                                 }}
-                                onMouseOver={(e) => !isArchiving && (e.currentTarget.style.opacity = '0.85')}
-                                onMouseOut={(e) => !isArchiving && (e.currentTarget.style.opacity = '1')}
+                                onMouseOver={(e) => {
+                                  if (!isArchiving) {
+                                    e.currentTarget.style.backgroundColor = '#fd7e14';
+                                    e.currentTarget.style.color = 'white';
+                                  }
+                                }}
+                                onMouseOut={(e) => {
+                                  if (!isArchiving) {
+                                    e.currentTarget.style.backgroundColor = 'transparent';
+                                    e.currentTarget.style.color = '#fd7e14';
+                                  }
+                                }}
                               >
                                 {isArchiving ? (
                                   <span className="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
