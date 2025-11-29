@@ -11,7 +11,11 @@ function Header({ showSidebarToggle = false, onToggleSidebar, hideNavbarToggler 
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   // Ne pas afficher le header sur la page d'accueil
-  if (window.location.hash === '#/' || window.location.hash === '') {
+  const isHomePage = window.location.hash === '#' || 
+                   window.location.hash === '#/' || 
+                   window.location.hash === '';
+
+  if (isHomePage) {
     return null;
   }
 
