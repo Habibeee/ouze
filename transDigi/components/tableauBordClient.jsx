@@ -19,6 +19,7 @@ const ClientDashboard = () => {
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isLgUp, setIsLgUp] = useState(() => (typeof window !== 'undefined' ? window.innerWidth >= 992 : true));
+  const [section, setSection] = useState('dashboard'); // État pour gérer la section active
   const [showWelcomeMessage, setShowWelcomeMessage] = useState(() => {
     // Vérifier si c'est une nouvelle session (premier chargement)
     return !sessionStorage.getItem('welcomeMessageShown');
@@ -54,21 +55,40 @@ const ClientDashboard = () => {
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
   }, []);
-  const [section, setSection] = useState(() => {
-    if (typeof window === 'undefined') return 'dashboard';
-    const h = (window.location.hash || '').split('?')[0];
-    switch (h) {
-      case '#/recherche-transitaire': return 'recherche';
-      case '#/nouveau-devis': return 'devis';
-      case '#/historique': return 'historique';
-      case '#/profil-client': return 'profil';
-      case '#/envois': return 'envois';
-      case '#/dashboard-client': return 'dashboard';
-      default: return 'dashboard';
-    }
-    if (h.startsWith('#/profil-client')) return 'profil';
-    return 'dashboard';
-  });
+  // Gestion de la section active basée sur l'URL
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
+    const updateSection = () => {
+      const h = (window.location.hash || '').split('?')[0];
+      switch (h) {
+        case '#/recherche-transitaire': 
+          setSection('recherche');
+          break;
+        case '#/nouveau-devis': 
+          setSection('devis');
+          break;
+        case '#/historique': 
+          setSection('historique');
+          break;
+        case '#/profil-client': 
+        case '#/profil-client/modifier': 
+          setSection('profil');
+          break;
+        case '#/envois': 
+          setSection('envois');
+          break;
+        case '#/dashboard-client': 
+        default:
+          setSection('dashboard');
+      }
+    };
+
+    window.addEventListener('hashchange', updateSection);
+    updateSection(); // Appel initial
+
+    return () => window.removeEventListener('hashchange', updateSection);
+  }, []);
   const chartId = 'clientActivityChart';
   const [chartFilter, setChartFilter] = useState('tous'); // tous|accepte|annule|attente|refuse
   const isGotoDevis = (typeof window !== 'undefined') && (() => {
@@ -673,19 +693,24 @@ return (
       {/* Main Content Area */}
       <div className="container-fluid px-2 px-md-4 py-3 py-md-4" style={{ backgroundColor: 'var(--bg)' }}>
         {/* Toasts globaux gèrent désormais les messages */}
-        {isGotoDevis ? (
-          <NouveauDevis />
-        ) : section === 'envois' ? (
-          <TrackingApp />
-        ) : section === 'profil' ? (
-          <ModofierProfClient />
-        ) : section === 'historique' ? (
-          <HistoriqueDevis />
-        ) : section === 'recherche' ? (
-          <RechercheTransitaire />
-        ) : section === 'devis' ? (
-          <NouveauDevis />
-        ) : (
+        {(() => {
+          if (isGotoDevis) {
+            return <NouveauDevis />;
+          }
+          switch(section) {
+            case 'envois':
+              return <TrackingApp />;
+            case 'profil':
+              return <ModofierProfClient />;
+            case 'historique':
+              return <HistoriqueDevis />;
+            case 'recherche':
+              return <RechercheTransitaire />;
+            case 'devis':
+              return <NouveauDevis />;
+            case 'dashboard':
+            default:
+              return (
           <div className="default-wrap">
             {/* Welcome Section */}
             <div className="mb-4">
@@ -983,7 +1008,9 @@ return (
               </div>
             </div>
           </div>
-        )}
+          );
+          }
+        })()}
         {editOpen && (
           <>
             <div className="modal fade show" style={{ display:'block' }} tabIndex="-1" role="dialog" aria-modal="true">
