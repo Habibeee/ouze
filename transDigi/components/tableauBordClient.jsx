@@ -670,12 +670,51 @@ return (
                 {/* Mes Devis Section */}
                 <div className="card border-0 shadow-sm mb-4" style={{ backgroundColor: 'var(--card)' }}>
                   <div className="card-body" style={{ backgroundColor: 'var(--card)' }}>
-                    <div className="d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between gap-2 mb-3">
-                      <h5 className="fw-bold mb-0">Mes devis</h5>
-                      <div className="btn-group btn-group-sm">
-                        <button className={`btn ${devisFilter==='tous'?'btn-primary text-white':'btn-light'}`} onClick={()=>setDevisFilter('tous')}>Tous</button>
-                        <button className={`btn ${devisFilter==='accepte'?'btn-primary text-white':'btn-light'}`} onClick={()=>setDevisFilter('accepte')}>Acceptés</button>
-                        <button className={`btn ${devisFilter==='attente'?'btn-primary text-white':'btn-light'}`} onClick={()=>setDevisFilter('attente')}>En attente</button>
+                    <div className="d-flex flex-column align-items-center mb-4">
+                      <h5 className="fw-bold mb-3">Mes devis</h5>
+                      <div className="d-flex gap-2">
+                        <button 
+                          className={`btn btn-sm ${devisFilter==='tous' ? 'text-white bg-success' : 'text-dark'}`} 
+                          style={{
+                            backgroundColor: devisFilter==='tous' ? '' : 'transparent',
+                            border: '1px solid #dee2e6',
+                            minWidth: '80px',
+                            transition: 'all 0.2s',
+                          }}
+                          onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#1987541a'}
+                          onMouseOut={(e) => e.currentTarget.style.backgroundColor = devisFilter==='tous' ? '#198754' : 'transparent'}
+                          onClick={()=>setDevisFilter('tous')}
+                        >
+                          Tous
+                        </button>
+                        <button 
+                          className={`btn btn-sm ${devisFilter==='accepte' ? 'text-white bg-success' : 'text-dark'}`}
+                          style={{
+                            backgroundColor: devisFilter==='accepte' ? '#198754' : 'transparent',
+                            border: '1px solid #dee2e6',
+                            minWidth: '80px',
+                            transition: 'all 0.2s',
+                          }}
+                          onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#1987541a'}
+                          onMouseOut={(e) => e.currentTarget.style.backgroundColor = devisFilter==='accepte' ? '#198754' : 'transparent'}
+                          onClick={()=>setDevisFilter('accepte')}
+                        >
+                          Acceptés
+                        </button>
+                        <button 
+                          className={`btn btn-sm ${devisFilter==='attente' ? 'text-white bg-success' : 'text-dark'}`}
+                          style={{
+                            backgroundColor: devisFilter==='attente' ? '#198754' : 'transparent',
+                            border: '1px solid #dee2e6',
+                            minWidth: '80px',
+                            transition: 'all 0.2s',
+                          }}
+                          onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#1987541a'}
+                          onMouseOut={(e) => e.currentTarget.style.backgroundColor = devisFilter==='attente' ? '#198754' : 'transparent'}
+                          onClick={()=>setDevisFilter('attente')}
+                        >
+                          En attente
+                        </button>
                       </div>
                     </div>
                     <div className="d-flex flex-column gap-3">
@@ -690,26 +729,102 @@ return (
                               <div className="mt-2 fw-semibold" style={{ fontSize: '15px' }}>{item.routeLabel && item.routeLabel !== '-' ? item.routeLabel : 'Itinéraire non renseigné'}</div>
                               <div className="text-muted small">{item.date}</div>
                             </div>
-                            <div className="d-flex flex-row flex-sm-row align-items-start gap-1 gap-sm-2 flex-shrink-0">
-                              <a className="btn btn-sm btn-outline-secondary" href={`#/detail-devis-client?id=${encodeURIComponent(item.id)}`}>Détail</a>
+                            <div className="d-flex flex-row flex-wrap align-items-start gap-1 gap-sm-2 flex-shrink-0">
+                              <a 
+                                className="btn btn-sm" 
+                                href={`#/detail-devis-client?id=${encodeURIComponent(item.id)}`}
+                                style={{
+                                  backgroundColor: '#0d6efd',
+                                  color: 'white',
+                                  borderRadius: '6px',
+                                  padding: '0.25rem 0.75rem',
+                                  border: 'none',
+                                  minWidth: '80px',
+                                  transition: 'all 0.2s',
+                                }}
+                                onMouseOver={(e) => e.currentTarget.style.opacity = '0.85'}
+                                onMouseOut={(e) => e.currentTarget.style.opacity = '1'}
+                              >
+                                Détail
+                              </a>
                               {item.status === 'attente' && (
                                 confirmCancelId === item.id ? (
-                                  <button className="btn btn-sm btn-danger" onClick={() => cancelDevis(item.id)}>Confirmer</button>
+                                  <button 
+                                    className="btn btn-sm" 
+                                    onClick={() => cancelDevis(item.id)}
+                                    style={{
+                                      backgroundColor: '#dc3545',
+                                      color: 'white',
+                                      borderRadius: '6px',
+                                      padding: '0.25rem 0.75rem',
+                                      border: 'none',
+                                      minWidth: '100px',
+                                      transition: 'all 0.2s',
+                                    }}
+                                    onMouseOver={(e) => e.currentTarget.style.opacity = '0.85'}
+                                    onMouseOut={(e) => e.currentTarget.style.opacity = '1'}
+                                  >
+                                    Confirmer
+                                  </button>
                                 ) : (
                                   <>
-                                    <button className="btn btn-sm btn-outline-secondary" onClick={() => onOpenEdit(item)}>Modifier</button>
-                                    <button className="btn btn-sm btn-outline-danger" onClick={() => setConfirmCancelId(item.id)}>Annuler</button>
+                                    <button 
+                                      className="btn btn-sm" 
+                                      onClick={() => onOpenEdit(item)}
+                                      style={{
+                                        backgroundColor: '#0dcaf0',
+                                        color: 'white',
+                                        borderRadius: '6px',
+                                        padding: '0.25rem 0.75rem',
+                                        border: 'none',
+                                        minWidth: '80px',
+                                        transition: 'all 0.2s',
+                                      }}
+                                      onMouseOver={(e) => e.currentTarget.style.opacity = '0.85'}
+                                      onMouseOut={(e) => e.currentTarget.style.opacity = '1'}
+                                    >
+                                      Modifier
+                                    </button>
+                                    <button 
+                                      className="btn btn-sm" 
+                                      onClick={() => setConfirmCancelId(item.id)}
+                                      style={{
+                                        backgroundColor: '#dc3545',
+                                        color: 'white',
+                                        borderRadius: '6px',
+                                        padding: '0.25rem 0.75rem',
+                                        border: 'none',
+                                        minWidth: '80px',
+                                        transition: 'all 0.2s',
+                                      }}
+                                      onMouseOver={(e) => e.currentTarget.style.opacity = '0.85'}
+                                      onMouseOut={(e) => e.currentTarget.style.opacity = '1'}
+                                    >
+                                      Annuler
+                                    </button>
                                   </>
                                 )
                               )}
                               <button
-                                className="btn btn-sm btn-outline-secondary ms-1"
+                                className="btn btn-sm"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   handleArchive(item.id);
                                 }}
                                 disabled={isArchiving}
                                 title="Archiver ce devis"
+                                style={{
+                                  backgroundColor: isArchiving ? '#6c757d' : '#fd7e14',
+                                  color: 'white',
+                                  borderRadius: '6px',
+                                  padding: '0.25rem 0.75rem',
+                                  border: 'none',
+                                  minWidth: '80px',
+                                  transition: 'all 0.2s',
+                                  opacity: isArchiving ? '0.65' : '1'
+                                }}
+                                onMouseOver={(e) => !isArchiving && (e.currentTarget.style.opacity = '0.85')}
+                                onMouseOut={(e) => !isArchiving && (e.currentTarget.style.opacity = '1')}
                               >
                                 {isArchiving ? (
                                   <span className="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
