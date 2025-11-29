@@ -19,7 +19,36 @@ const ClientDashboard = () => {
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isLgUp, setIsLgUp] = useState(() => (typeof window !== 'undefined' ? window.innerWidth >= 992 : true));
+  const [showWelcomeMessage, setShowWelcomeMessage] = useState(() => {
+    // Vérifier si c'est une nouvelle session (premier chargement)
+    return !sessionStorage.getItem('welcomeMessageShown');
+  });
+  const [userName, setUserName] = useState('');
   
+  // Récupérer le nom de l'utilisateur au chargement du composant
+  useEffect(() => {
+    const user = getAuth();
+    if (user && user.user) {
+      setUserName(user.user.name || user.user.email.split('@')[0]);
+    }
+  }, []);
+
+  // Gérer l'affichage du message de bienvenue
+  useEffect(() => {
+    if (showWelcomeMessage) {
+      // Marquer comme affiché dans la session
+      sessionStorage.setItem('welcomeMessageShown', 'true');
+      
+      // Cacher le message après 10 secondes
+      const timer = setTimeout(() => {
+        setShowWelcomeMessage(false);
+      }, 10000);
+
+      // Nettoyer le timer si le composant est démonté
+      return () => clearTimeout(timer);
+    }
+  }, [showWelcomeMessage]);
+
   useEffect(() => {
     const onResize = () => setIsLgUp(window.innerWidth >= 992);
     window.addEventListener('resize', onResize);
@@ -916,11 +945,17 @@ return (
                 {/* Recent Activity */}
                 <div className="card border-0 shadow-sm" style={{ backgroundColor: 'var(--card)' }}>
                   <div className="card-body" style={{ backgroundColor: 'var(--card)' }}>
-                    <div className="d-flex justify-content-between align-items-center mb-3">
+                    <div className="d-flex justify-content-between align-items-center mb-4">
                       <h5 className="fw-bold mb-0">Activité récente</h5>
-                      <button className="btn btn-sm btn-link" onClick={onBellClick}>Voir tout</button>
+                      <button className="btn btn-sm btn-link p-0" onClick={onBellClick}>Voir tout</button>
                     </div>
-                    <div className="d-flex flex-column gap-3">
+                    <div className="d-flex flex-column gap-3 p-3">
+                      {showWelcomeMessage && (
+                        <div className="alert alert-success alert-dismissible fade show mb-3" role="alert" style={{ maxWidth: '100%' }}>
+                          Bonjour <strong>{userName}</strong>, Bienvenue !
+                          <button type="button" className="btn-close" onClick={() => setShowWelcomeMessage(false)} aria-label="Fermer"></button>
+                        </div>
+                      )}
                       {recentActivities.length === 0 && (
                         <div className="text-muted small">Aucune activité récente.</div>
                       )}
