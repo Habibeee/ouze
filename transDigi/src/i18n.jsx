@@ -1,10 +1,6 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 
-const I18nContext = createContext({
-  lang: 'fr',
-  t: (k) => k,
-  setLang: () => {},
-});
+const I18nContext = createContext();
 
 const TRANSLATIONS = {
   fr: {
@@ -914,28 +910,58 @@ const TRANSLATIONS = {
 };
 
 export function I18nProvider({ children }) {
-  const [lang, setLangState] = useState('fr');
+  const [lang, setLangState] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('lang') || 'fr';
+    }
+    return 'fr';
+  });
 
   useEffect(() => {
-    const saved = localStorage.getItem('lang') || 'fr';
-    setLangState(saved);
-    try { document.documentElement.lang = saved; } catch {}
-  }, []);
+    try {
+      document.documentElement.lang = lang;
+      localStorage.setItem('lang', lang);
+    } catch (e) {
+      console.error('Error setting language:', e);
+    }
+  }, [lang]);
 
-  const setLang = (next) => {
-    setLangState(next);
-    localStorage.setItem('lang', next);
-    try { document.documentElement.lang = next; } catch {}
+  const setLang = (nextLang) => {
+    setLangState(nextLang);
   };
 
   const t = useMemo(() => {
-    return (key) => (TRANSLATIONS[lang] && TRANSLATIONS[lang][key]) || TRANSLATIONS['fr'][key] || key;
+    return (key) => {
+      // Vérifier si la traduction existe dans la langue actuelle
+      if (TRANSLATIONS[lang] && TRANSLATIONS[lang][key]) {
+        return TRANSLATIONS[lang][key];
+      }
+      // Si non, essayer le français
+      if (TRANSLATIONS['fr'] && TRANSLATIONS['fr'][key]) {
+        return TRANSLATIONS['fr'][key];
+      }
+      // Si toujours pas trouvé, retourner la clé
+      return key;
+    };
   }, [lang]);
 
-  const value = useMemo(() => ({ lang, setLang, t }), [lang, t]);
-  return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
+  const value = useMemo(() => ({
+    lang,
+    setLang,
+    t,
+  }), [lang, t]);
+
+  return (
+    <I18nContext.Provider value={value}>
+      {children}
+    </I18nContext.Provider>
+  );
 }
 
 export function useI18n() {
-  return useContext(I18nContext);
+  const context = useContext(I18nContext);
+  if (context === undefined) {
+    throw new Error('useI18n must be used within an I18nProvider');
+  }
+  return context;
 }
