@@ -600,16 +600,16 @@ return (
         --content-transition: ${clientStyles.contentTransition};
       }`
     }</style>
+    <SideBare
       defaultOpen={true}
       open={sidebarOpen}
-      onOpenChange={(o)=>setSidebarOpen(!!o)}
+      onOpenChange={(o) => setSidebarOpen(!!o)}
       activeId={section}
       items={[
         { id: 'dashboard', label: 'Tableau de bord', icon: LayoutGrid },
         { id: 'recherche', label: 'Trouver un transitaire', icon: Search },
         { id: 'devis', label: 'Nouveau devis', icon: FileText },
         { id: 'historique-devis', label: 'Historique de devis', icon: FileText },
-        { id: 'historique', label: 'Historique', icon: Clock },
         { id: 'envois', label: 'Suivi des envois', icon: Truck },
         { id: 'fichiers-recus', label: 'Mes fichiers reçus', icon: FileText },
         { id: 'profil', label: 'Mon profil', icon: User },
@@ -622,8 +622,6 @@ return (
           window.location.hash = '#/recherche-transitaire';
         } else if (id === 'devis') {
           window.location.hash = '#/nouveau-devis';
-        } else if (id === 'historique') {
-          window.location.hash = '#/historique';
         } else if (id === 'envois') {
           window.location.hash = '#/envois';
         } else if (id === 'profil') {
