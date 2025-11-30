@@ -9,6 +9,7 @@ export const clientStyles = {
   sidebar: { width: '240px', position: 'fixed', height: '100vh', overflowY: 'auto', zIndex: 1000 },
   primary: '#0EA5E9',
   mainMarginLg: '240px',
+  contentTransition: 'margin-left 0.3s ease, width 0.3s ease',
   menuBtnBase: { border: 'none', padding: '12px 16px', borderRadius: '8px' },
   activeMenuBtn: { backgroundColor: '#0EA5E9', color: '#ffffff' },
   inactiveMenuBtn: { backgroundColor: 'transparent', color: 'var(--text)' },
@@ -32,6 +33,32 @@ export const clientCss = `
 
   .flex-grow-1 {
     min-width: 0;
+    transition: var(--content-transition, margin-left 0.3s ease);
+    margin-left: var(--sidebar-width, 240px);
+    width: calc(100% - var(--sidebar-width, 240px));
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  /* When sidebar is collapsed */
+  .sidebar-collapsed .flex-grow-1 {
+    margin-left: 56px;
+    width: calc(100% - 56px);
+  }
+
+  /* Mobile specific styles */
+  @media (max-width: 991.98px) {
+    .flex-grow-1 {
+      margin-left: 0 !important;
+      width: 100% !important;
+    }
+    
+    .sidebar-open .flex-grow-1 {
+      transform: translateX(var(--sidebar-width, 240px));
+      width: 100%;
+      position: relative;
+      z-index: 1;
+    }
   }
 
   .card { 

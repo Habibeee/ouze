@@ -10,14 +10,29 @@ function Header({ showSidebarToggle = false, onToggleSidebar, hideNavbarToggler 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
+  // Fonction pour vérifier l'état de connexion
+  const checkAuth = () => {
+    const { token } = getAuth();
+    const isAuthenticated = !!token;
+    setIsLoggedIn(isAuthenticated);
+    return isAuthenticated;
+  };
+
   useEffect(() => {
+    // Gestion du thème
     const saved = localStorage.getItem('theme') || 'light';
     setTheme(saved);
     document.documentElement.dataset.theme = saved;
     document.body.classList.toggle('theme-dark', saved === 'dark');
-    // Vérifier si l'utilisateur est connecté
-    const { token } = getAuth();
-    setIsLoggedIn(!!token);
+    
+    // Vérification initiale de l'authentification
+    checkAuth();
+    
+    // Vérifier périodiquement l'état de connexion
+    const authCheckInterval = setInterval(checkAuth, 1000);
+    
+    // Nettoyer l'intervalle lors du démontage du composant
+    return () => clearInterval(authCheckInterval);
   }, []);
 
   const toggleTheme = () => {
@@ -27,6 +42,7 @@ function Header({ showSidebarToggle = false, onToggleSidebar, hideNavbarToggler 
     document.documentElement.dataset.theme = next;
     document.body.classList.toggle('theme-dark', next === 'dark');
   };
+  
   const applyTheme = (next) => {
     if (next === theme) return;
     setTheme(next);
@@ -34,12 +50,14 @@ function Header({ showSidebarToggle = false, onToggleSidebar, hideNavbarToggler 
     document.documentElement.dataset.theme = next;
     document.body.classList.toggle('theme-dark', next === 'dark');
   };
+  
   const handleBack = () => {
     try {
       if (window.history.length > 1) window.history.back();
       else window.location.hash = '#/'
     } catch {}
   };
+  
   const navigateHash = (hash) => {
     try {
       window.location.hash = hash;
@@ -66,6 +84,7 @@ function Header({ showSidebarToggle = false, onToggleSidebar, hideNavbarToggler 
         >
           <ArrowLeft size={20} />
         </button>
+        
         {showSidebarToggle && (
           <button
             type="button"
@@ -76,12 +95,12 @@ function Header({ showSidebarToggle = false, onToggleSidebar, hideNavbarToggler 
             <Menu size={20} />
           </button>
         )}
+
         <a className="navbar-brand d-flex flex-column align-items-start gap-0" href="#/">
           <img src={'/logo1.png'} alt="TransDigiSN" style={headerStyles.logo} />
         </a>
 
         <div className="ms-auto d-flex align-items-center gap-2">
-          {/* Nav / actions desktop */}
           <div className="d-none d-lg-flex align-items-center gap-3">
             <ul className="navbar-nav me-4 me-lg-5 me-xl-5 mb-0 nav-main gap-3">
               <li className="nav-item">
@@ -102,7 +121,7 @@ function Header({ showSidebarToggle = false, onToggleSidebar, hideNavbarToggler 
                 onClick={() => {
                   if (isLoggedIn) {
                     clearAuth();
-                    window.location.hash = '#/';
+                    window.location.hash = '#/connexion';
                     window.location.reload();
                   } else {
                     window.location.hash = '#/connexion';
@@ -155,7 +174,7 @@ function Header({ showSidebarToggle = false, onToggleSidebar, hideNavbarToggler 
               </div>
             </div>
           </div>
-          {/* Bouton hamburger mobile à droite (caché sur desktop) */}
+
           {!hideNavbarToggler && (
             <button
               type="button"
@@ -176,7 +195,6 @@ function Header({ showSidebarToggle = false, onToggleSidebar, hideNavbarToggler 
         </div>
       </div>
 
-      {/* Nav inline sous le header désactivée (menu mobile géré par la sidebar) */}
       <div className="w-100 d-none border-top bg-white">
         <div className="container-fluid px-3 py-2 d-flex justify-content-center gap-3 small">
           <button type="button" className="btn btn-link p-0" onClick={() => navigateHash('#/')}>{t('nav.home')}</button>
@@ -185,7 +203,6 @@ function Header({ showSidebarToggle = false, onToggleSidebar, hideNavbarToggler 
         </div>
       </div>
 
-      {/* Menu mobile type sidebar */}
       {mobileMenuOpen && (
         <>
           <div className="mobile-menu-overlay" onClick={() => setMobileMenuOpen(false)}></div>
@@ -198,7 +215,7 @@ function Header({ showSidebarToggle = false, onToggleSidebar, hideNavbarToggler 
                 onClick={() => setMobileMenuOpen(false)}
                 aria-label={t('aria.close')}
               >
-                <ArrowLeft size={26} />
+                <X size={26} />
               </button>
             </div>
             <ul className="list-unstyled mb-1 mobile-menu-links">
@@ -274,7 +291,7 @@ function Header({ showSidebarToggle = false, onToggleSidebar, hideNavbarToggler 
                 onClick={() => {
                   if (isLoggedIn) {
                     clearAuth();
-                    window.location.hash = '#/';
+                    window.location.hash = '#/connexion';
                     window.location.reload();
                   } else {
                     navigateHash('#/connexion');

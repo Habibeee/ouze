@@ -1,9 +1,54 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useToast } from './ui/ToastProvider.jsx';
-import { Search, ChevronLeft, ChevronRight, LayoutGrid, FileText, Clock, User, Truck, Search as SearchIcon } from 'lucide-react';
+import { Search, ChevronLeft, ChevronRight, LayoutGrid, FileText, Clock, User, Truck, Search as SearchIcon, RefreshCw } from 'lucide-react';
 import { historiqueDevisCss } from '../styles/historiqueDevisStyle.jsx';
 import { listMesDevis, cancelDevis } from '../services/apiClient.js';
 import { useI18n } from '../src/i18n.jsx';
+
+const cols = [
+  { key: 'transitaire', label: 'Transitaire' },
+  { key: 'date', label: 'Date' },
+  { key: 'typeService', label: 'Type de service' },
+  { key: 'description', label: 'Description' },
+  { key: 'origin', label: 'Origine' },
+  { key: 'destination', label: 'Destination' },
+  { key: 'expiration', label: 'Expiration' },
+  { key: 'statut', label: 'Statut' },
+  { key: 'actions', label: 'Actions' }
+];
+
+const renderCell = (row, col) => {
+  if (col.key === 'statut') {
+    const status = row.statut || 'attente';
+    const meta = statusMeta[status] || {};
+    return (
+      <span className={`badge ${meta.className || 'bg-secondary'}`}>
+        {status.charAt(0).toUpperCase() + status.slice(1)}
+      </span>
+    );
+  }
+  if (col.key === 'actions') {
+    return (
+      <div className="d-flex gap-2">
+        <button className="btn btn-sm btn-outline-primary">
+          Voir
+        </button>
+        {row.statut === 'attente' && (
+          <button 
+            className="btn btn-sm btn-outline-danger"
+            onClick={(e) => {
+              e.stopPropagation();
+              // handleCancel(row.id);
+            }}
+          >
+            Annuler
+          </button>
+        )}
+      </div>
+    );
+  }
+  return row[col.key] || '-';
+};
 
 const statusMeta = {
   accepte: { key: 'client.history.filter.status.accepted', className: 'badge-status success' },
@@ -39,35 +84,42 @@ const HistoriqueDevis = () => {
       try {
         setLoading(true);
         setErr('');
+        console.log('Chargement des devis depuis l\'API...');
+        
         const data = await listMesDevis();
-        const devis = Array.isArray(data?.devis) ? data.devis : [];
+        console.log('Réponse de l\'API:', data);
+        
+        if (!data) {
+          throw new Error('Aucune donnée reçue du serveur');
+        }
+        
+        const devis = Array.isArray(data) ? data : (Array.isArray(data.devis) ? data.devis : []);
+        
         const mapped = devis.map((d) => ({
-          id: d._id || d.id || '#',
-          transitaire: d.translataire || '',
-          date: d.createdAt ? new Date(d.createdAt).toISOString().slice(0,10) : '',
-          typeService: d.typeService || '',
-          description: d.description || '',
-          origin: d.origin || d.origine || '',
-          destination: d.destination || d.route || '',
-          expiration: d.dateExpiration ? new Date(d.dateExpiration).toISOString().slice(0,10) : '',
-          statut: normalizeStatus(d.statut || d.status),
+          id: d._id || d.id || `#${Math.random().toString(36).substr(2, 8)}`,
+          transitaire: d.translataire || d.transitaire || 'Transitaire inconnu',
+          date: d.createdAt ? new Date(d.createdAt).toISOString().slice(0,10) : (d.date || ''),
+          typeService: d.typeService || d.type || 'Non spécifié',
+          description: d.description || 'Aucune description',
+          origin: d.origin || d.origine || 'Non spécifiée',
+          destination: d.destination || d.route || 'Non spécifiée',
+          expiration: d.dateExpiration ? new Date(d.dateExpiration).toISOString().slice(0,10) : (d.expiration || ''),
+          statut: normalizeStatus(d.statut || d.status || 'en attente'),
         }));
-        setRows(mapped);
+        
+        console.log('Devis mappés:', mapped);
+        
+        if (mapped.length === 0) {
+          console.log('Aucun devis trouvé dans la réponse');
+          setErr('Aucun devis trouvé dans votre historique');
+          setRows([]); // S'assurer que les lignes sont vides si pas de données
+        } else {
+          setErr('');
+          setRows(mapped); // Mettre à jour les lignes avec les données chargées
+        }
       } catch (e) {
         setErr(e?.message || t('client.history.error'));
       } finally { setLoading(false); }
-  };
-
-  const handleArchive = async (id) => {
-    if (!id) return;
-    if (!window.confirm(t('client.history.confirm.archive'))) return;
-    try {
-      await cancelDevis(id);
-      await load();
-      toast.success(t('client.history.toast.archived'));
-    } catch (e) {
-      toast.error(e?.message || t('client.history.toast.archive_error'));
-    }
   };
 
   useEffect(() => { load(); }, []);
@@ -81,6 +133,19 @@ const HistoriqueDevis = () => {
       toast.success(t('client.history.toast.canceled'));
     } catch (e) {
       toast.error(e?.message || t('client.history.toast.cancel_error'));
+    }
+  };
+
+  const handleArchive = async (id) => {
+    if (!id) return;
+    if (!window.confirm('Voulez-vous vraiment archiver ce devis ?')) return;
+    try {
+      await archiveDevis(id);
+      toast.success('Le devis a été archivé avec succès');
+      // Recharger les données
+      await load();
+    } catch (e) {
+      toast.error(e?.message || 'Erreur lors de l\'archivage du devis');
     }
   };
 
@@ -115,8 +180,55 @@ const HistoriqueDevis = () => {
     setPage(1);
   };
 
+  // Afficher un indicateur de chargement
+  if (loading) {
+    return (
+      <div className="d-flex flex-column justify-content-center align-items-center py-5">
+        <div className="spinner-border text-primary mb-3" role="status" style={{width: '3rem', height: '3rem'}}>
+          <span className="visually-hidden">Chargement...</span>
+        </div>
+        <h4>Chargement de l'historique...</h4>
+        <p className="text-muted mt-2">Veuillez patienter pendant que nous récupérons vos devis.</p>
+      </div>
+    );
+  }
+
+  // Afficher un message si aucun résultat
+  if (filtered.length === 0) {
+    return (
+      <div className="container py-5">
+        <div className="text-center">
+          <div className="mb-4">
+            <FileText size={64} className="text-muted" />
+          </div>
+          <h4 className="mb-3">Aucun devis trouvé</h4>
+          <p className="text-muted mb-4">
+            {err || 'Aucun devis ne correspond à vos critères de recherche.'}
+          </p>
+          <div className="d-flex justify-content-center gap-3">
+            <button 
+              className="btn btn-primary" 
+              onClick={reset}
+            >
+              Réinitialiser les filtres
+            </button>
+            <button 
+              className="btn btn-outline-secondary" 
+              onClick={load}
+            >
+              <span className="d-flex align-items-center">
+                <RefreshCw size={16} className="me-2" />
+                Actualiser
+              </span>
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="bg-body" style={{ minHeight: '100vh' }}>
+    <div className="container py-4">
       <style>{historiqueDevisCss}</style>
       <div className="container-fluid px-3 px-md-4 py-4">
         <h2 className="fw-bold mb-3">{t('client.history.title')}</h2>
@@ -170,16 +282,55 @@ const HistoriqueDevis = () => {
                 </tr>
               </thead>
               <tbody>
-                {loading && (
-                  <tr><td colSpan={cols.length} className="text-center text-muted py-4">{t('client.history.loading')}</td></tr>
-                )}
-                {err && !loading && (
-                  <tr><td colSpan={cols.length} className="text-center text-danger py-4">{err}</td></tr>
-                )}
-                {!loading && !err && pageRows.map((r) => (
+                {pageRows.map((r) => (
                   <tr key={r.id}>
                     {cols.map((col) => (
-                      <td key={col.key}>{renderCell(r, col)}</td>
+                      <td key={col.key}>
+                        {col.key === 'statut' ? (
+                          <span className={`badge ${statusMeta[r.statut]?.className || 'bg-secondary'}`}>
+                            {r.statut.charAt(0).toUpperCase() + r.statut.slice(1)}
+                          </span>
+                        ) : col.key === 'actions' ? (
+                          <div className="d-flex gap-2">
+                            <button 
+                              className="btn btn-sm btn-outline-primary"
+                              onClick={() => {
+                                // Rediriger vers le détail du devis
+                                window.location.hash = `#/detail-devis-client?id=${r.id}`;
+                              }}
+                            >
+                              Voir
+                            </button>
+                            <>
+                              {r.statut === 'attente' && (
+                                <button 
+                                  className="btn btn-sm btn-outline-danger"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (window.confirm('Êtes-vous sûr de vouloir annuler ce devis ?')) {
+                                      handleCancel(r.id);
+                                    }
+                                  }}
+                                >
+                                  Annuler
+                                </button>
+                              )}
+                              <button 
+                                className="btn btn-sm btn-outline-secondary ms-1"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleArchive(r.id);
+                                }}
+                                title="Archiver ce devis"
+                              >
+                                Archiver
+                              </button>
+                            </>
+                          </div>
+                        ) : (
+                          r[col.key] || '-'
+                        )}
+                      </td>
                     ))}
                   </tr>
                 ))}

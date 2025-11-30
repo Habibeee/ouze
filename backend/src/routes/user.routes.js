@@ -12,6 +12,7 @@ const {
   annulerDevis,
   updateMonDevis,
   deleteMonDevis,
+  archiverDevis,
 } = require('../controllers/user.controller');
 const { protect, authorize } = require('../middleware/auth.middleware');
 const { upload, uploadAny } = require('../middleware/upload.middleware');
@@ -313,6 +314,9 @@ router.get('/mes-devis', getMesDevis);
 
 // Récupérer un devis spécifique appartenant au client connecté
 router.get('/devis/:id', getMonDevisById);
+
+// Archiver un devis
+router.put('/devis/:id/archive', archiverDevis);
 
 // Mettre à jour un devis (client)
 router.put('/devis/:id', uploadAny.single('fichier'), updateMonDevis);

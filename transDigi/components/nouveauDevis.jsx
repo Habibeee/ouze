@@ -45,34 +45,57 @@ const NouveauDevis = () => {
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
-    try {
-      const hash = typeof window !== 'undefined' ? window.location.hash : '';
-      const parts = hash.split('?');
-      if (parts.length > 1) {
-        const params = new URLSearchParams(parts[1]);
-        const tId = params.get('translataireId');
-        const tName = params.get('translataireName');
-        setFormData(prev => ({ ...prev, translataireId: tId || prev.translataireId, translataireName: tName || prev.translataireName }));
-      }
-      // Fallback: lire depuis localStorage si le hash n'a pas de paramètres
-      if (typeof window !== 'undefined') {
-        if (!formData.translataireId) {
+    const loadTransitaireData = () => {
+      try {
+        // Lire d'abord depuis l'URL
+        const hash = typeof window !== 'undefined' ? window.location.hash : '';
+        const parts = hash.split('?');
+        let tId = '';
+        let tName = '';
+        
+        if (parts.length > 1) {
+          const params = new URLSearchParams(parts[1]);
+          tId = params.get('translataireId') || '';
+          tName = params.get('translataireName') || '';
+        }
+        
+        // Si pas dans l'URL, essayer le localStorage
+        if (!tId && typeof window !== 'undefined') {
           try {
-            const lsId = localStorage.getItem('pendingTranslataireId');
-            if (lsId) setFormData(prev => ({ ...prev, translataireId: lsId }));
+            tId = localStorage.getItem('pendingTranslataireId') || '';
+            tName = localStorage.getItem('pendingTranslataireName') || '';
           } catch {}
         }
-        if (!formData.translataireName) {
-          try {
-            const lsName = localStorage.getItem('pendingTranslataireName');
-            if (lsName) setFormData(prev => ({ ...prev, translataireName: lsName }));
-          } catch {}
+        
+        // Mettre à jour le formulaire si on a des données
+        if (tId) {
+          setFormData(prev => ({
+            ...prev,
+            translataireId: tId,
+            translataireName: tName || prev.translataireName
+          }));
         }
-        // Nettoyage après lecture
-        try { localStorage.removeItem('pendingTranslataireId'); } catch {}
-        try { localStorage.removeItem('pendingTranslataireName'); } catch {}
+        
+        // Nettoyer le localStorage après lecture
+        if (typeof window !== 'undefined') {
+          try { localStorage.removeItem('pendingTranslataireId'); } catch {}
+          try { localStorage.removeItem('pendingTranslataireName'); } catch {}
+        }
+        
+      } catch (error) {
+        console.error('Erreur lors du chargement des données du transitaire:', error);
       }
-    } catch {}
+    };
+    
+    loadTransitaireData();
+    
+    // Écouter les changements de hash pour les mises à jour dynamiques
+    const handleHashChange = () => loadTransitaireData();
+    window.addEventListener('hashchange', handleHashChange);
+    
+    return () => {
+      window.removeEventListener('hashchange', handleHashChange);
+    };
   }, []);
 
   // Progress computation based on filled fields
@@ -174,84 +197,101 @@ const NouveauDevis = () => {
     }));
   };
 
-  const handleSubmit = () => {
-    // Construire le payload pour l'API backend
-    (async () => {
-      try {
-        // Champs obligatoires : date d'envoi du devis et fichier (Bill)
-        if (!formData.pickupDate) {
-          toastError("Veuillez renseigner la date d’envoi du devis.");
-          return;
-        }
-        if (!formData.uploadedFiles || !formData.uploadedFiles.length) {
-          toastError('Veuillez importer le Bill of Lading ou un document associé.');
-          return;
-        }
+  const handleSubmit = async () => {
+    try {
+      // Champs obligatoires : date d'envoi du devis et fichier (Bill)
+      if (!formData.pickupDate) {
+        toastError("Veuillez renseigner la date d'envoi du devis.");
+        return;
+      }
+      if (!formData.uploadedFiles || !formData.uploadedFiles.length) {
+        toastError('Veuillez importer le Bill of Lading ou un document associé.');
+        return;
+      }
 
-        let tId = (formData.translataireId || '').trim();
-        // isFromSearch sert à personnaliser le message de succès lorsqu'on vient de "Trouver un transitaire"
-        const isFromSearch = !!tId && !!(formData.translataireName || '').trim();
-        // Nouveau comportement : le choix du transitaire est optionnel.
-        // Si aucun transitaire n'est sélectionné, on choisit automatiquement le premier disponible
-        // (côté back, l'admin reste le point central grâce à devisOrigin = 'nouveau-devis').
-        if (!tId) {
-          let list = Array.isArray(translataires) ? translataires : [];
-          if (!list.length) {
-            try {
-              const result = await searchTranslatairesClient({});
-              list = Array.isArray(result?.translataires)
-                ? result.translataires
-                : (Array.isArray(result) ? result : []);
-            } catch (e) {
-              toastError(e?.message || "Impossible de trouver un transitaire disponible pour le moment.");
-              return;
-            }
-          }
-          const pick = list[0];
-          if (pick && pick._id) {
-            tId = pick._id;
-          } else {
-            toastError('Aucun transitaire n\'est disponible pour traiter votre demande pour le moment.');
+      let tId = (formData.translataireId || '').trim();
+      const isFromSearch = !!tId && !!(formData.translataireName || '').trim();
+      
+      if (!tId) {
+        let list = Array.isArray(translataires) ? translataires : [];
+        if (!list.length) {
+          try {
+            const result = await searchTranslatairesClient({});
+            list = Array.isArray(result?.translataires)
+              ? result.translataires
+              : (Array.isArray(result) ? result : []);
+          } catch (e) {
+            toastError(e?.message || "Impossible de trouver un transitaire disponible pour le moment.");
             return;
           }
         }
-        if (!formData.description && !(formData.uploadedFiles && formData.uploadedFiles.length)) {
-          toastError('Veuillez décrire votre marchandise ou joindre au moins un fichier');
+        const pick = list[0];
+        if (pick && pick._id) {
+          tId = pick._id;
+        } else {
+          toastError('Aucun transitaire n\'est disponible pour traiter votre demande pour le moment.');
           return;
         }
-        const fd = new FormData();
-        // Champs attendus par le backend
-        const allowed = ['maritime','routier','aerien'];
-        const tService = allowed.includes((formData.transportType||'').toLowerCase()) ? (formData.transportType||'').toLowerCase() : 'maritime';
-        fd.append('typeService', tService);
-        fd.append('description', formData.description || '');
-        if (formData.pickupDate) fd.append('dateExpiration', formData.pickupDate);
-        if (formData.pickupAddress) fd.append('origin', formData.pickupAddress);
-        if (formData.deliveryAddress) fd.append('destination', formData.deliveryAddress);
-        // Indiquer au backend l'origine du devis (recherche transitaire vs nouveau devis direct)
-        fd.append('devisOrigin', isFromSearch ? 'search' : 'nouveau-devis');
-        if (formData.uploadedFiles && formData.uploadedFiles.length) {
-          formData.uploadedFiles.forEach((file) => {
-            if (file) fd.append('fichier', file);
-          });
-        }
-        if (formData.translataireName) fd.append('translataireName', formData.translataireName);
-        await createDevis(tId, fd);
-        const cible = (formData.translataireName || '').trim();
-        // Message de confirmation :
-        // - depuis "Trouver un transitaire" (isFromSearch) -> transitaire choisi + suivi admin
-        // - depuis "Nouveau devis" -> envoyé à la plateforme, traité par les transitaires via l'administrateur
-        if (isFromSearch && cible) {
-          success(`Votre devis a bien été envoyé à ${cible}. L'administrateur en a également été informé pour le suivi.`);
-        } else {
-          success('Votre devis a été envoyé. Il sera pris en charge par la plateforme et traité par les transitaires via l’administrateur.');
-        }
-        window.location.hash = '#/historique';
-      } catch (e) {
-        const errorMsg = e?.message || "Une erreur est survenue lors de l'envoi du devis.";
-        toastError(errorMsg.includes('400') ? "Erreur lors de l'upload du fichier. Vérifiez la taille et le format." : errorMsg);
       }
-    })();
+      
+      if (!formData.description && !(formData.uploadedFiles && formData.uploadedFiles.length)) {
+        toastError('Veuillez décrire votre marchandise ou joindre au moins un fichier');
+        return;
+      }
+      
+      const fd = new FormData();
+      const allowed = ['maritime','routier','aerien'];
+      const tService = allowed.includes((formData.transportType||'').toLowerCase()) 
+        ? (formData.transportType||'').toLowerCase() 
+        : 'maritime';
+        
+      fd.append('typeService', tService);
+      fd.append('description', formData.description || '');
+      if (formData.pickupDate) fd.append('dateExpiration', formData.pickupDate);
+      if (formData.pickupAddress) fd.append('origin', formData.pickupAddress);
+      if (formData.deliveryAddress) fd.append('destination', formData.deliveryAddress);
+      fd.append('devisOrigin', isFromSearch ? 'search' : 'nouveau-devis');
+      
+      if (formData.uploadedFiles && formData.uploadedFiles.length) {
+        formData.uploadedFiles.forEach((file) => {
+          if (file) fd.append('fichier', file);
+        });
+      }
+      
+      if (formData.translataireName) {
+        fd.append('translataireName', formData.translataireName);
+      }
+      
+      // Créer le devis
+      await createDevis(tId, fd);
+      
+      // Afficher le message de confirmation
+      const cible = (formData.translataireName || '').trim();
+      if (isFromSearch && cible) {
+        success(`Votre devis a bien été envoyé à ${cible}. L'administrateur en a également été informé pour le suivi.`);
+      } else {
+        success('Votre devis a été envoyé. Il sera pris en charge par la plateforme et traité par les transitaires via l\'administrateur.');
+      }
+      
+      // Rafraîchir la liste des devis avant la redirection
+      try {
+        if (window.refreshDevis && typeof window.refreshDevis === 'function') {
+          await window.refreshDevis();
+        }
+      } catch (e) {
+        console.error('Erreur lors du rafraîchissement des devis:', e);
+      }
+      
+      // Rediriger vers l'historique
+      window.location.hash = '#/historique';
+      
+    } catch (e) {
+      const errorMsg = e?.message || "Une erreur est survenue lors de l'envoi du devis.";
+      toastError(errorMsg.includes('400') 
+        ? "Erreur lors de l'upload du fichier. Vérifiez la taille et le format." 
+        : errorMsg
+      );
+    }
   };
 
   return (

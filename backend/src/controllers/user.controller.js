@@ -633,6 +633,58 @@ exports.annulerDevis = async (req, res) => {
   }
 };
 
+// @desc    Archiver un devis (client)
+// @route   PUT /api/users/devis/:id/archive
+// @access  Private
+exports.archiverDevis = async (req, res) => {
+  try {
+    const devisId = req.params.id;
+    
+    if (!devisId) {
+      return res.status(400).json({ success: false, message: 'ID de devis manquant' });
+    }
+
+    const translataire = await Translataire.findOne({
+      'devis._id': devisId,
+      'devis.client': req.user.id
+    });
+
+    if (!translataire) {
+      return res.status(404).json({ success: false, message: 'Devis non trouvé' });
+    }
+
+    const devis = translataire.devis.id(devisId);
+    if (!devis) {
+      return res.status(404).json({ success: false, message: 'Devis non trouvé' });
+    }
+
+    // Marquer le devis comme archivé
+    devis.archived = true;
+    devis.archivedAt = new Date();
+    
+    await translataire.save();
+
+    res.json({
+      success: true,
+      message: 'Devis archivé avec succès',
+      devis: {
+        id: devis._id,
+        status: devis.statut,
+        archived: devis.archived,
+        archivedAt: devis.archivedAt
+      }
+    });
+
+  } catch (error) {
+    console.error('Erreur lors de l\'archivage du devis:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erreur lors de l\'archivage du devis',
+      error: error.message
+    });
+  }
+};
+
 // @desc    Supprimer définitivement un devis (client)
 // @route   DELETE /api/users/devis/:id
 // @access  Private

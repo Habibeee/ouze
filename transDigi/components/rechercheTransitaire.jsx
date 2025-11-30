@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { 
   MapPin, Wrench, Building2, Search, Star,
-  CheckCircle, Clock, AlertCircle
+  CheckCircle, Clock, AlertCircle, ArrowUpDown
 } from 'lucide-react';
 import { transitaireStyles, transitaireCss } from '../styles/rechercheTransitaireStyle.jsx';
 import { searchTranslatairesClient } from '../services/apiClient.js';
@@ -12,7 +12,42 @@ const RechercheTransitaire = () => {
   const [searchFilters, setSearchFilters] = useState({ location: '', service: '', company: '' });
   const [page, setPage] = useState(1);
   const pageSize = 6;
-  const [items, setItems] = useState([]);
+  const [items, setItems] = useState([
+    // Données de test (à supprimer en production)
+    {
+      id: '1',
+      name: 'Transitaire Express',
+      location: 'Paris, France',
+      verified: true,
+      rating: 4.5,
+      ratingsCount: 12,
+      description: 'Service rapide et professionnel',
+      services: ['Transport maritime', 'Dédouanement', 'Logistique'],
+      logoUrl: 'data:image/svg+xml;utf8,<svg width="80" height="80" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><rect width="80" height="80" fill="%23f0f0f0"/><text x="50%" y="50%" font-family="Arial" font-size="30" text-anchor="middle" dy=".3em" fill="%23666">TE</text></svg>'
+    },
+    {
+      id: '2',
+      name: 'Global Logistics',
+      location: 'Lyon, France',
+      verified: true,
+      rating: 4.2,
+      ratingsCount: 8,
+      description: 'Spécialiste du transport international',
+      services: ['Transport aérien', 'Transport routier'],
+      logoUrl: 'data:image/svg+xml;utf8,<svg width="80" height="80" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><rect width="80" height="80" fill="%23f0f0f0"/><text x="50%" y="50%" font-family="Arial" font-size="30" text-anchor="middle" dy=".3em" fill="%23666">GL</text></svg>'
+    },
+    {
+      id: '3',
+      name: 'Cargo Plus',
+      location: 'Marseille, France',
+      verified: false,
+      rating: 3.8,
+      ratingsCount: 5,
+      description: 'Votre partenaire logistique',
+      services: ['Transport maritime', 'Entreposage'],
+      logoUrl: 'data:image/svg+xml;utf8,<svg width="80" height="80" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><rect width="80" height="80" fill="%23f0f0f0"/><text x="50%" y="50%" font-family="Arial" font-size="30" text-anchor="middle" dy=".3em" fill="%23666">CP</text></svg>'
+    }
+  ]);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState('');
   // Sélection locale simple pour "Voir les avis" côté client
@@ -21,9 +56,34 @@ const RechercheTransitaire = () => {
 
   const fetchTrans = async () => {
     try {
-      setLoading(true); setErr('');
-      const data = await searchTranslatairesClient({ typeService: searchFilters.service || undefined, ville: searchFilters.location || undefined, recherche: searchFilters.company || undefined });
-      const rows = Array.isArray(data?.translataires) ? data.translataires : (Array.isArray(data) ? data : []);
+      setLoading(true); 
+      setErr('');
+      console.log('Recherche des transitaires avec les filtres:', searchFilters);
+      
+      const data = await searchTranslatairesClient({ 
+        typeService: searchFilters.service || undefined, 
+        ville: searchFilters.location || undefined, 
+        recherche: searchFilters.company || undefined 
+      });
+      
+      console.log('Réponse de l\'API:', data);
+      
+      // Vérifier si la réponse est vide ou invalide
+      if (!data) {
+        console.error('Aucune donnée reçue de l\'API');
+        setErr('Aucune donnée reçue du serveur');
+        setItems([]);
+        return;
+      }
+      
+      // Gérer différents formats de réponse
+      const rows = Array.isArray(data) 
+        ? data 
+        : (Array.isArray(data.translataires) 
+            ? data.translataires 
+            : []);
+            
+      console.log('Transitaires trouvés:', rows.length);
       const mapped = rows.map(t => {
         const avgRating = typeof t.avgRating === 'number' ? t.avgRating : (t.avgRating ? Number(t.avgRating) : 0);
         const adminRating = typeof t.adminRating === 'number' ? t.adminRating : (t.adminRating ? Number(t.adminRating) : 0);
@@ -31,7 +91,7 @@ const RechercheTransitaire = () => {
         const ratingsCount = typeof t.ratingsCount === 'number' ? t.ratingsCount : (t.ratingsCount ? Number(t.ratingsCount) : 0);
         const name = t.nomEntreprise || t.name || 'Transitaire';
         const logoRaw = t.logo || t.photoProfil || t.profileImage || t.logoUrl || t.avatar;
-        const defaultLogo = 'https://via.placeholder.com/80x80?text=Logo';
+        const defaultLogo = 'data:image/svg+xml;utf8,<svg width="80" height="80" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg"><rect width="80" height="80" fill="%23f0f0f0"/><text x="50%" y="50%" font-family="Arial" font-size="20" text-anchor="middle" dy=".3em" fill="%23666">Logo</text></svg>';
         const logoUrl = (typeof logoRaw === 'string' && logoRaw.trim()) ? logoRaw : defaultLogo;
         const rawServices = (Array.isArray(t.services) && t.services.length)
           ? t.services
@@ -114,6 +174,36 @@ const RechercheTransitaire = () => {
   const total = filtered.length;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const pageItems = filtered.slice((page - 1) * pageSize, page * pageSize);
+
+  // Afficher un message d'erreur s'il y en a un
+  if (err) {
+    return (
+      <div className="container py-5">
+        <div className="alert alert-danger">
+          <h5 className="alert-heading">Erreur lors du chargement des transitaires</h5>
+          <p className="mb-0">{err}</p>
+          <button 
+            className="btn btn-outline-secondary mt-3" 
+            onClick={fetchTrans}
+          >
+            Réessayer
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Afficher un indicateur de chargement
+  if (loading) {
+    return (
+      <div className="d-flex justify-content-center align-items-center py-5">
+        <div className="spinner-border text-primary" role="status">
+          <span className="visually-hidden">Chargement...</span>
+        </div>
+        <span className="ms-3">Recherche des transitaires en cours...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-body" style={{ ...transitaireStyles.app, backgroundColor: 'var(--bg)', width: '100%', maxWidth: '100vw', overflowX: 'hidden' }}>
@@ -243,10 +333,6 @@ const RechercheTransitaire = () => {
                   {/* Action Button */}
                   <div className="d-grid gap-2">
                     {(() => {
-                      const nameParam = `translataireName=${encodeURIComponent(transitaire.name || '')}`;
-                      const href = transitaire.id
-                        ? `#/nouveau-devis?translataireId=${encodeURIComponent(transitaire.id)}&${nameParam}`
-                        : `#/nouveau-devis?${nameParam}`;
                       return (
                         <button
                           className="btn text-white w-100"
@@ -254,11 +340,25 @@ const RechercheTransitaire = () => {
                           onClick={() => {
                             try {
                               if (transitaire.id) {
+                                // Stocker les informations du transitaire dans localStorage
                                 localStorage.setItem('pendingTranslataireId', String(transitaire.id));
                                 localStorage.setItem('pendingTranslataireName', String(transitaire.name || ''));
-                                setSelectedTransitaire(transitaire);
-                                success(`Transitaire sélectionné : ${transitaire.name}`);
-                                window.location.hash = '#/nouveau-devis';
+                                
+                                // Utiliser directement la navigation vers nouveau-devis avec les paramètres
+                                const params = new URLSearchParams();
+                                params.append('translataireId', transitaire.id);
+                                if (transitaire.name) {
+                                  params.append('translataireName', transitaire.name);
+                                }
+                                
+                                // Rediriger directement vers la page de création de devis
+                                window.location.hash = `#/nouveau-devis?${params.toString()}`;
+                                
+                                // Forcer le rechargement si nécessaire
+                                window.dispatchEvent(new Event('hashchange'));
+                                
+                                // Faire défiler vers le haut de la page
+                                window.scrollTo(0, 0);
                               }
                             } catch (e) {
                               console.error('Erreur lors de la sélection du transitaire:', e);

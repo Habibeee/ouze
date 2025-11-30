@@ -191,6 +191,10 @@ function Connexion() {
           }
         }
       } catch {}
+      // Définir l'indicateur de nouvelle session pour afficher le message de bienvenue
+      if (typeof sessionStorage !== 'undefined') {
+        sessionStorage.setItem('isNewSession', 'true');
+      }
       redirectByRole();
     } catch (err) {
       const raw = (err?.message || '').toLowerCase();

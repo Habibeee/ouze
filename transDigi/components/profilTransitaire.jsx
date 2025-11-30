@@ -5,32 +5,59 @@ import { LayoutGrid, User } from 'lucide-react';
 import { get, put, putForm } from '../services/apiClient.js';
 
 const ProfilTransitaire = () => {
-  const [logoPreview, setLogoPreview] = useState(() => {
-    try { return localStorage.getItem('transLogoUrl') || ''; } catch { return ''; }
-  });
-
-  // On mount, try to load logo from API and sync to localStorage for persistence
+  // Suppression de la gestion de l'image de profil pour utiliser un cercle coloré avec initiales
+  const [userInitials, setUserInitials] = useState('');
+  const [userEmail, setUserEmail] = useState('');
+  
+  // Récupérer les initiales du nom de l'entreprise
   React.useEffect(() => {
-    const loadLogo = async () => {
+    const loadProfile = async () => {
       try {
         const res = await get('/translataires/profile').catch(async () => {
           try { return await get('/translataires/me'); } catch { return null; }
         });
-        const url = res?.logo || res?.photoProfil || res?.photoUrl || res?.photo || '';
-        if (url && typeof url === 'string') {
-          setLogoPreview(url);
-          try { localStorage.setItem('transLogoUrl', url); } catch {}
+        if (res) {
+          const name = res.nomEntreprise || res.companyName || '';
+          const email = res.email || '';
+          setUserEmail(email);
+          
+          // Générer les initiales à partir du nom de l'entreprise
+          const initials = name
+            .split(' ')
+            .map(word => word[0])
+            .join('')
+            .toUpperCase()
+            .substring(0, 2);
+          
+          setUserInitials(initials);
         }
-      } catch {}
+      } catch (error) {
+        console.error('Erreur lors du chargement du profil:', error);
+      }
     };
-    if (!logoPreview) loadLogo();
+    
+    loadProfile();
   }, []);
-  const [logoFile, setLogoFile] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState('');
   const [err, setErr] = useState('');
   const [fieldErr, setFieldErr] = useState({ email: '', phone: '' });
+  const [isLgUp, setIsLgUp] = useState(window.innerWidth >= 992);
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+  
+  // Gestion du redimensionnement de la fenêtre
+  useEffect(() => {
+    const handleResize = () => {
+      setIsLgUp(window.innerWidth >= 992);
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+  
   const isEmail = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(v||'').trim());
   const isPhone = (v) => /^\+?\d[\d\s.-]{7,}$/.test(String(v||'').trim());
   const normalizePhone = (v) => String(v||'').replace(/[^\d+]/g, '');
@@ -38,7 +65,7 @@ const ProfilTransitaire = () => {
   const SECTOR_OPTIONS = [
     { id: 'transport-maritime', label: 'Transport maritime', serviceCode: 'maritime' },
     { id: 'fret-aerien', label: 'Fret aérien', serviceCode: 'aerien' },
-    { id: 'logistique-entreposage', label: 'Logistique d’entreposage', serviceCode: null },
+    { id: 'logistique-entreposage', label: 'Logistique d\'entreposage', serviceCode: null },
     { id: 'dedouanement', label: 'Dédouanement', serviceCode: null },
     { id: 'transport-aerien', label: 'Transport aérien', serviceCode: 'aerien' },
     { id: 'transport-routier', label: 'Transport routier', serviceCode: 'routier' },
@@ -168,23 +195,24 @@ const ProfilTransitaire = () => {
     }
   };
 
-  const [isLgUp, setIsLgUp] = React.useState(() => (typeof window !== 'undefined' ? window.innerWidth >= 992 : true));
+  // Fonction pour obtenir le nom d'affichage
+  const getDisplayName = () => {
+    return formData.companyName || 'Transitaire';
+  };
   
-  React.useEffect(() => {
-    const onResize = () => setIsLgUp(window.innerWidth >= 992);
-    window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
-  }, []);
+  // Fonction pour gérer la déconnexion
+  const handleLogout = () => {
+    // Implémentez la logique de déconnexion ici
+    window.location.hash = '/connexion';
+  };
 
   return (
-    <div className="d-flex bg-light" style={{ minHeight: '100vh', width: '100%', maxWidth: '100vw', overflowX: 'hidden' }}>
+    <div className="d-flex" style={{ minHeight: '100vh', backgroundColor: '#f8f9fc' }}>
       <SideBare
-        topOffset={96}
-        activeId="profil"
-        closeOnNavigate={false}
         defaultOpen={true}
         open={sidebarOpen}
-        onOpenChange={(o)=>setSidebarOpen(!!o)}
+        onOpenChange={setSidebarOpen}
+        activeId="profil"
         items={[
           { id: 'dashboard', label: 'Tableau de bord', icon: LayoutGrid },
           { id: 'profil', label: 'Mon profil', icon: User },
@@ -194,8 +222,138 @@ const ProfilTransitaire = () => {
           if (id === 'profil') window.location.hash = '#/profile';
         }}
       />
-      <style>{profilTransitaireCss}</style>
-      <div className="flex-grow-1 bg-light" style={{ marginLeft: isLgUp ? (sidebarOpen ? '240px' : '56px') : '0', transition: 'margin-left .25s ease', minWidth: 0, width: '100%', maxWidth: '100vw', overflowX: 'hidden' }}>
+      
+      {/* En-tête avec notifications et profil */}
+      <div className="position-fixed top-0 end-0 p-3 d-flex align-items-center gap-3" style={{ zIndex: 1000, marginLeft: sidebarOpen ? '240px' : '56px' }}>
+        {/* Bouton de notification */}
+        <div className="position-relative">
+          <button
+            className={`btn btn-light position-relative p-2 ${notifOpen ? 'active' : ''}`}
+            onClick={() => setNotifOpen(!notifOpen)}
+            style={{ borderRadius: '50%', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          >
+            <Bell size={20} />
+            {unreadCount > 0 && (
+              <span className="position-absolute top-0 end-0 translate-middle badge rounded-pill bg-danger" style={{ fontSize: '10px', padding: '4px 6px' }}>
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
+            )}
+          </button>
+          
+          {/* Menu déroulant des notifications */}
+          {notifOpen && (
+            <div 
+              className="dropdown-menu show" 
+              style={{
+                position: 'absolute',
+                right: 0,
+                top: '100%',
+                marginTop: '8px',
+                backgroundColor: 'white',
+                border: '1px solid rgba(0,0,0,.15)',
+                borderRadius: '8px',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                zIndex: 1000,
+                minWidth: '320px',
+                maxHeight: '400px',
+                overflowY: 'auto',
+                padding: '0.5rem 0'
+              }}
+            >
+              <div className="px-3 py-2 border-bottom">
+                <div className="d-flex justify-content-between align-items-center">
+                  <h6 className="mb-0">Notifications</h6>
+                  <button 
+                    className="btn btn-link p-0 text-muted"
+                    onClick={() => {}}
+                  >
+                    <small>Marquer tout comme lu</small>
+                  </button>
+                </div>
+              </div>
+              <div className="text-center py-4">
+                <p className="text-muted mb-0">Aucune notification</p>
+              </div>
+            </div>
+          )}
+        </div>
+        
+        {/* Bouton de profil */}
+        <div className="position-relative">
+          <button
+            className="btn btn-link text-decoration-none p-0"
+            onClick={() => setProfileMenuOpen(!profileMenuOpen)}
+            style={{ color: 'inherit' }}
+          >
+            <div className="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" style={{ width: '40px', height: '40px' }}>
+              {userInitials || <User size={20} />}
+            </div>
+          </button>
+          
+          {/* Menu déroulant du profil */}
+          {profileMenuOpen && (
+            <div 
+              className="dropdown-menu dropdown-menu-end show" 
+              style={{ 
+                position: 'absolute', 
+                right: 0, 
+                marginTop: '8px', 
+                zIndex: 1000, 
+                minWidth: '200px',
+                backgroundColor: 'white',
+                border: '1px solid rgba(0,0,0,.15)',
+                borderRadius: '8px',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+              }}
+            >
+              <div className="dropdown-header d-flex flex-column align-items-center py-3">
+                <div className="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center mb-2" style={{ width: '64px', height: '64px' }}>
+                  {userInitials || <User size={28} />}
+                </div>
+                <div className="text-center">
+                  <div className="fw-bold">{getDisplayName()}</div>
+                  <div className="text-muted small">{userEmail || ''}</div>
+                </div>
+              </div>
+              <div className="dropdown-divider"></div>
+              <button className="dropdown-item d-flex align-items-center gap-2">
+                <User size={16} /> Mon profil
+              </button>
+              <div className="dropdown-divider"></div>
+              <button 
+                className="dropdown-item d-flex align-items-center gap-2 text-danger"
+                onClick={handleLogout}
+              >
+                <LogOut size={16} /> Déconnexion
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+      
+      <style>{`
+        .dropdown-menu {
+          --bs-dropdown-bg: white;
+          --bs-dropdown-link-color: #212529;
+          --bs-dropdown-link-hover-color: #1e2125;
+          --bs-dropdown-link-hover-bg: #f8f9fa;
+        }
+        .dropdown-item {
+          padding: 0.5rem 1rem;
+        }
+        .dropdown-item:hover {
+          background-color: #f8f9fa;
+        }
+      `}</style>
+      <div className="flex-grow-1 bg-light" style={{ 
+        marginLeft: window.innerWidth >= 992 ? (sidebarOpen ? '240px' : '56px') : '0', 
+        marginTop: '60px',
+        transition: 'margin-left .25s ease', 
+        minWidth: 0, 
+        width: 'calc(100% - ' + (window.innerWidth >= 992 ? (sidebarOpen ? '240px' : '56px') : '0') + ')', 
+        maxWidth: '100vw', 
+        overflowX: 'hidden' 
+      }}>
         {/* Header with hamburger button */}
         {!isLgUp && (
           <div className="w-100 d-flex align-items-center gap-2 px-2 py-2 bg-white border-bottom" style={{ position: 'sticky', top: 0, zIndex: 100 }}>
@@ -216,52 +374,32 @@ const ProfilTransitaire = () => {
         <div className="container-fluid px-2 px-md-4 py-3 py-md-4">
           <div className="row justify-content-center">
             <div className="col-12 col-lg-10 col-xl-8">
-            <h2 className="h3 h2-md fw-bold mb-2 mb-md-3 titre-page">Profil de l'entreprise</h2>
-            <p className="text-muted small mb-3 mb-md-4">Mettez à jour les informations de votre entreprise visibles par les clients.</p>
+              <h2 className="h3 h2-md fw-bold mb-2 mb-md-3 titre-page">Profil de l'entreprise</h2>
+              <p className="text-muted small mb-3 mb-md-4">Mettez à jour les informations de votre entreprise visibles par les clients.</p>
 
-            <form className="card border-0 shadow-sm rounded-3 overflow-hidden" onSubmit={onSubmit}>
-              <div className="card-body p-2 p-md-4 p-lg-5">
-                <div className="row g-2 g-md-4 align-items-center mb-3">
-                  <div className="col-12">
-                    <div className="fw-semibold text-muted">Informations générales</div>
-                  </div>
-                  <div className="col-12 col-sm-auto">
-                    <div className="avatar-uploader">
-                      {logoPreview ? (
-                        <img src={logoPreview} alt="logo" className="rounded-circle border" style={{ width: 72, height: 72, objectFit: 'cover' }} />
-                      ) : (
-                        <div className="rounded-circle border d-flex align-items-center justify-content-center bg-white" style={{ width: 72, height: 72 }}>
-                          <span className="text-muted">📦</span>
-                        </div>
-                      )}
+              <form className="card border-0 shadow-sm rounded-3 overflow-hidden" onSubmit={onSubmit}>
+                <div className="card-body p-2 p-md-4 p-lg-5">
+                  <div className="d-flex flex-column align-items-center mb-4">
+                    <div className="position-relative mb-3">
+                      <div 
+                        className="rounded-circle d-flex align-items-center justify-content-center" 
+                        style={{
+                          width: '120px', 
+                          height: '120px',
+                          backgroundColor: '#4e73df',
+                          color: 'white',
+                          fontSize: '40px',
+                          fontWeight: 'bold',
+                          border: '3px solid #fff',
+                          boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
+                        }}
+                      >
+                        {userInitials || <User size={48} />}
+                      </div>
                     </div>
-                  </div>
-                  <div className="col-12 col-sm">
-                    <div className="d-flex flex-wrap gap-2">
-                      <label className="btn btn-outline-secondary btn-sm">
-                        Choisir un photo
-                        <input type="file" accept="image/*" onChange={onUpload} hidden />
-                      </label>
-                      <span className="text-muted small align-self-center">No file chosen</span>
-                    </div>
-                  </div>
-                </div>
-                {msg && <div className="alert alert-success py-2">{msg}</div>}
-                {err && <div className="alert alert-danger py-2">{err}</div>}
-
-                <div className="mb-4">
-                  <label className="form-label fw-semibold">Nom de l’entreprise</label>
-                  <input type="text" className="form-control" value={formData.companyName} onChange={(e) => onChange('companyName', e.target.value)} />
-                </div>
-
-                <div className="fw-semibold text-muted mb-2">Coordonnées</div>
-                <div className="row g-3 mb-3">
-                  <div className="col-12 col-md-6">
-                    <label className="form-label fw-semibold small">Email de contact</label>
-                    <input type="email" className={`form-control ${fieldErr.email ? 'is-invalid' : ''}`} value={formData.email} onChange={(e) => onChange('email', e.target.value)} />
-                    {fieldErr.email && <div className="invalid-feedback d-block">{fieldErr.email}</div>}
-                  </div>
-                  <div className="col-12 col-md-6">
+                    <div className="w-100">
+                      <div className="row">
+                        <div className="col-12 col-md-6">
                     <label className="form-label fw-semibold small">Téléphone</label>
                     <input type="text" className={`form-control ${fieldErr.phone ? 'is-invalid' : ''}`} value={formData.phone} onChange={(e) => onChange('phone', normalizePhone(e.target.value))} onKeyDown={(e)=>{ const allowed = /[0-9+]/; if (e.key.length===1 && !allowed.test(e.key)) e.preventDefault(); }} />
                     {fieldErr.phone && <div className="invalid-feedback d-block">{fieldErr.phone}</div>}
@@ -272,6 +410,8 @@ const ProfilTransitaire = () => {
                   <label className="form-label fw-semibold small">Adresse</label>
                   <input type="text" className="form-control" value={formData.address} onChange={(e) => onChange('address', e.target.value)} />
                 </div>
+              </div>
+            </div>
 
                 <div className="mb-4">
                   <label className="form-label fw-semibold small">Secteurs d'activité</label>

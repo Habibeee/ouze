@@ -1,14 +1,97 @@
 export const transitaireStyles = {
-  app: { backgroundColor: 'var(--bg)', minHeight: '100vh' },
+  app: { backgroundColor: '#f8f9fa', minHeight: '100vh' },
   brandSquare: { width: '40px', height: '40px', backgroundColor: '#28A745' },
-  publishBtn: { backgroundColor: '#0EA5E9', color: '#ffffff' },
+  publishBtn: { 
+    backgroundColor: '#0EA5E9', 
+    color: '#ffffff',
+    '&:hover': {
+      backgroundColor: '#0c8fd4'
+    }
+  },
   avatar: { width: '36px', height: '36px', backgroundColor: '#FFB74D' },
-  heroTitle: { },
-  cardHover: { transition: 'transform 0.2s, box-shadow 0.2s', backgroundColor: '#F3F4F6' },
-  companyLogo: { width: '60px', height: '60px', fontSize: '18px' },
-  verified: { color: '#28A745' },
-  serviceBadge: { backgroundColor: 'var(--card)', color: 'var(--text)' },
-  primaryBtn: { backgroundColor: '#0EA5E9', color: '#ffffff' },
+  heroTitle: { 
+    color: '#2d3748',
+    fontWeight: '700',
+    fontSize: '2rem',
+    marginBottom: '1rem'
+  },
+  cardHover: { 
+    transition: 'all 0.3s ease',
+    backgroundColor: '#ffffff',
+    borderRadius: '12px',
+    border: '1px solid #e2e8f0',
+    '&:hover': {
+      transform: 'translateY(-5px)',
+      boxShadow: '0 10px 25px rgba(0, 0, 0, 0.08)'
+    }
+  },
+  companyLogo: { 
+    width: '80px', 
+    height: '80px',
+    borderRadius: '12px',
+    overflow: 'hidden',
+    border: '1px solid #e2e8f0',
+    backgroundColor: '#ffffff'
+  },
+  verified: { 
+    color: '#10b981',
+    fontWeight: '500',
+    fontSize: '0.8rem',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '4px'
+  },
+  serviceBadge: { 
+    backgroundColor: '#edf2f7', 
+    color: '#4a5568',
+    borderRadius: '6px',
+    padding: '0.35rem 0.75rem',
+    fontWeight: '500',
+    fontSize: '0.8rem',
+    border: 'none'
+  },
+  primaryBtn: { 
+    backgroundColor: '#0EA5E9', 
+    color: '#ffffff',
+    borderRadius: '8px',
+    padding: '0.6rem 1rem',
+    fontWeight: '600',
+    fontSize: '0.9rem',
+    textTransform: 'none',
+    transition: 'all 0.2s ease',
+    '&:hover': {
+      backgroundColor: '#0c8fd4',
+      transform: 'translateY(-1px)'
+    }
+  },
+  rating: {
+    color: '#f59e0b',
+    fontSize: '0.9rem',
+    fontWeight: '600',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '4px',
+    marginBottom: '0.5rem'
+  },
+  location: {
+    color: '#64748b',
+    fontSize: '0.9rem',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '4px',
+    marginBottom: '0.5rem'
+  },
+  description: {
+    color: '#4b5563',
+    fontSize: '0.9rem',
+    lineHeight: '1.5',
+    marginBottom: '1rem',
+    display: '-webkit-box',
+    WebkitLineClamp: 3,
+    WebkitBoxOrient: 'vertical',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis'
+  }
 };
 
 export const transitaireCss = `
