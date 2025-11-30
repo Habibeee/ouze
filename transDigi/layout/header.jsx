@@ -10,14 +10,29 @@ function Header({ showSidebarToggle = false, onToggleSidebar, hideNavbarToggler 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
+  // Fonction pour vérifier l'état de connexion
+  const checkAuth = () => {
+    const { token } = getAuth();
+    const isAuthenticated = !!token;
+    setIsLoggedIn(isAuthenticated);
+    return isAuthenticated;
+  };
+
   useEffect(() => {
+    // Gestion du thème
     const saved = localStorage.getItem('theme') || 'light';
     setTheme(saved);
     document.documentElement.dataset.theme = saved;
     document.body.classList.toggle('theme-dark', saved === 'dark');
-    // Vérifier si l'utilisateur est connecté
-    const { token } = getAuth();
-    setIsLoggedIn(!!token);
+    
+    // Vérification initiale de l'authentification
+    checkAuth();
+    
+    // Vérifier périodiquement l'état de connexion
+    const authCheckInterval = setInterval(checkAuth, 1000);
+    
+    // Nettoyer l'intervalle lors du démontage du composant
+    return () => clearInterval(authCheckInterval);
   }, []);
 
   const toggleTheme = () => {
@@ -106,7 +121,7 @@ function Header({ showSidebarToggle = false, onToggleSidebar, hideNavbarToggler 
                 onClick={() => {
                   if (isLoggedIn) {
                     clearAuth();
-                    window.location.hash = '#';
+                    window.location.hash = '#/connexion';
                     window.location.reload();
                   } else {
                     window.location.hash = '#/connexion';
@@ -276,7 +291,7 @@ function Header({ showSidebarToggle = false, onToggleSidebar, hideNavbarToggler 
                 onClick={() => {
                   if (isLoggedIn) {
                     clearAuth();
-                    window.location.hash = '#';
+                    window.location.hash = '#/connexion';
                     window.location.reload();
                   } else {
                     navigateHash('#/connexion');
