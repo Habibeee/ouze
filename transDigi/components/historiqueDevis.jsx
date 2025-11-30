@@ -95,17 +95,31 @@ const HistoriqueDevis = () => {
         
         const devis = Array.isArray(data) ? data : (Array.isArray(data.devis) ? data.devis : []);
         
-        const mapped = devis.map((d) => ({
-          id: d._id || d.id || `#${Math.random().toString(36).substr(2, 8)}`,
-          transitaire: d.translataire || d.transitaire || 'Transitaire inconnu',
-          date: d.createdAt ? new Date(d.createdAt).toISOString().slice(0,10) : (d.date || ''),
-          typeService: d.typeService || d.type || 'Non spécifié',
-          description: d.description || 'Aucune description',
-          origin: d.origin || d.origine || 'Non spécifiée',
-          destination: d.destination || d.route || 'Non spécifiée',
-          expiration: d.dateExpiration ? new Date(d.dateExpiration).toISOString().slice(0,10) : (d.expiration || ''),
-          statut: normalizeStatus(d.statut || d.status || 'en attente'),
-        }));
+        const mapped = devis.map((d) => {
+          // Normaliser la date de création
+          const createdAt = d.createdAt ? new Date(d.createdAt) : (d.date ? new Date(d.date) : new Date());
+          const dateStr = createdAt.toISOString().split('T')[0];
+          
+          // Normaliser la date d'expiration
+          let expirationStr = '';
+          if (d.dateExpiration) {
+            expirationStr = new Date(d.dateExpiration).toISOString().split('T')[0];
+          } else if (d.expiration) {
+            expirationStr = new Date(d.expiration).toISOString().split('T')[0];
+          }
+          
+          return {
+            id: d._id || d.id || `#${Math.random().toString(36).substr(2, 8)}`,
+            transitaire: d.translataire || d.transitaire || 'Transitaire inconnu',
+            date: dateStr,
+            typeService: d.typeService || d.type || 'Non spécifié',
+            description: d.description || 'Aucune description',
+            origin: d.origin || d.origine || 'Non spécifiée',
+            destination: d.destination || d.route || 'Non spécifiée',
+            expiration: expirationStr,
+            statut: normalizeStatus(d.statut || d.status || 'en attente'),
+          };
+        });
         
         console.log('Devis mappés:', mapped);
         
@@ -150,17 +164,32 @@ const HistoriqueDevis = () => {
   };
 
   const filtered = useMemo(() => {
-    let rs = rows;
+    let rs = [...rows];
+    
+    // Filtrage par date en premier
+    if (date) {
+      const filterDate = new Date(date).toISOString().split('T')[0];
+      rs = rs.filter(r => {
+        if (!r.date) return false;
+        const rowDate = new Date(r.date).toISOString().split('T')[0];
+        return rowDate === filterDate;
+      });
+    }
+
+    // Appliquer les autres filtres
     if (query) {
       const q = query.toLowerCase();
-      rs = rs.filter(r => (r.transitaire || '').toLowerCase().includes(q) || 
-                          (r.destination || '').toLowerCase().includes(q) ||
-                          (r.origin || '').toLowerCase().includes(q));
+      rs = rs.filter(r => 
+        (r.transitaire || '').toLowerCase().includes(q) || 
+        (r.destination || '').toLowerCase().includes(q) ||
+        (r.origin || '').toLowerCase().includes(q)
+      );
     }
+    
     if (status !== 'tous') rs = rs.filter(r => r.statut === status);
     if (destination !== 'tous') rs = rs.filter(r => r.destination === destination);
     if (type !== 'tous') rs = rs.filter(r => (r.typeService || '').toString().toLowerCase() === type.toLowerCase());
-    if (date) rs = rs.filter(r => (r.date || '') === date);
+    
     return rs;
   }, [query, status, destination, type, date, rows]);
 
@@ -261,7 +290,25 @@ const HistoriqueDevis = () => {
                   <option key={d} value={d}>{d}</option>
                 ))}
               </select>
-              <input type="date" className="form-control filter-select" value={date} onChange={(e) => setDate(e.target.value)} />
+              <div className="input-group" style={{ maxWidth: '200px' }}>
+                <input 
+                  type="date" 
+                  className="form-control" 
+                  value={date} 
+                  onChange={(e) => setDate(e.target.value)}
+                  max={new Date().toISOString().split('T')[0]}
+                />
+                {date && (
+                  <button 
+                    className="btn btn-outline-secondary" 
+                    type="button"
+                    onClick={() => setDate('')}
+                    title="Réinitialiser la date"
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
               <div className="d-flex gap-2">
                 <button className="btn btn-primary">{t('client.history.filter.apply')}</button>
                 <button type="button" className="btn btn-link text-decoration-none" onClick={reset}>{t('client.history.filter.reset')}</button>
