@@ -574,14 +574,32 @@ const getUserDisplayName = () => {
 };
 const userDisplayName = getUserDisplayName();
 
+// Ajouter une classe au body pour gérer l'état du menu
+useEffect(() => {
+  const body = document.body;
+  if (sidebarOpen) {
+    body.classList.add('sidebar-open');
+    body.classList.remove('sidebar-collapsed');
+  } else {
+    body.classList.add('sidebar-collapsed');
+    body.classList.remove('sidebar-open');
+  }
+  
+  // Nettoyer les classes au démontage
+  return () => {
+    body.classList.remove('sidebar-open', 'sidebar-collapsed');
+  };
+}, [sidebarOpen]);
+
 return (
-  <div className="d-flex" style={{ ...clientStyles.layout, backgroundColor: 'var(--bg)' }}>
+  <div className="d-flex" style={{ ...clientStyles.layout, backgroundColor: 'var(--bg)', position: 'relative' }}>
     <style>{clientCss}</style>
-    
-    {/* Sidebar */}
-    <SideBare
-      topOffset={96}
-      closeOnNavigate={!isLgUp}
+    <style>{
+      `:root {
+        --sidebar-width: ${sidebarOpen ? '240px' : '56px'};
+        --content-transition: ${clientStyles.contentTransition};
+      }`
+    }</style>
       defaultOpen={true}
       open={sidebarOpen}
       onOpenChange={(o)=>setSidebarOpen(!!o)}
@@ -619,8 +637,27 @@ return (
     />
   
     {/* Main Content */}
-    <div className="flex-grow-1" style={{ marginLeft: isLgUp ? (sidebarOpen ? '240px' : '56px') : '0 !important', transition: 'margin-left .25s ease', paddingLeft: 0, minWidth: 0, width: '100%', maxWidth: '100vw', overflowX: 'hidden', position: 'relative', backgroundColor: 'var(--bg)' }}>
-      <div className="w-100 d-flex align-items-center gap-2 px-2 px-md-3 py-2">
+    <div className="flex-grow-1" style={{ 
+      paddingLeft: 0, 
+      minWidth: 0, 
+      position: 'relative', 
+      backgroundColor: 'var(--bg)',
+      minHeight: 'calc(100vh - 96px)',
+      marginTop: '96px'
+    }}>
+      {/* Header fixe en haut de la page */}
+      <div className="w-100 d-flex align-items-center gap-2 px-2 px-md-3 py-2" style={{
+        position: 'fixed',
+        top: 0,
+        right: 0,
+        left: isLgUp ? (sidebarOpen ? '240px' : '56px') : '0',
+        zIndex: 1000,
+        backgroundColor: 'var(--card)',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+        transition: 'left 0.3s ease',
+        height: '64px',
+        alignItems: 'center'
+      }}>
         {/* Hamburger menu button - visible only on mobile */}
         {!isLgUp && (
           <button 
