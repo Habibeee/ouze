@@ -1177,10 +1177,10 @@ return (
               </div>
             </div>
           </div>
-        )
-      }
+        
+      
       return null;
-    })()}
+    ()
     {editOpen && (
           <>
             <div className="modal fade show" style={{ display:'block' }} tabIndex="-1" role="dialog" aria-modal="true">
@@ -1297,8 +1297,8 @@ return (
             <div className="modal-backdrop fade show" onClick={()=>setEditOpen(false)}></div>
           </>
         )}
-      </div>
-    </div>
+  </div>
+    
   );
 };
 
