@@ -69,7 +69,8 @@ const ClientDashboard = () => {
           setSection('devis');
           break;
         case '#/historique': 
-          setSection('historique');
+        case '#/historique-devis':
+          setSection('historique-devis');
           break;
         case '#/profil-client': 
         case '#/profil-client/modifier': 
@@ -78,7 +79,11 @@ const ClientDashboard = () => {
         case '#/envois': 
           setSection('envois');
           break;
+        case '#/mes-fichiers-recus':
+          setSection('fichiers-recus');
+          break;
         case '#/dashboard-client': 
+        case '':
         default:
           setSection('dashboard');
       }
@@ -753,6 +758,8 @@ return (
       onOpenChange={setSidebarOpen}
       open={sidebarOpen}
       isLgUp={isLgUp}
+      collapsible={true}
+      closeOnNavigate={!isLgUp} // Fermer automatiquement sur mobile après la navigation
       onNavigate={(id) => {
         setSection(id);
         if (id === 'dashboard') {
@@ -811,10 +818,30 @@ return (
           </button>
         )}
         <div className="ms-auto d-flex align-items-center gap-2 position-relative">
-          <button className="btn btn-link position-relative" onClick={onBellClick} aria-label="Notifications">
-            <Bell size={20} />
+          <button 
+            className="btn btn-link position-relative p-1" 
+            onClick={onBellClick} 
+            aria-label="Notifications"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: '40px',
+              height: '40px',
+              borderRadius: '50%',
+              transition: 'background-color 0.2s',
+            }}
+            onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.05)'}
+            onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+          >
+            <Bell size={24} className="text-dark" />
             {unreadCount > 0 && (
-              <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">{unreadCount}</span>
+              <span 
+                className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                style={{ fontSize: '0.6rem', padding: '0.2rem 0.35rem' }}
+              >
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
             )}
           </button>
           {notifOpen && (
@@ -843,8 +870,36 @@ return (
               </div>
             </div>
           )}
-          <button className="btn p-0 border-0 bg-transparent" onClick={() => setProfileMenuOpen(!profileMenuOpen)} aria-label="Ouvrir menu profil">
-            <img src={avatarUrl} alt="Profil" className="rounded-circle" style={{ width: 36, height: 36, objectFit: 'cover', border: '2px solid #e9ecef' }} />
+          <button 
+            className="btn p-0 border-0 bg-transparent position-relative" 
+            onClick={() => setProfileMenuOpen(!profileMenuOpen)} 
+            aria-label="Ouvrir menu profil"
+            style={{
+              width: '40px',
+              height: '40px',
+              borderRadius: '50%',
+              overflow: 'hidden',
+              border: '2px solid #e9ecef',
+              padding: '2px',
+              transition: 'border-color 0.2s',
+            }}
+            onMouseOver={(e) => e.currentTarget.style.borderColor = '#adb5bd'}
+            onMouseOut={(e) => e.currentTarget.style.borderColor = '#e9ecef'}
+          >
+            <img 
+              src={avatarUrl} 
+              alt="Profil" 
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src = 'https://ui-avatars.com/api/?name=' + encodeURIComponent(userName || 'U') + '&background=random';
+              }}
+              style={{ 
+                width: '100%', 
+                height: '100%', 
+                objectFit: 'cover',
+                borderRadius: '50%'
+              }} 
+            />
           </button>
           {profileMenuOpen && (
             <div className="card shadow-sm" style={{ position: 'absolute', top: '100%', right: 0, zIndex: 1050, minWidth: '200px' }}>

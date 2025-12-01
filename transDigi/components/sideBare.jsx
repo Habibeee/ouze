@@ -88,12 +88,14 @@ export default function SideBare({ activeId = 'dashboard', onNavigate, onOpenCha
           ...sideBareStyles.sidebar,
           backgroundColor: 'var(--card)',
           color: 'var(--text)',
-          width: isLgUp ? (collapsible ? (open ? sideBareStyles.sidebar.width : '56px') : sideBareStyles.sidebar.width) : sideBareStyles.sidebar.width,
+          width: isLgUp ? (collapsible ? (open ? '240px' : '56px') : '240px') : '240px',
           top: topOffset,
           height: `calc(100vh - ${topOffset}px)`,
           zIndex: 1050,
           transform: isLgUp ? 'none' : (open ? 'translateX(0)' : 'translateX(-100%)'),
-          transition: 'transform .25s ease, width .25s ease'
+          transition: 'transform 0.3s ease, width 0.3s ease',
+          overflowX: 'hidden',
+          overflowY: 'auto'
         }}
       >
           <div className="p-3">
@@ -144,20 +146,41 @@ export default function SideBare({ activeId = 'dashboard', onNavigate, onOpenCha
       </div>
       {!isLgUp && open && !disableMobileOverlay && (
         <div
-          onClick={() => toggleOpen()}
+          onClick={toggleOpen}
           style={{
             position: 'fixed',
             left: 0,
             right: 0,
             top: topOffset,
             bottom: 0,
-            background: 'rgba(0,0,0,0.35)',
+            background: 'rgba(0,0,0,0.5)',
             zIndex: 1040,
+            backdropFilter: 'blur(2px)',
+            transition: 'opacity 0.3s ease',
+            animation: 'fadeIn 0.3s ease'
           }}
           aria-label="Fermer l'overlay"
         />
       )}
+      <style dangerouslySetInnerHTML={{
+        __html: `
+          @media (max-width: 991.98px) {
+            .sidebare-sm { 
+              font-size: 0.9rem; 
+            }
+
+            .sidebare-shadow {
+              transform: translateX(-100%);
+              transition: transform 0.3s ease;
+            }
+
+            .sidebare-shadow[style*="translateX(0)"] {
+              transform: translateX(0) !important;
+              box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+            }
+          }
+        `
+      }} />
     </>
   );
 }
-
