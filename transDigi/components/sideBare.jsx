@@ -1,13 +1,50 @@
 import React, { useState, useEffect } from 'react';
-import { LayoutGrid, Search, FileText, Truck, Clock, Settings, Menu, ArrowLeft } from 'lucide-react';
+import { LayoutGrid, Search, FileText, Truck, Clock, Settings, Menu, ArrowLeft, User } from 'lucide-react';
 import { sideBareStyles, sideBareCss } from '../styles/sideBareStyle.jsx';
 
 const menuItems = [
-  { id: 'dashboard', label: 'Tableau de bord', icon: LayoutGrid },
-  { id: 'recherche', label: 'Trouver un transitaire', icon: Search },
-  { id: 'devis', label: 'Mes devis', icon: FileText },
-  { id: 'envois', label: "Suivi des envois", icon: Truck },
-  { id: 'parametres', label: 'Paramètres', icon: Settings },
+  { 
+    id: 'dashboard', 
+    label: 'Tableau de bord', 
+    icon: LayoutGrid,
+    path: '#/dashboard-client'
+  },
+  { 
+    id: 'recherche', 
+    label: 'Trouver un transitaire', 
+    icon: Search,
+    path: '#/recherche-transitaire'
+  },
+  { 
+    id: 'devis', 
+    label: 'Nouveau devis', 
+    icon: FileText,
+    path: '#/nouveau-devis'
+  },
+  { 
+    id: 'historique-devis', 
+    label: 'Historique de devis', 
+    icon: FileText,
+    path: '#/historique-devis'
+  },
+  { 
+    id: 'envois', 
+    label: 'Suivi des envois', 
+    icon: Truck,
+    path: '#/envois'
+  },
+  { 
+    id: 'fichiers-recus', 
+    label: 'Mes fichiers reçus', 
+    icon: FileText,
+    path: '#/mes-fichiers-recus'
+  },
+  { 
+    id: 'profil', 
+    label: 'Mon profil', 
+    icon: User,
+    path: '#/profil-client'
+  }
 ];
 
 export default function SideBare({ activeId = 'dashboard', onNavigate, onOpenChange, className = '', topOffset = 96, items, closeOnNavigate = false, defaultOpen = true, collapsible = true, open: controlledOpen, showFloatingToggle = true, showHeaderToggle = true, hideItemsWhenCollapsed = false, disableMobileOverlay = false }) {

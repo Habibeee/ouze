@@ -96,11 +96,11 @@ const ClientDashboard = () => {
     return h.includes('goto=nouveau-devis') || h.startsWith('#/nouveau-devis') || h.includes('translataireName=');
   })();
   const [avatarUrl, setAvatarUrl] = useState(() => {
-    try { return localStorage.getItem('avatarUrl') || 'https://i.pravatar.cc/64?img=5'; } catch { return 'https://i.pravatar.cc/64?img=5'; }
+    try { return localStorage.getItem('avatarUrl') || 'https:\/\/i.pravatar.cc\/64?img=5'; } catch { return 'https:\/\/i.pravatar.cc\/64?img=5'; }
   });
   useEffect(() => {
     const onStorage = () => {
-      try { setAvatarUrl(localStorage.getItem('avatarUrl') || 'https://i.pravatar.cc/64?img=5'); } catch {}
+      try { setAvatarUrl(localStorage.getItem('avatarUrl') || 'https:\/\/i.pravatar.cc\/64?img=5'); } catch {}
     };
     window.addEventListener('storage', onStorage);
     return () => window.removeEventListener('storage', onStorage);
@@ -574,6 +574,154 @@ const getUserDisplayName = () => {
 };
 const userDisplayName = getUserDisplayName();
 
+// Fonction pour afficher le tableau de bord
+const renderDashboard = () => (
+  <div className="container-fluid p-4">
+    {/* En-tête */}
+    <div className="row mb-4">
+      <div className="col-12">
+        <h1 className="h2 mb-2">Tableau de bord</h1>
+        <p className="text-muted">Bienvenue, {userName || 'Utilisateur'}</p>
+      </div>
+    </div>
+
+    {/* Cartes de statistiques */}
+    <div className="row g-4 mb-4">
+      <div className="col-md-4">
+        <div className="card h-100">
+          <div className="card-body">
+            <div className="d-flex justify-content-between align-items-center">
+              <div>
+                <h6 className="text-muted mb-2">Devis en attente</h6>
+                <h3 className="mb-0">
+                  {devis.filter(d => d.status === 'attente').length}
+                </h3>
+              </div>
+              <div className="bg-primary bg-opacity-10 p-3 rounded">
+                <FileText className="text-primary" size={24} />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div className="col-md-4">
+        <div className="card h-100">
+          <div className="card-body">
+            <div className="d-flex justify-content-between align-items-center">
+              <div>
+                <h6 className="text-muted mb-2">Devis acceptés</h6>
+                <h3 className="mb-0">
+                  {devis.filter(d => d.status === 'accepte').length}
+                </h3>
+              </div>
+              <div className="bg-success bg-opacity-10 p-3 rounded">
+                <CheckCircle className="text-success" size={24} />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div className="col-md-4">
+        <div className="card h-100">
+          <div className="card-body">
+            <div className="d-flex justify-content-between align-items-center">
+              <div>
+                <h6 className="text-muted mb-2">Envois en cours</h6>
+                <h3 className="mb-0">0</h3>
+              </div>
+              <div className="bg-warning bg-opacity-10 p-3 rounded">
+                <Truck className="text-warning" size={24} />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {/* Derniers devis */}
+    <div className="card">
+      <div className="card-header bg-white d-flex justify-content-between align-items-center">
+        <h5 className="mb-0">Derniers devis</h5>
+        <button 
+          className="btn btn-sm btn-outline-primary"
+          onClick={() => setSection('devis')}
+        >
+          Voir tout
+        </button>
+      </div>
+      <div className="card-body p-0">
+        <div className="table-responsive">
+          <table className="table table-hover mb-0">
+            <thead className="table-light">
+              <tr>
+                <th>Référence</th>
+                <th>Date</th>
+                <th>Statut</th>
+                <th className="text-end">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {devisLoading ? (
+                <tr>
+                  <td colSpan="4" className="text-center py-4">
+                    <div className="spinner-border text-primary" role="status">
+                      <span className="visually-hidden">Chargement...</span>
+                    </div>
+                  </td>
+                </tr>
+              ) : devisError ? (
+                <tr>
+                  <td colSpan="4" className="text-center text-danger py-4">
+                    {devisError}
+                  </td>
+                </tr>
+              ) : devis.length === 0 ? (
+                <tr>
+                  <td colSpan="4" className="text-center text-muted py-4">
+                    Aucun devis trouvé
+                  </td>
+                </tr>
+              ) : (
+                devis.slice(0, 5).map((devisItem) => (
+                  <tr key={devisItem.id}>
+                    <td>{devisItem.reference || 'N/A'}</td>
+                    <td>{new Date(devisItem.createdAt).toLocaleDateString('fr-FR')}</td>
+                    <td>
+                      <span className={`badge bg-${devisItem.status === 'accepte' ? 'success' : 
+                                     devisItem.status === 'attente' ? 'warning' : 'secondary'}`}>
+                        {devisItem.statusLabel}
+                      </span>
+                    </td>
+                    <td className="text-end">
+                      <button 
+                        className="btn btn-sm btn-outline-primary me-2"
+                        onClick={() => onViewDevis(devisItem.id)}
+                      >
+                        Voir
+                      </button>
+                      {devisItem.status === 'attente' && (
+                        <button 
+                          className="btn btn-sm btn-outline-danger"
+                          onClick={() => handleArchive(devisItem.id)}
+                          disabled={isArchiving}
+                        >
+                          {isArchiving ? 'Archivage...' : 'Archiver'}
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
 // Ajouter une classe au body pour gérer l'état du menu
 useEffect(() => {
   const body = document.body;
@@ -601,19 +749,10 @@ return (
       }`
     }</style>
     <SideBare
-      defaultOpen={true}
-      open={sidebarOpen}
-      onOpenChange={(o) => setSidebarOpen(!!o)}
       activeId={section}
-      items={[
-        { id: 'dashboard', label: 'Tableau de bord', icon: LayoutGrid },
-        { id: 'recherche', label: 'Trouver un transitaire', icon: Search },
-        { id: 'devis', label: 'Nouveau devis', icon: FileText },
-        { id: 'historique-devis', label: 'Historique de devis', icon: FileText },
-        { id: 'envois', label: 'Suivi des envois', icon: Truck },
-        { id: 'fichiers-recus', label: 'Mes fichiers reçus', icon: FileText },
-        { id: 'profil', label: 'Mon profil', icon: User },
-      ]}
+      onOpenChange={setSidebarOpen}
+      open={sidebarOpen}
+      isLgUp={isLgUp}
       onNavigate={(id) => {
         setSection(id);
         if (id === 'dashboard') {
@@ -738,6 +877,7 @@ return (
             case 'profil':
               return <ModofierProfClient />;
             case 'historique':
+            case 'historique-devis':
               return <HistoriqueDevis />;
             case 'recherche':
               return <RechercheTransitaire />;
@@ -745,15 +885,9 @@ return (
               return <NouveauDevis />;
             case 'dashboard':
             default:
-              return (
-          <div className="default-wrap">
-            {/* Welcome Section */}
-            <div className="mb-4">
-              <h1 className="h2 fw-bold mb-2">Bonjour, {userDisplayName} !</h1>
-              <p className="text-muted">Voici un aperçu de votre activité récente.</p>
-            </div>
-
-            <div className="row g-2 g-md-3 g-lg-4">
+              return renderDashboard();
+          }
+        })()}
               {/* Left Column */}
               <div className="col-12 col-lg-8">
                 {/* Mes Devis Section */}
@@ -1043,10 +1177,11 @@ return (
               </div>
             </div>
           </div>
-          );
-          }
-        })()}
-        {editOpen && (
+        )
+      }
+      return null;
+    })()}
+    {editOpen && (
           <>
             <div className="modal fade show" style={{ display:'block' }} tabIndex="-1" role="dialog" aria-modal="true">
               <div className="modal-dialog">
@@ -1164,8 +1299,7 @@ return (
         )}
       </div>
     </div>
-  </div>
-);
+  );
 };
 
 export default ClientDashboard;
