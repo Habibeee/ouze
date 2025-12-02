@@ -59,6 +59,11 @@ export const clientCss = `
       position: relative;
       z-index: 1;
     }
+    
+    /* Adjust grid for mobile */
+    .row.g-3 {
+      grid-template-columns: 1fr;
+    }
   }
 
   .card { 
@@ -69,7 +74,10 @@ export const clientCss = `
 
   /* Cartes de devis dans "Mes devis" */
   .default-wrap .client-quotes-list {
-    row-gap: 1rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1rem;
+    width: 100%;
   }
 
   .default-wrap .client-quote-card {
@@ -77,7 +85,24 @@ export const clientCss = `
     max-width: 100%;
     box-shadow: 0 6px 16px rgba(15,23,42,0.10);
     background-color: var(--card);
-    margin-bottom: 0.75rem;
+    margin-bottom: 0;
+    transition: all 0.2s ease;
+  }
+  
+  /* Ensure cards maintain consistent width and spacing */
+  .row.g-3 {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1rem;
+    margin-left: 0;
+    margin-right: 0;
+    width: 100%;
+  }
+  
+  .row.g-3 > .col-12 {
+    padding: 0;
+    width: 100%;
+    max-width: 100%;
   }
 
   /* Filtres "Tous / Acceptés / En attente" - dashboard client */
