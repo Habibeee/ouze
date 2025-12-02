@@ -112,7 +112,7 @@ export default function SideBare({ activeId = 'dashboard', onNavigate, onOpenCha
                     >
                       {open ? <ArrowLeft size={18} /> : <Menu size={18} />}
                     </button>
-                    {open && (
+                    {(!hideItemsWhenCollapsed || open) && (
                       <button
                         className={`btn text-start d-flex align-items-center gap-3 flex-grow-1 sidebare-btn ${isActive ? 'text-white' : 'text-dark'}`}
                         style={{ ...(isActive ? sideBareStyles.activeMenuBtn : sideBareStyles.inactiveMenuBtn), ...sideBareStyles.menuBtnBase }}
