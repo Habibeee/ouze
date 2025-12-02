@@ -1,18 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  LayoutGrid, Search, FileText, Truck, Clock, Settings, LogOut,
-  CheckCircle, Mail, XCircle, X, User, Bell, Archive, Edit3
+  LayoutGrid, Search, FileText, Truck, CheckCircle, Bell, User
 } from 'lucide-react';
 import { clientStyles, clientCss } from '../styles/tableauBordClientStyle.jsx';
-import SideBare from './sideBare.jsx';
+import Sidebar from './sideBare.jsx';
 import RechercheTransitaire from './rechercheTransitaire.jsx';
 import NouveauDevis from './nouveauDevis.jsx';
 import TrackingApp from './suiviEnvoi.jsx';
 import ModofierProfClient from './modofierProfClient.jsx';
 import HistoriqueDevis from './historiqueDevis.jsx';
-import { get, post, logout, listNotifications, markNotificationRead, markAllNotificationsRead, getUnreadNotificationsCount, cancelDevis as cancelDevisApi, listMesDevis as listMesDevisApi, updateMonDevis, getMonDevisById, archiveDevis as archiveDevisApi } from '../services/apiClient.js';
+import { get, listNotifications, markNotificationRead, markAllNotificationsRead, getUnreadNotificationsCount, archiveDevis as archiveDevisApi } from '../services/apiClient.js';
 import { useToast } from './ui/ToastProvider.jsx';
-import { getAuth, isAdmin as isAdminRole, isTrans as isTransRole } from '../services/authStore.js';
+import { getAuth, logout } from '../services/authStore.js';
 
 const ClientDashboard = () => {
   const toast = useToast();
@@ -24,7 +23,47 @@ const ClientDashboard = () => {
     return !sessionStorage.getItem('welcomeMessageShown');
   });
   const [userName, setUserName] = useState('');
-  
+  const [devis, setDevis] = useState([]);
+  const [devisLoading, setDevisLoading] = useState(true);
+  const [devisError, setDevisError] = useState(null);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [total, setTotal] = useState(0);
+  const [successMsg, setSuccessMsg] = useState('');
+  const [acceptedShipments, setAcceptedShipments] = useState([]);
+  const [recentActivities, setRecentActivities] = useState([]);
+  const [confirmCancelId, setConfirmCancelId] = useState(null);
+  const [devisFilter, setDevisFilter] = useState('tous');
+  const [editOpen, setEditOpen] = useState(false);
+  const [editId, setEditId] = useState('');
+  const [editTypeService, setEditTypeService] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [editFiles, setEditFiles] = useState([]);
+  const [editLoading, setEditLoading] = useState(false);
+  const [editOrigin, setEditOrigin] = useState('');
+  const [editDestination, setEditDestination] = useState('');
+  const [editDateExpiration, setEditDateExpiration] = useState('');
+  const [editWeight, setEditWeight] = useState('');
+  const [editPackageType, setEditPackageType] = useState('');
+  const [editLength, setEditLength] = useState('');
+  const [editWidth, setEditWidth] = useState('');
+  const [editHeight, setEditHeight] = useState('');
+  const [editPickupAddress, setEditPickupAddress] = useState('');
+  const [editPickupDate, setEditPickupDate] = useState('');
+  const [editDeliveryAddress, setEditDeliveryAddress] = useState('');
+  const [editDeliveryDate, setEditDeliveryDate] = useState('');
+  const [editNotes, setEditNotes] = useState('');
+  const [editDangerous, setEditDangerous] = useState(false);
+  const [editTemperature, setEditTemperature] = useState(false);
+  const [editFragile, setEditFragile] = useState(false);
+  const [isArchiving, setIsArchiving] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [notifs, setNotifs] = useState([]);
+  const [notifLoading, setNotifLoading] = useState(true);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [isGotoDevis, setIsGotoDevis] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState('');
+
   useEffect(() => {
     const user = getAuth();
     if (user && user.user) {
@@ -86,278 +125,9 @@ const ClientDashboard = () => {
     return () => window.removeEventListener('hashchange', updateSection);
   }, []);
 
-  const chartId = 'clientActivityChart';
-  const [chartFilter, setChartFilter] = useState('tous');
-  const isGotoDevis = (typeof window !== 'undefined') && (() => {
-    const h = (window.location.hash || '');
-    return h.includes('goto=nouveau-devis') || h.startsWith('#/nouveau-devis') || h.includes('translataireName=');
-  })();
-
-  const [avatarUrl, setAvatarUrl] = useState(() => {
-    try { 
-      return localStorage.getItem('avatarUrl') || 'https://i.pravatar.cc/64?img=5'; 
-    } catch { 
-      return 'https://i.pravatar.cc/64?img=5'; 
-    }
-  });
-
-  useEffect(() => {
-    const onStorage = () => {
-      try { 
-        setAvatarUrl(localStorage.getItem('avatarUrl') || 'https://i.pravatar.cc/64?img=5'); 
-      } catch {}
-    };
-    window.addEventListener('storage', onStorage);
-    return () => window.removeEventListener('storage', onStorage);
-  }, []);
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const prof = await get('/users/profile');
-        const url = prof?.user?.photoProfil;
-        if (url && typeof url === 'string') {
-          setAvatarUrl((prev) => {
-            try { localStorage.setItem('avatarUrl', url); } catch {}
-            return url;
-          });
-        }
-      } catch {}
-    })();
-  }, []);
-
-  // Notifications
-  const [notifOpen, setNotifOpen] = useState(false);
-  const [notifs, setNotifs] = useState([]);
-  const [notifLoading, setNotifLoading] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(0);
-
-  const loadNotifs = async () => {
-    try { 
-      setNotifLoading(true); 
-      const data = await listNotifications(10); 
-      const items = Array.isArray(data?.items) ? data.items : (Array.isArray(data) ? data : []); 
-      setNotifs(items); 
-      setUnreadCount(items.filter(n=>!n.read).length); 
-    } catch {} finally { 
-      setNotifLoading(false); 
-    }
-  };
-
-  const onBellClick = async () => { 
-    setNotifOpen((o)=>!o); 
-    if (!notifOpen) await loadNotifs(); 
-  };
-
-  const onNotifClick = async (id) => {
-    try {
-      await markNotificationRead(id);
-      setNotifs(prev => {
-        const item = prev.find(n => n.id === id);
-        const next = prev.map(n => n.id === id ? { ...n, read: true } : n);
-        setUnreadCount(next.filter(n=>!n.read).length);
-        try {
-          const data = item?.data || {};
-          if (data.devisId) {
-            window.location.hash = `#/detail-devis-client?id=${encodeURIComponent(data.devisId)}`;
-          } else if (data.translataireId) {
-            const params = new URLSearchParams({ transId: String(data.translataireId), open: 'reviews' });
-            window.location.hash = `#/recherche-transitaire?${params.toString()}`;
-          }
-        } catch {}
-        return next;
-      });
-    } catch {}
-  };
-
-  const onMarkAll = async () => { 
-    try { 
-      await markAllNotificationsRead(); 
-      setNotifs(prev => { 
-        const next = prev.map(n => ({ ...n, read: true })); 
-        setUnreadCount(0); 
-        return next; 
-      }); 
-    } catch {} 
-  };
-
-  useEffect(() => {
-    let timer;
-    let backoff = 90000;
-    const maxBackoff = 5 * 60 * 1000;
-    const poll = async () => {
-      if (document.hidden) return;
-      try {
-        const data = await getUnreadNotificationsCount();
-        const c = (data?.count ?? data?.unread ?? data) || 0;
-        setUnreadCount(Number(c) || 0);
-        backoff = 90000;
-      } catch {
-        backoff = Math.min(maxBackoff, Math.round((backoff || 90000) * 1.8));
-      }
-      if (timer) clearInterval(timer);
-      timer = setInterval(poll, backoff || 90000);
-    };
-    const onVisibility = () => { if (!document.hidden) { poll(); } };
-    document.addEventListener('visibilitychange', onVisibility);
-    poll();
-    return () => { 
-      document.removeEventListener('visibilitychange', onVisibility); 
-      if (timer) clearInterval(timer); 
-    };
-  }, []);
-
-  useEffect(() => {
-    try {
-      const { token } = getAuth();
-      if (!token) {
-        window.location.hash = '#/connexion';
-      } else if (isAdminRole()) {
-        window.location.hash = '#/tableau-bord-admin';
-      } else if (isTransRole()) {
-        window.location.hash = '#/dashboard-transitaire';
-      }
-    } catch {}
-
-    const syncFromHash = () => {
-      const hash = window.location.hash || '';
-      const p = hash.split('?');
-      if (p.length > 1) {
-        const params = new URLSearchParams(p[1]);
-        const goto = params.get('goto');
-        if (goto === 'nouveau-devis') return setSection('devis');
-        if (goto === 'recherche-transitaire') return setSection('recherche');
-        if (goto === 'historique') return setSection('historique');
-        if (goto === 'envois') return setSection('envois');
-        if (goto === 'profil-client') return setSection('profil');
-      }
-      if (hash.startsWith('#/historique')) setSection('historique');
-      else if (hash.startsWith('#/dashboard-client')) setSection('dashboard');
-      else if (hash.startsWith('#/nouveau-devis')) setSection('devis');
-      else if (hash.startsWith('#/recherche-transitaire')) setSection('recherche');
-      else if (hash.startsWith('#/envois')) setSection('envois');
-      else if (hash.startsWith('#/profil-client')) setSection('profil');
-    };
-    const onHash = () => syncFromHash();
-    window.addEventListener('hashchange', onHash);
-    syncFromHash();
-    if ((window.location.hash || '').includes('goto=nouveau-devis')) {
-      setSection('devis');
-    }
-    return () => window.removeEventListener('hashchange', onHash);
-  }, []);
-
-  const [devis, setDevis] = useState([]);
-  const [devisLoading, setDevisLoading] = useState(false);
-  const [devisError, setDevisError] = useState('');
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
-  const [total, setTotal] = useState(0);
-  const [successMsg, setSuccessMsg] = useState('');
-  const [acceptedShipments, setAcceptedShipments] = useState([]);
-  const [recentActivities, setRecentActivities] = useState([]);
-  const [confirmCancelId, setConfirmCancelId] = useState(null);
-  const [devisFilter, setDevisFilter] = useState('tous');
-  const [editOpen, setEditOpen] = useState(false);
-  const [editId, setEditId] = useState('');
-  const [editTypeService, setEditTypeService] = useState('');
-  const [editDescription, setEditDescription] = useState('');
-  const [editFiles, setEditFiles] = useState([]);
-  const [editLoading, setEditLoading] = useState(false);
-  const [editOrigin, setEditOrigin] = useState('');
-  const [editDestination, setEditDestination] = useState('');
-  const [editDateExpiration, setEditDateExpiration] = useState('');
-  const [editWeight, setEditWeight] = useState('');
-  const [editPackageType, setEditPackageType] = useState('');
-  const [editLength, setEditLength] = useState('');
-  const [editWidth, setEditWidth] = useState('');
-  const [editHeight, setEditHeight] = useState('');
-  const [editPickupAddress, setEditPickupAddress] = useState('');
-  const [editPickupDate, setEditPickupDate] = useState('');
-  const [editDeliveryAddress, setEditDeliveryAddress] = useState('');
-  const [editDeliveryDate, setEditDeliveryDate] = useState('');
-  const [editNotes, setEditNotes] = useState('');
-  const [editDangerous, setEditDangerous] = useState(false);
-  const [editTemperature, setEditTemperature] = useState(false);
-  const [editFragile, setEditFragile] = useState(false);
-
   const onViewDevis = (id) => {
     window.location.hash = `#/detail-devis-client?id=${id}`;
   };
-
-  useEffect(() => {
-    if (section !== 'dashboard') return;
-    const canvas = document.getElementById(chartId);
-    if (!canvas) return;
-
-    const now = new Date();
-    const months = [];
-    for (let i = 11; i >= 0; i--) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      months.push({ y: d.getFullYear(), m: d.getMonth() });
-    }
-    const matchFilter = (st) => chartFilter === 'tous' ? true : st === chartFilter;
-    const counts = months.map(({ y, m }) => {
-      return devis.filter(d => {
-        const dt = new Date(d.date || d.createdAt || Date.now());
-        const st = (d.status || '').toString().toLowerCase();
-        return dt.getFullYear() === y && dt.getMonth() === m && matchFilter(st);
-      }).length;
-    });
-
-    const dpr = window.devicePixelRatio || 1;
-    const parent = canvas.parentElement;
-    const width = parent ? parent.clientWidth : 800;
-    const height = 300;
-    canvas.width = width * dpr;
-    canvas.height = height * dpr;
-    canvas.style.width = width + 'px';
-    canvas.style.height = height + 'px';
-    const ctx = canvas.getContext('2d');
-    ctx.setTransform(1,0,0,1,0,0);
-    ctx.scale(dpr, dpr);
-
-    const padding = 40;
-    const maxVal = Math.max(1, Math.max(...counts)) * 1.2;
-    const stepX = (width - padding * 2) / (counts.length - 1);
-
-    ctx.clearRect(0, 0, width, height);
-    const cssVars = getComputedStyle(document.documentElement);
-    const cardBg = (cssVars.getPropertyValue('--card') || '#ffffff').trim();
-    ctx.fillStyle = cardBg || '#ffffff';
-    ctx.fillRect(0, 0, width, height);
-
-    ctx.strokeStyle = '#E5E7EB';
-    ctx.lineWidth = 1;
-    for (let i = 0; i <= 5; i++) {
-      const y = padding + ((height - padding * 2) * i) / 5;
-      ctx.beginPath();
-      ctx.moveTo(padding, y);
-      ctx.lineTo(width - padding, y);
-      ctx.stroke();
-    }
-
-    const toY = (v) => height - padding - (v / maxVal) * (height - padding * 2);
-    ctx.strokeStyle = clientStyles.primary;
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    counts.forEach((v, i) => {
-      const x = padding + i * stepX;
-      const y = toY(v);
-      if (i === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
-    });
-    ctx.stroke();
-
-    const gradient = ctx.createLinearGradient(0, padding, 0, height - padding);
-    gradient.addColorStop(0, 'rgba(14,165,233,0.25)');
-    gradient.addColorStop(1, 'rgba(14,165,233,0)');
-    ctx.fillStyle = gradient;
-    ctx.lineTo(padding + (counts.length - 1) * stepX, height - padding);
-    ctx.lineTo(padding, height - padding);
-    ctx.closePath();
-    ctx.fill();
-  }, [section, devis, chartFilter]);
 
   const fetchDevis = async (opts) => {
     try {
@@ -365,7 +135,7 @@ const ClientDashboard = () => {
       setDevisError('');
       const curPage = opts?.page || page;
       const curLimit = opts?.limit || limit;
-      const res = await listMesDevisApi({ page: curPage, limit: curLimit });
+      const res = await get('/devis');
       const list = (res?.devis || res?.items || res || []);
       const rows = list.map(d => {
         const raw = (d.statut || d.status || '').toString().toLowerCase();
@@ -405,7 +175,7 @@ const ClientDashboard = () => {
     setEditOpen(true);
     setEditLoading(true);
     try {
-      const res = await getMonDevisById(d.id);
+      const res = await get(`/devis/${d.id}`);
       const dv = res?.devis || res || {};
       const typeService = dv.typeService || dv.type || '';
       const description = dv.description || dv.remarque || '';
@@ -489,7 +259,7 @@ const ClientDashboard = () => {
       fd.append('specialRequirements[temperature]', editTemperature ? 'true' : 'false');
       fd.append('specialRequirements[fragile]', editFragile ? 'true' : 'false');
       if (editFiles && editFiles.length) Array.from(editFiles).forEach(f => f && fd.append('fichier', f));
-      await updateMonDevis(editId, fd);
+      await post(`/devis/${editId}`, fd);
       setEditOpen(false);
       await fetchDevis({ page: 1, limit });
       toast.success('Demande mise à jour');
@@ -509,7 +279,7 @@ const ClientDashboard = () => {
       return;
     }
     try {
-      await cancelDevisApi(id);
+      await post(`/devis/${id}/cancel`);
       await fetchDevis({ page, limit });
       toast.success('Le devis a été annulé avec succès');
     } catch (e) {
@@ -518,8 +288,6 @@ const ClientDashboard = () => {
       setConfirmCancelId(null);
     }
   };
-
-  const [isArchiving, setIsArchiving] = useState(false);
 
   const handleArchive = async (id) => {
     if (!id) {
@@ -675,7 +443,7 @@ const ClientDashboard = () => {
 
       <div className="card">
         <div className="card-header bg-white d-flex justify-content-between align-items-center">
-          <h5 className="mb-0">Derniers devis</h5>
+          <h5 className="mb-0">Mes devis</h5>
           <button 
             className="btn btn-sm btn-outline-primary"
             onClick={() => setSection('devis')}
@@ -683,95 +451,55 @@ const ClientDashboard = () => {
             Voir tout
           </button>
         </div>
-        <div className="card-body p-0">
-          <div className="table-responsive">
-            <table className="table table-hover mb-0">
-              <thead className="table-light">
-                <tr>
-                  <th>Référence</th>
-                  <th>Date</th>
-                  <th>Statut</th>
-                  <th className="text-end">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {devisLoading ? (
-                  <tr>
-                    <td colSpan="4" className="text-center py-4">
-                      <div className="spinner-border text-primary" role="status">
-                        <span className="visually-hidden">Chargement...</span>
-                      </div>
-                    </td>
-                  </tr>
-                ) : devisError ? (
-                  <tr>
-                    <td colSpan="4" className="text-center text-danger py-4">
-                      {devisError}
-                    </td>
-                  </tr>
-                ) : devis.length === 0 ? (
-                  <tr>
-                    <td colSpan="4" className="text-center text-muted py-4">
-                      Aucun devis trouvé
-                    </td>
-                  </tr>
-                ) : (
-                  devis.slice(0, 5).map((devisItem) => (
-                    <tr key={devisItem.id}>
-                      <td>{devisItem.reference || 'N/A'}</td>
-                      <td>{new Date(devisItem.createdAt).toLocaleDateString('fr-FR')}</td>
-                      <td>
+        <div className="card-body">
+          <div className="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+            {devisLoading ? (
+              <div className="col-12 text-center py-4">
+                <div className="spinner-border text-primary" role="status">
+                  <span className="visually-hidden">Chargement...</span>
+                </div>
+              </div>
+            ) : devisError ? (
+              <div className="col-12 text-center text-danger py-4">
+                {devisError}
+              </div>
+            ) : devis.length === 0 ? (
+              <div className="col-12 text-center text-muted py-4">
+                Aucun devis trouvé
+              </div>
+            ) : (
+              devis.slice(0, 6).map((devisItem) => (
+                <div key={devisItem.id} className="col">
+                  <div className="card h-100">
+                    <div className="card-body">
+                      <div className="d-flex justify-content-between align-items-center mb-3">
+                        <h6 className="card-title mb-0">Devis {devisItem.reference || 'N/A'}</h6>
                         <span className={`badge bg-${devisItem.status === 'accepte' ? 'success' : 
-                                       devisItem.status === 'attente' ? 'warning' : 'secondary'}`}>
+                                         devisItem.status === 'attente' ? 'warning' : 'secondary'}`}>
                           {devisItem.statusLabel}
                         </span>
-                      </td>
-                      <td className="text-end">
+                      </div>
+                      <p className="text-muted small mb-3">
+                        Créé le {new Date(devisItem.createdAt).toLocaleDateString('fr-FR')}
+                      </p>
+                      <div className="d-flex justify-content-between align-items-center">
                         <button 
-                          className="btn btn-sm btn-outline-primary me-2"
+                          className="btn btn-sm btn-outline-primary"
                           onClick={() => onViewDevis(devisItem.id)}
                         >
-                          Voir
+                          Voir les détails
                         </button>
-                        {devisItem.status === 'attente' && (
-                          <button 
-                            className="btn btn-sm btn-outline-danger"
-                            onClick={() => handleArchive(devisItem.id)}
-                            disabled={isArchiving}
-                          >
-                            {isArchiving ? 'Archivage...' : 'Archiver'}
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
       </div>
     </div>
   );
-
-  useEffect(() => {
-    if (typeof document === 'undefined') return;
-    
-    const body = document.body;
-    if (sidebarOpen) {
-      body.classList.add('sidebar-open');
-      body.classList.remove('sidebar-collapsed');
-    } else {
-      body.classList.add('sidebar-collapsed');
-      body.classList.remove('sidebar-open');
-    }
-    
-    return () => {
-      if (typeof document !== 'undefined') {
-        body.classList.remove('sidebar-open', 'sidebar-collapsed');
-      }
-    };
-  }, [sidebarOpen]);
 
   return (
     <div className="d-flex" style={{ ...clientStyles.layout, backgroundColor: 'var(--bg)', position: 'relative' }}>
@@ -782,7 +510,7 @@ const ClientDashboard = () => {
           --content-transition: ${clientStyles.contentTransition};
         }`
       }</style>
-      <SideBare
+      <Sidebar
         activeId={section}
         onOpenChange={setSidebarOpen}
         open={sidebarOpen}
@@ -808,9 +536,8 @@ const ClientDashboard = () => {
           }
         }}
       />
-    
+      
       <div className="flex-grow-1" style={{ 
-        paddingLeft: 0, 
         minWidth: 0, 
         position: 'relative', 
         backgroundColor: 'var(--bg)',
