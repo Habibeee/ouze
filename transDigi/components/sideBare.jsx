@@ -102,26 +102,31 @@ export default function SideBare({ activeId = 'dashboard', onNavigate, onOpenCha
             {(items || menuItems).map((item) => {
               const Icon = item.icon;
               const isActive = item.id === activeId;
-              if (item.id === 'dashboard' && collapsible) {
+              if (item.id === 'dashboard') {
                 return (
                   <div key={item.id} className="d-flex align-items-center gap-2 mb-2">
-                    <button
-                      className="btn btn-link p-1"
-                      onClick={toggleOpen}
-                      aria-label={open ? 'Fermer le menu' : 'Ouvrir le menu'}
-                    >
-                      {open ? <ArrowLeft size={18} /> : <Menu size={18} />}
-                    </button>
-                    {(!hideItemsWhenCollapsed || open) && (
+                    {collapsible && (
                       <button
-                        className={`btn text-start d-flex align-items-center gap-3 flex-grow-1 sidebare-btn ${isActive ? 'text-white' : 'text-dark'}`}
-                        style={{ ...(isActive ? sideBareStyles.activeMenuBtn : sideBareStyles.inactiveMenuBtn), ...sideBareStyles.menuBtnBase }}
-                        onClick={() => handleNavigate(item.id)}
+                        className="btn btn-link p-1"
+                        onClick={toggleOpen}
+                        aria-label={open ? 'Fermer le menu' : 'Ouvrir le menu'}
                       >
-                        <Icon size={20} />
-                        <span className="sidebare-label">{item.label}</span>
+                        {open ? <ArrowLeft size={18} /> : <Menu size={18} />}
                       </button>
                     )}
+                    <button
+                      className={`btn text-start d-flex align-items-center gap-3 flex-grow-1 sidebare-btn ${isActive ? 'text-white' : 'text-dark'}`}
+                      style={{ 
+                        ...(isActive ? sideBareStyles.activeMenuBtn : sideBareStyles.inactiveMenuBtn), 
+                        ...sideBareStyles.menuBtnBase,
+                        ...(!open && collapsible ? { justifyContent: 'center' } : {})
+                      }}
+                      onClick={() => handleNavigate(item.id)}
+                      title={!open && collapsible ? item.label : ''}
+                    >
+                      <Icon size={20} />
+                      {(!collapsible || open) && <span className="sidebare-label">{item.label}</span>}
+                    </button>
                   </div>
                 );
               }

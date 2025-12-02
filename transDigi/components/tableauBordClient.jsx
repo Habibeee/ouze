@@ -441,62 +441,92 @@ const ClientDashboard = () => {
         </div>
       </div>
 
-      <div className="card">
+      <div className="card mb-4">
         <div className="card-header bg-white d-flex justify-content-between align-items-center">
           <h5 className="mb-0">Mes devis</h5>
           <button 
             className="btn btn-sm btn-outline-primary"
-            onClick={() => setSection('devis')}
+            onClick={() => setSection('historique-devis')}
           >
             Voir tout
           </button>
         </div>
-        <div className="card-body">
-          <div className="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
-            {devisLoading ? (
-              <div className="col-12 text-center py-4">
-                <div className="spinner-border text-primary" role="status">
-                  <span className="visually-hidden">Chargement...</span>
-                </div>
+        <div className="card-body p-0">
+          {devisLoading ? (
+            <div className="text-center p-4">
+              <div className="spinner-border text-primary" role="status">
+                <span className="visually-hidden">Chargement...</span>
               </div>
-            ) : devisError ? (
-              <div className="col-12 text-center text-danger py-4">
-                {devisError}
-              </div>
-            ) : devis.length === 0 ? (
-              <div className="col-12 text-center text-muted py-4">
-                Aucun devis trouvé
-              </div>
-            ) : (
-              devis.slice(0, 6).map((devisItem) => (
-                <div key={devisItem.id} className="col">
-                  <div className="card h-100">
-                    <div className="card-body">
-                      <div className="d-flex justify-content-between align-items-center mb-3">
-                        <h6 className="card-title mb-0">Devis {devisItem.reference || 'N/A'}</h6>
+              <p className="mt-2 mb-0 text-muted">Chargement de vos devis...</p>
+            </div>
+          ) : devisError ? (
+            <div className="alert alert-danger m-3">
+              <i className="bi bi-exclamation-triangle me-2"></i>
+              {devisError}
+            </div>
+          ) : devis.length === 0 ? (
+            <div className="text-center p-4">
+              <i className="bi bi-inbox text-muted" style={{fontSize: '2rem', opacity: 0.5}}></i>
+              <p className="mt-2 mb-0 text-muted">Aucun devis trouvé</p>
+              <button 
+                className="btn btn-primary mt-3"
+                onClick={() => setSection('devis')}
+              >
+                Créer un devis
+              </button>
+            </div>
+          ) : (
+            <div className="table-responsive">
+              <table className="table table-hover mb-0">
+                <thead>
+                  <tr>
+                    <th>Référence</th>
+                    <th>Date</th>
+                    <th>Statut</th>
+                    <th className="text-end">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {devis.slice(0, 5).map((devisItem) => (
+                    <tr key={devisItem.id}>
+                      <td className="align-middle">
+                        <div className="fw-medium">Devis {devisItem.reference || 'N/A'}</div>
+                        <small className="text-muted">{devisItem.routeLabel}</small>
+                      </td>
+                      <td className="align-middle">
+                        {new Date(devisItem.createdAt).toLocaleDateString('fr-FR')}
+                      </td>
+                      <td className="align-middle">
                         <span className={`badge bg-${devisItem.status === 'accepte' ? 'success' : 
                                          devisItem.status === 'attente' ? 'warning' : 'secondary'}`}>
                           {devisItem.statusLabel}
                         </span>
-                      </div>
-                      <p className="text-muted small mb-3">
-                        Créé le {new Date(devisItem.createdAt).toLocaleDateString('fr-FR')}
-                      </p>
-                      <div className="d-flex justify-content-between align-items-center">
+                      </td>
+                      <td className="text-end align-middle">
                         <button 
                           className="btn btn-sm btn-outline-primary"
                           onClick={() => onViewDevis(devisItem.id)}
                         >
-                          Voir les détails
+                          Détails
                         </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
+        {devis.length > 0 && (
+          <div className="card-footer bg-white text-end">
+            <button 
+              className="btn btn-link text-primary p-0"
+              onClick={() => setSection('historique-devis')}
+            >
+              Voir tous les devis <i className="bi bi-arrow-right ms-1"></i>
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
