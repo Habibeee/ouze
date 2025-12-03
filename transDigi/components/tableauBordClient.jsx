@@ -627,18 +627,90 @@ const userDisplayName = getUserDisplayName();
             </h1>
           </div>
           <div className="d-flex align-items-center gap-2">
-            <button
-              className={`btn btn-light position-relative p-2 ${notifOpen ? 'active' : ''}`}
-              onClick={onBellClick}
-              style={{ borderRadius: '50%', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-            >
-              <Bell size={20} />
-              {unreadCount > 0 && (
-                <span className="position-absolute top-0 end-0 translate-middle badge rounded-pill bg-danger" style={{ fontSize: '10px', padding: '4px 6px' }}>
-                  {unreadCount > 9 ? '9+' : unreadCount}
-                </span>
+            <div className="position-relative">
+              <button
+                className={`btn btn-light position-relative p-2 ${notifOpen ? 'active' : ''}`}
+                onClick={onBellClick}
+                style={{ borderRadius: '50%', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              >
+                <Bell size={20} />
+                {unreadCount > 0 && (
+                  <span className="position-absolute top-0 end-0 translate-middle badge rounded-pill bg-danger" style={{ fontSize: '10px', padding: '4px 6px' }}>
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
+              </button>
+              {notifOpen && (
+                <div 
+                  className="dropdown-menu show" 
+                  style={{
+                    position: 'absolute',
+                    right: 0,
+                    top: '50px',
+                    width: '400px',
+                    maxHeight: '600px',
+                    overflowY: 'auto',
+                    backgroundColor: 'var(--bs-white)',
+                    border: '1px solid var(--bs-gray-300)',
+                    borderRadius: '8px',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                    zIndex: 1000,
+                    padding: '0'
+                  }}
+                >
+                  <div className="card border-0">
+                    <div className="card-header bg-white border-bottom d-flex justify-content-between align-items-center p-3">
+                      <h5 className="mb-0 fw-bold">Activité récente</h5>
+                      <div className="d-flex align-items-center gap-2">
+                        <button 
+                          className="btn btn-sm btn-link p-0 text-decoration-none" 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onMarkAll();
+                          }}
+                        >
+                          <small>Marquer tout comme lu</small>
+                        </button>
+                        <button 
+                          className="btn-close" 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setNotifOpen(false);
+                          }}
+                        />
+                      </div>
+                    </div>
+                    <div className="list-group list-group-flush" style={{ maxHeight: '500px', overflowY: 'auto' }}>
+                      {recentActivities.length > 0 ? (
+                        recentActivities.map((activity, index) => (
+                          <div 
+                            key={index} 
+                            className={`list-group-item list-group-item-action ${!activity.read ? 'fw-bold' : ''}`}
+                            style={{ cursor: 'pointer', position: 'relative', borderLeft: 'none', borderRight: 'none' }}
+                            onClick={() => {
+                              onNotifClick(activity.id);
+                              setNotifOpen(false);
+                            }}
+                          >
+                            <div className="d-flex w-100 justify-content-between">
+                              <h6 className="mb-1">{activity.title}</h6>
+                              <small className="text-muted">
+                                {activity.date.toLocaleDateString()}
+                              </small>
+                            </div>
+                            <p className="mb-1">{activity.message}</p>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="text-center py-4 text-muted">
+                          Aucune activité récente
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
               )}
-            </button>
+            </div>
             <div className="dropdown">
               <button
                 className="btn btn-link text-decoration-none p-0"
@@ -691,105 +763,16 @@ const userDisplayName = getUserDisplayName();
             </div>
           </div>
         </div>
-        <div className="alert alert-info d-flex align-items-center mb-4" role="alert">
-          <i className="bi bi-info-circle-fill me-2"></i>
-          <div>
-            Votre devis peut être envoyé à tous les transitaires via la page <a href="#/nouveau-devis" className="alert-link">Nouveau devis</a>, 
-            ou vous pouvez choisir un transitaire spécifique depuis la page <a href="#/recherche-transitaire" className="alert-link">Rechercher un transitaire</a>.
+        <div className="d-flex justify-content-center mb-4">
+          <div className="alert alert-info d-flex align-items-center" role="alert" style={{ maxWidth: '800px', width: '100%' }}>
+            <i className="bi bi-info-circle-fill me-2"></i>
+            <div className="text-center">
+              Votre devis peut être envoyé à tous les transitaires via la page <a href="#/nouveau-devis" className="alert-link">Nouveau devis</a>, 
+              ou vous pouvez choisir un transitaire spécifique depuis la page <a href="#/recherche-transitaire" className="alert-link">Rechercher un transitaire</a>.
+            </div>
           </div>
         </div>
-        <div className="card shadow-sm mb-4">
-          <div className="card-header bg-white border-0 d-flex justify-content-between align-items-center">
-            <h5 className="mb-0">ActivitÃ© rÃ©cente</h5>
-            <button className="btn btn-link p-0" onClick={onMarkAll}>
-              <small>Marquer tout comme lu</small>
-            </button>
-          </div>
-          <div className="list-group list-group-flush" style={{ maxHeight: '300px', overflowY: 'auto' }}>
-            {recentActivities.map((activity, index) => (
-              <div 
-                key={index} 
-                className={`list-group-item list-group-item-action ${!activity.read ? 'fw-bold' : ''}`}
-                style={{ cursor: 'pointer', position: 'relative' }}
-              >
-                <div 
-                  className="d-flex w-100 justify-content-between"
-                  onClick={() => onNotifClick(activity.id)}
-                >
-                  <h6 className="mb-1">{activity.title}</h6>
-                  <div className="d-flex align-items-center">
-                    <small className="text-muted me-2">
-                      {activity.date.toLocaleDateString()}
-                    </small>
-                    <div className="dropdown">
-                      <button 
-                        className="btn btn-link p-0 text-muted" 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setMenuOpen(menuOpen === activity.id ? null : activity.id);
-                        }}
-                      >
-                        <MoreVertical size={16} />
-                      </button>
-                      {menuOpen === activity.id && (
-                        <div 
-                          className="dropdown-menu show" 
-                          style={{
-                            position: 'absolute',
-                            right: '10px',
-                            top: '30px',
-                            backgroundColor: 'var(--bs-gray-800)',
-                            border: '1px solid var(--bs-gray-700)',
-                            borderRadius: '8px',
-                            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-                            zIndex: 1000,
-                            minWidth: '220px'
-                          }}
-                        >
-                          <button 
-                            className="dropdown-item text-white d-flex align-items-center gap-2"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              hideNotification(activity.id);
-                            }}
-                            style={{ backgroundColor: 'transparent' }}
-                          >
-                            <EyeOff size={16} />
-                            <span>Masquer cette notification</span>
-                          </button>
-                          <button 
-                            className="dropdown-item text-white d-flex align-items-center gap-2"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (activity.type) {
-                                disableNotificationType(activity.type);
-                              }
-                            }}
-                            style={{ backgroundColor: 'transparent' }}
-                          >
-                            <BellOff size={16} />
-                            <span>DÃ©sactiver ce type de notification</span>
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-                <p 
-                  className="mb-1"
-                  onClick={() => onNotifClick(activity.id)}
-                >
-                  {activity.message}
-                </p>
-              </div>
-            ))}
-            {recentActivities.length === 0 && (
-              <div className="text-center py-4 text-muted">
-                Aucune activitÃ© rÃ©cente
-              </div>
-            )}
-          </div>
-        </div>
+        {/* La section 'Activité récente' a été déplacée dans le menu déroulant des notifications */}
         
         <style jsx>{`
           .dropdown-menu {
