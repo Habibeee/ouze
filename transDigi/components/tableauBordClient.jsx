@@ -99,95 +99,9 @@ const ClientDashboard = () => {
     })();
   }, []);
 
-  // Notifications
-  const [notifOpen, setNotifOpen] = useState(false);
-  const [notifs, setNotifs] = useState([]);
-  const [notifLoading, setNotifLoading] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [menuOpen, setMenuOpen] = useState(null); // Pour gérer l'ouverture du menu d'options
-  const [hiddenNotifs, setHiddenNotifs] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('hiddenNotifs') || '[]'); } catch { return []; }
-  });
-  const [disabledNotifTypes, setDisabledNotifTypes] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('disabledNotifTypes') || '[]'); } catch { return []; }
-  });
-  const loadNotifs = async () => {
-    try { setNotifLoading(true); const data = await listNotifications(10); const items = Array.isArray(data?.items) ? data.items : (Array.isArray(data) ? data : []); setNotifs(items); setUnreadCount(items.filter(n=>!n.read).length); } catch {} finally { setNotifLoading(false); }
-  };
-  const onBellClick = async () => { setNotifOpen((o)=>!o); if (!notifOpen) await loadNotifs(); };
-  const onNotifClick = async (id) => {
-    try {
-      await markNotificationRead(id);
-      setNotifs(prev => {
-        const item = prev.find(n => n.id === id);
-        const next = prev.map(n => n.id === id ? { ...n, read: true } : n);
-        setUnreadCount(next.filter(n=>!n.read).length);
-        // Router vers la ressource associée si connue
-        try {
-          const data = item?.data || {};
-          if (data.devisId) {
-            window.location.hash = `#/detail-devis-client?id=${encodeURIComponent(data.devisId)}`;
-          } else if (data.translataireId) {
-            // Ouvrir les avis du transitaire ciblé
-            const params = new URLSearchParams({ transId: String(data.translataireId), open: 'reviews' });
-            window.location.hash = `#/recherche-transitaire?${params.toString()}`;
-          }
-        } catch {}
-        return next;
-      });
-    } catch {}
-  };
-  // Masquer une notification spécifique
-  const hideNotification = (id) => {
-    setHiddenNotifs(prev => new Set([...prev, id]));
-    setMenuOpen(null);
-  };
-
-  // Désactiver un type de notification
-  const disableNotificationType = (type) => {
-    setDisabledNotifTypes(prev => new Set([...prev, type]));
-    setMenuOpen(null);
-    // Ici, vous devriez également appeler une API pour enregistrer cette préférence
-  };
-
-  // Vérifier si une notification doit être affichée
-  const shouldShowNotification = (notif) => {
-    return !hiddenNotifs.has(notif.id) && 
-           !(notif.type && disabledNotifTypes.has(notif.type));
-  };
-
-  const onMarkAll = async () => { 
-    try { 
-      await markAllNotificationsRead(); 
-      setNotifs(prev => { 
-        const next = prev.map(n => ({ ...n, read: true })); 
-        setUnreadCount(0); 
-        return next; 
-      }); 
-    } catch {} 
-  };
-  useEffect(() => {
-    let timer;
-    let backoff = 90000; // start at 90s
-    const maxBackoff = 5 * 60 * 1000; // 5 minutes
-    const poll = async () => {
-      if (document.hidden) return; // pause when tab hidden
-      try {
-        const data = await getUnreadNotificationsCount();
-        const c = (data?.count ?? data?.unread ?? data) || 0;
-        setUnreadCount(Number(c) || 0);
-        backoff = 90000; // normal cadence on success
-      } catch {
-        backoff = Math.min(maxBackoff, Math.round((backoff || 90000) * 1.8));
-      }
-      if (timer) clearInterval(timer);
-      timer = setInterval(poll, backoff || 90000);
-    };
-    const onVisibility = () => { if (!document.hidden) { poll(); } };
-    document.addEventListener('visibilitychange', onVisibility);
-    poll();
-    return () => { document.removeEventListener('visibilitychange', onVisibility); if (timer) clearInterval(timer); };
-  }, []);
+  // Suppression des états liés aux notifications
+  // Suppression des fonctions liées aux notifications
+  // Suppression de l'effet de polling des notifications
 
   // Sync section with current hash for proper navigation between pages
   useEffect(() => {
@@ -627,175 +541,31 @@ const ClientDashboard = () => {
         }}
       />
       <div className="flex-grow-1" style={{ marginLeft: isLgUp ? (sidebarOpen ? '240px' : '56px') : '0', transition: 'margin 0.3s ease', backgroundColor: 'var(--bg)' }}>
-        {/* En-tï¿½te avec barre de navigation */}
-        <div className="w-100 d-flex justify-content-between align-items-center gap-2 px-2 px-md-3 py-2 bg-body border-bottom" style={{ position: 'sticky', top: 0, zIndex: 10, backgroundColor: 'var(--card)' }}>
-          <div className="d-flex align-items-center gap-2">
-            {!isLgUp && (
-              <button
-                className="btn btn-link p-1 me-1"
-                onClick={() => setSidebarOpen(!sidebarOpen)}
-                style={{ color: 'var(--text)' }}
-              >
-                <Menu size={24} />
-              </button>
-            )}
-            <h1 className="h5 mb-0 d-none d-md-block">
-              {section === 'dashboard' && t('client.dashboard.title')}
-              {section === 'recherche' && t('client.search.title')}
-              {section === 'devis' && t('client.quotes.new')}
-              {section === 'devis-admin' && t('client.quotes.new')}
-              {section === 'historique' && t('client.history.title')}
-              {section === 'envois' && t('client.shipments.title')}
-              {section === 'fichiers' && t('client.files.title')}
-              {section === 'profil' && t('client.profile.title')}
-            </h1>
+        {/* Bouton de menu pour mobile */}
+        {!isLgUp && (
+          <div className="w-100 d-flex justify-content-between align-items-center gap-2 px-2 px-md-3 py-2">
+            <button
+              className="btn btn-link p-1 me-1"
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              style={{ color: 'var(--text)' }}
+            >
+              <Menu size={24} />
+            </button>
           </div>
-          <div className="d-flex align-items-center gap-2">
-            <div className="position-relative">
-              <button
-                className={`btn btn-light position-relative p-2 ${notifOpen ? 'active' : ''}`}
-                onClick={onBellClick}
-                style={{ borderRadius: '50%', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-              >
-                <Bell size={20} />
-                {unreadCount > 0 && (
-                  <span className="position-absolute top-0 end-0 translate-middle badge rounded-pill bg-danger" style={{ fontSize: '10px', padding: '4px 6px' }}>
-                    {unreadCount > 9 ? '9+' : unreadCount}
-                  </span>
-                )}
-              </button>
-              {notifOpen && (
-                <div 
-                  className="dropdown-menu show" 
-                  style={{
-                    position: 'absolute',
-                    right: 0,
-                    top: '50px',
-                    width: '400px',
-                    maxHeight: '600px',
-                    overflowY: 'auto',
-                    backgroundColor: 'var(--bs-white)',
-                    border: '1px solid var(--bs-gray-300)',
-                    borderRadius: '8px',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                    zIndex: 1000,
-                    padding: '0'
-                  }}
-                >
-                  <div className="card border-0">
-                    <div className="card-header bg-white border-bottom d-flex justify-content-between align-items-center p-3">
-                      <h5 className="mb-0 fw-bold">Activité récente</h5>
-                      <div className="d-flex align-items-center gap-2">
-                        <button 
-                          className="btn btn-sm btn-link p-0 text-decoration-none" 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onMarkAll();
-                          }}
-                        >
-                          <small>Marquer tout comme lu</small>
-                        </button>
-                        <button 
-                          className="btn-close" 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setNotifOpen(false);
-                          }}
-                        />
-                      </div>
-                    </div>
-                    <div className="list-group list-group-flush" style={{ maxHeight: '500px', overflowY: 'auto' }}>
-                      {recentActivities.length > 0 ? (
-                        recentActivities.map((activity, index) => (
-                          <div 
-                            key={index} 
-                            className={`list-group-item list-group-item-action ${!activity.read ? 'fw-bold' : ''}`}
-                            style={{ cursor: 'pointer', position: 'relative', borderLeft: 'none', borderRight: 'none' }}
-                            onClick={() => {
-                              onNotifClick(activity.id);
-                              setNotifOpen(false);
-                            }}
-                          >
-                            <div className="d-flex w-100 justify-content-between">
-                              <h6 className="mb-1">{activity.title}</h6>
-                              <small className="text-muted">
-                                {activity.date.toLocaleDateString()}
-                              </small>
-                            </div>
-                            <p className="mb-1">{activity.message}</p>
-                          </div>
-                        ))
-                      ) : (
-                        <div className="text-center py-4 text-muted">
-                          Aucune activité récente
-                        </div>
-                      )}
-                    </div>
-                  </div>
+        )}
+        {/* Message d'information */}
+        <div className="container-fluid px-3 px-md-4 py-3">
+          <div className="row">
+            <div className="col-12">
+              <div className="alert alert-info d-flex align-items-center" role="alert" style={{ maxWidth: '800px', width: '100%', margin: '20px auto' }}>
+                <i className="bi bi-info-circle-fill me-2"></i>
+                <div className="text-center">
+                  Votre devis peut être envoyé à tous les transitaires via la page <a href="#/nouveau-devis" className="alert-link">Nouveau devis</a>, 
+                  ou vous pouvez choisir un transitaire spécifique depuis la page <a href="#/recherche-transitaire" className="alert-link">Rechercher un transitaire</a>.
                 </div>
-              )}
-            </div>
-            <div className="dropdown">
-              <button
-                className="btn btn-link text-decoration-none p-0"
-                onClick={() => setProfileMenuOpen(!profileMenuOpen)}
-                style={{ color: 'var(--text)' }}
-              >
-                {avatarUrl ? (
-                  <img
-                    src={avatarUrl}
-                    alt="Profile"
-                    className="rounded-circle"
-                    style={{ width: '40px', height: '40px', objectFit: 'cover' }}
-                  />
-                ) : (
-                  <div className="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" style={{ width: '40px', height: '40px' }}>
-                    {userInitials || <User size={20} />}
-                  </div>
-                )}
-              </button>
-              {profileMenuOpen && (
-                <div className="dropdown-menu dropdown-menu-end show" style={{ position: 'absolute', right: 0, marginTop: '8px', zIndex: 1000, minWidth: '200px' }}>
-                  <div className="dropdown-header d-flex flex-column align-items-center py-3">
-                    {avatarUrl ? (
-                      <img
-                        src={avatarUrl}
-                        alt="Profile"
-                        className="rounded-circle mb-2"
-                        style={{ width: '64px', height: '64px', objectFit: 'cover' }}
-                      />
-                    ) : (
-                      <div className="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center mb-2" style={{ width: '64px', height: '64px' }}>
-                        {userInitials || <User size={28} />}
-                      </div>
-                    )}
-                    <div className="text-center">
-                      <div className="fw-bold">{userDisplayName}</div>
-                      <div className="text-muted small">{userEmail || ''}</div>
-                    </div>
-                  </div>
-                  <div className="dropdown-divider"></div>
-                  <button className="dropdown-item d-flex align-items-center gap-2" onClick={onProfileClick}>
-                    <User size={16} /> {t('client.profile.title')}
-                  </button>
-                  <div className="dropdown-divider"></div>
-                  <button className="dropdown-item d-flex align-items-center gap-2 text-danger" onClick={onLogout}>
-                    <LogOut size={16} /> {t('client.logout')}
-                  </button>
-                </div>
-              )}
+              </div>
             </div>
           </div>
-        </div>
-        <div className="d-flex justify-content-center mb-4">
-          <div className="alert alert-info d-flex align-items-center" role="alert" style={{ maxWidth: '800px', width: '100%' }}>
-            <i className="bi bi-info-circle-fill me-2"></i>
-            <div className="text-center">
-              Votre devis peut être envoyé à tous les transitaires via la page <a href="#/nouveau-devis" className="alert-link">Nouveau devis</a>, 
-              ou vous pouvez choisir un transitaire spécifique depuis la page <a href="#/recherche-transitaire" className="alert-link">Rechercher un transitaire</a>.
-            </div>
-          </div>
-        </div>
         {/* La section 'Activité récente' a été déplacée dans le menu déroulant des notifications */}
         
         <style jsx>{`
@@ -816,8 +586,8 @@ const ClientDashboard = () => {
         <div className="container-fluid px-3 px-md-4 py-3">
           {section === 'dashboard' ? (
             <div className="row">
-              {/* Section principale - Gauche */}
-              <div className="col-12 col-lg-8">
+              {/* Section principale */}
+              <div className="col-12">
                 {/* Carte de bienvenue (affichée uniquement au moment de la connexion) */}
                 {showWelcomeMessage && (
                   <div className="card border-0 shadow-sm mb-4">
@@ -841,55 +611,6 @@ const ClientDashboard = () => {
                     </div>
                   </div>
                 )}
-
-                {/* Cartes de statistiques */}
-                <div className="row mb-4">
-                  <div className="col-md-4 mb-3 mb-md-0">
-                    <div className="card border-0 shadow-sm h-100">
-                      <div className="card-body">
-                        <div className="d-flex justify-content-between align-items-center">
-                          <div>
-                            <h6 className="text-muted mb-1">Devis en attente</h6>
-                            <h3 className="mb-0">{stats.pendingQuotes}</h3>
-                          </div>
-                          <div className="bg-warning bg-opacity-10 p-3 rounded">
-                            <Clock className="text-warning" size={24} />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="col-md-4 mb-3 mb-md-0">
-                    <div className="card border-0 shadow-sm h-100">
-                      <div className="card-body">
-                        <div className="d-flex justify-content-between align-items-center">
-                          <div>
-                            <h6 className="text-muted mb-1">Devis acceptés</h6>
-                            <h3 className="mb-0">{stats.acceptedQuotes}</h3>
-                          </div>
-                          <div className="bg-success bg-opacity-10 p-3 rounded">
-                            <CheckCircle className="text-success" size={24} />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="col-md-4">
-                    <div className="card border-0 shadow-sm h-100">
-                      <div className="card-body">
-                        <div className="d-flex justify-content-between align-items-center">
-                          <div>
-                            <h6 className="text-muted mb-1">Devis refusés</h6>
-                            <h3 className="mb-0">{stats.rejectedQuotes}</h3>
-                          </div>
-                          <div className="bg-danger bg-opacity-10 p-3 rounded">
-                            <XCircle className="text-danger" size={24} />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
 
                 {/* Mes devis récents */}
                 <div className="card border-0 shadow-sm mb-4">
@@ -946,38 +667,6 @@ const ClientDashboard = () => {
                   </div>
                 </div>
               </div>
-
-              {/* Section de droite - Espace pour d'autres éléments */}
-              <div className="col-12 col-lg-4">
-                {/* Espace réservé pour d'autres éléments */}
-
-                {/* Statistiques rapides */}
-                <div className="card border-0 shadow-sm">
-                  <div className="card-body">
-                    <h5 className="fw-bold mb-3">Statistiques</h5>
-                    <div className="d-flex flex-column gap-2">
-                      <div className="d-flex justify-content-between align-items-center">
-                        <span>Devis en attente</span>
-                        <span className="badge bg-warning text-dark">
-                          {stats?.pendingQuotes || 0}
-                        </span>
-                      </div>
-                      <div className="d-flex justify-content-between align-items-center">
-                        <span>Devis acceptÃ©s</span>
-                        <span className="badge bg-success">
-                          {stats?.acceptedQuotes || 0}
-                        </span>
-                      </div>
-                      <div className="d-flex justify-content-between align-items-center">
-                        <span>Devis refusÃ©s</span>
-                        <span className="badge bg-danger">
-                          {stats?.rejectedQuotes || 0}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
             </div>
           ) : (
             <>
@@ -992,6 +681,7 @@ const ClientDashboard = () => {
           )}
         </div>
       </div>
+    </div>
     </div>
   
   );
