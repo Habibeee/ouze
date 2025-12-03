@@ -673,6 +673,17 @@ const ClientDashboard = () => {
         </div>
       </div>
 
+      <div className="row mb-4">
+        <div className="col-12">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 max-w-3xl mx-auto my-6 text-center">
+            <p className="text-blue-800 font-medium">
+              Information : Votre devis peut être envoyé à tous les transitaires via la page Nouveau devis, 
+              ou vous pouvez choisir un transitaire spécifique depuis la page Rechercher un transitaire.
+            </p>
+          </div>
+        </div>
+      </div>
+
       <div className="card">
         <div className="card-header bg-white d-flex justify-content-between align-items-center">
           <h5 className="mb-0">Derniers devis</h5>
