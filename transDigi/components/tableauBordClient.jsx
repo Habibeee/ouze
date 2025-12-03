@@ -23,7 +23,8 @@ const ClientDashboard = () => {
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isLgUp, setIsLgUp] = useState(() => (typeof window !== 'undefined' ? window.innerWidth >= 992 : true));
-  
+  const [userName, setUserName] = useState('');
+
   // États pour les notifications
   const [hiddenNotifs, setHiddenNotifs] = useState({});
   const [disabledNotifTypes, setDisabledNotifTypes] = useState({});
@@ -134,6 +135,12 @@ const ClientDashboard = () => {
 
   // Charger les préférences et les notifications au montage
   useEffect(() => {
+    // Récupérer le nom d'utilisateur depuis l'authentification
+    const auth = getAuth();
+    if (auth && auth.user) {
+      setUserName(auth.user.name || auth.user.email || 'Utilisateur');
+    }
+
     // Charger les préférences
     try {
       const savedHidden = localStorage.getItem('hiddenNotifications');
