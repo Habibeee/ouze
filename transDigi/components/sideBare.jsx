@@ -99,23 +99,37 @@ export default function SideBare({ activeId = 'dashboard', onNavigate, onOpenCha
         }}
       >
           <div className="p-3">
+            {/* Afficher d'abord le bouton de basculement du menu */}
+            {collapsible && (
+              <div className="d-flex align-items-center gap-2 mb-3">
+                <button
+                  className="btn btn-link p-1"
+                  onClick={toggleOpen}
+                  aria-label={open ? 'Fermer le menu' : 'Ouvrir le menu'}
+                >
+                  {open ? <ArrowLeft size={18} /> : <Menu size={18} />}
+                </button>
+                {open && <div style={{width: '20px'}}></div>}
+              </div>
+            )}
+            
+            {/* Afficher tous les éléments du menu, y compris le Tableau de bord */}
             {(items || menuItems).map((item) => {
               const Icon = item.icon;
               const isActive = item.id === activeId;
+              
+              // Si on est en mode "masquer les items" et que la sidebar est repliée sur grand écran,
+              // ne pas afficher les autres entrées de menu (seule la colonne étroite avec le toggle reste visible)
+              if (collapsible && !open && hideItemsWhenCollapsed && isLgUp) {
+                return null;
+              }
+              
+              // Rendu spécial pour le tableau de bord
               if (item.id === 'dashboard') {
                 return (
-                  <div key={item.id} className="d-flex align-items-center gap-2 mb-2">
-                    {collapsible && (
-                      <button
-                        className="btn btn-link p-1"
-                        onClick={toggleOpen}
-                        aria-label={open ? 'Fermer le menu' : 'Ouvrir le menu'}
-                      >
-                        {open ? <ArrowLeft size={18} /> : <Menu size={18} />}
-                      </button>
-                    )}
+                  <div key={item.id} className="mb-2">
                     <button
-                      className={`btn text-start d-flex align-items-center gap-3 flex-grow-1 sidebare-btn ${isActive ? 'text-white' : 'text-dark'}`}
+                      className={`btn w-100 text-start d-flex align-items-center gap-3 sidebare-btn ${isActive ? 'text-white' : 'text-dark'}`}
                       style={{ 
                         ...(isActive ? sideBareStyles.activeMenuBtn : sideBareStyles.inactiveMenuBtn), 
                         ...sideBareStyles.menuBtnBase,
@@ -129,11 +143,6 @@ export default function SideBare({ activeId = 'dashboard', onNavigate, onOpenCha
                     </button>
                   </div>
                 );
-              }
-              // Si on est en mode "masquer les items" et que la sidebar est repliée sur grand écran,
-              // ne pas afficher les autres entrées de menu (seule la colonne étroite avec le toggle reste visible)
-              if (collapsible && !open && hideItemsWhenCollapsed && isLgUp) {
-                return null;
               }
               return (
                 <button
