@@ -126,6 +126,7 @@ const ClientDashboard = () => {
     })();
   }, []);
 
+  // Notifications
   const [notifOpen, setNotifOpen] = useState(false);
   const [notifs, setNotifs] = useState([]);
   const [notifLoading, setNotifLoading] = useState(false);
@@ -498,259 +499,497 @@ const ClientDashboard = () => {
       setEditLoading(false); 
     }
   };
-// Problèmes identifiés et corrigés :
 
-// 1. Code dupliqué (les fonctions cancelDevis et handleArchive apparaissent 2 fois)
-// 2. La fonction getUserDisplayName retourne 'Bienvenue' mais la variable userDisplayName n'est pas utilisée
-// 3. Le renderDashboard a une balise <div className="table-responsive"> non fermée
-// 4. Utilisation de localStorage dans getUserDisplayName (à éviter dans les artifacts)
-
-// Voici les corrections principales :
-
-const cancelDevis = async (id) => {
-  if (confirmCancelId !== id) {
-    setConfirmCancelId(id);
-    setTimeout(() => { 
-      setConfirmCancelId(prev => prev === id ? null : prev); 
-    }, 4000);
-    return;
-  }
-  try {
-    await cancelDevisApi(id);
-    await fetchDevis({ page, limit });
-    toast.success('Le devis a été annulé avec succès');
-  } catch (e) {
-    toast.error(e?.message || 'Erreur lors de l\'annulation du devis');
-  } finally {
-    setConfirmCancelId(null);
-  }
-};
-
-const [isArchiving, setIsArchiving] = useState(false);
-
-const handleArchive = async (id) => {
-  if (!id) {
-    toast.error('ID de devis manquant');
-    return;
-  }
-  
-  if (!window.confirm('Êtes-vous sûr de vouloir archiver ce devis ?')) {
-    return;
-  }
-  
-  setIsArchiving(true);
-  try {
-    const response = await archiveDevisApi(id);
-    
-    if (response && response.success === false) {
-      throw new Error(response.message || 'Échec de l\'archivage du devis');
+  const cancelDevis = async (id) => {
+    if (confirmCancelId !== id) {
+      setConfirmCancelId(id);
+      setTimeout(() => { 
+        setConfirmCancelId(prev => prev === id ? null : prev); 
+      }, 4000);
+      return;
     }
-    
-    await fetchDevis({ page, limit });
-    toast.success('Le devis a été archivé avec succès');
-  } catch (error) {
-    console.error('Erreur lors de l\'archivage du devis:', error);
-    
-    if (error.response) {
-      if (error.response.status === 404) {
-        toast.error('La ressource demandée est introuvable. Veuillez réessayer.');
-      } else if (error.response.status === 401) {
-        toast.error('Session expirée. Veuillez vous reconnecter.');
-        window.location.href = '/connexion';
-      } else {
-        const errorMessage = error.response.data?.message || 'Une erreur est survenue lors de l\'archivage du devis';
-        toast.error(errorMessage);
-      }
-    } else if (error.request) {
-      toast.error('Pas de réponse du serveur. Vérifiez votre connexion internet.');
-    } else {
-      toast.error(error.message || 'Erreur lors de la préparation de la requête');
-    }
-  } finally {
-    setIsArchiving(false);
-  }
-};
-
-useEffect(() => {
-  let isMounted = true;
-  
-  const fetchNotifications = async () => {
     try {
-      const items = await listNotifications(5);
-      if (!isMounted) return;
-      
-      const arr = Array.isArray(items?.items) ? items.items : (Array.isArray(items) ? items : []);
-      const mapped = arr.slice(0,5).map(n => ({
-        id: n.id || n._id || String(Math.random()),
-        type: (n.type || '').toString().toLowerCase(),
-        title: n.title || 'Notification',
-        text: n.body || n.message || '',
-        time: n.createdAt ? new Date(n.createdAt).toLocaleString() : '',
-        data: n.data || {},
-        read: !!n.read,
-      }));
-      setRecentActivities(mapped);
-    } catch (error) {
-      console.error('Erreur lors du chargement des notifications:', error);
+      await cancelDevisApi(id);
+      await fetchDevis({ page, limit });
+      toast.success('Le devis a été annulé avec succès');
+    } catch (e) {
+      toast.error(e?.message || 'Erreur lors de l\'annulation du devis');
+    } finally {
+      setConfirmCancelId(null);
     }
   };
-  
-  fetchNotifications();
-  
-  return () => {
-    isMounted = false;
+
+  const [isArchiving, setIsArchiving] = useState(false);
+
+  const handleArchive = async (id) => {
+    if (!id) {
+      toast.error('ID de devis manquant');
+      return;
+    }
+    
+    if (!window.confirm('Êtes-vous sûr de vouloir archiver ce devis ?')) {
+      return;
+    }
+    
+    setIsArchiving(true);
+    try {
+      const response = await archiveDevisApi(id);
+      
+      if (response && response.success === false) {
+        throw new Error(response.message || 'Échec de l\'archivage du devis');
+      }
+      
+      await fetchDevis({ page, limit });
+      toast.success('Le devis a été archivé avec succès');
+    } catch (error) {
+      console.error('Erreur lors de l\'archivage du devis:', error);
+      
+      if (error.response) {
+        if (error.response.status === 404) {
+          toast.error('La ressource demandée est introuvable. Veuillez réessayer.');
+        } else if (error.response.status === 401) {
+          toast.error('Session expirée. Veuillez vous reconnecter.');
+          window.location.href = '/connexion';
+        } else {
+          const errorMessage = error.response.data?.message || 'Une erreur est survenue lors de l\'archivage du devis';
+          toast.error(errorMessage);
+        }
+      } else if (error.request) {
+        toast.error('Pas de réponse du serveur. Vérifiez votre connexion internet.');
+      } else {
+        toast.error(error.message || 'Erreur lors de la préparation de la requête');
+      }
+    } finally {
+      setIsArchiving(false);
+    }
   };
-}, []);
 
-// Supprimez getUserDisplayName si vous utilisez userName directement
-// Ou utilisez userName partout au lieu de userDisplayName
+  useEffect(() => {
+    let isMounted = true;
+    
+    const fetchNotifications = async () => {
+      try {
+        const items = await listNotifications(5);
+        if (!isMounted) return;
+        
+        const arr = Array.isArray(items?.items) ? items.items : (Array.isArray(items) ? items : []);
+        const mapped = arr.slice(0,5).map(n => ({
+          id: n.id || n._id || String(Math.random()),
+          type: (n.type || '').toString().toLowerCase(),
+          title: n.title || 'Notification',
+          text: n.body || n.message || '',
+          time: n.createdAt ? new Date(n.createdAt).toLocaleString() : '',
+          data: n.data || {},
+          read: !!n.read,
+        }));
+        setRecentActivities(mapped);
+      } catch (error) {
+        console.error('Erreur lors du chargement des notifications:', error);
+      }
+    };
+    
+    fetchNotifications();
+    
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
-const renderDashboard = () => (
-  <div className="container-fluid p-4">
-    <div className="row mb-4">
-      <div className="col-12">
-        <h1 className="h2 mb-2">Tableau de bord</h1>
-        <p className="text-muted">Bienvenue, {userName || 'Utilisateur'}</p>
+  const getUserDisplayName = () => {
+    try {
+      const candidates = [
+        'userName','username','name','prenom','firstName','fullName','displayName','email'
+      ];
+      for (const k of candidates) {
+        const v = localStorage.getItem(k);
+        if (v && v.trim()) return v.trim();
+      }
+    } catch {}
+    return 'Bienvenue';
+  };
+
+  const userDisplayName = getUserDisplayName();
+
+  const renderDashboard = () => (
+    <div className="container-fluid p-4">
+      <div className="row mb-4">
+        <div className="col-12">
+          <h1 className="h2 mb-2">Tableau de bord</h1>
+          <p className="text-muted">Bienvenue, {userName || 'Utilisateur'}</p>
+        </div>
       </div>
-    </div>
 
-    <div className="row g-4 mb-4">
-      <div className="col-md-4">
-        <div className="card h-100">
-          <div className="card-body">
-            <div className="d-flex justify-content-between align-items-center">
-              <div>
-                <h6 className="text-muted mb-2">Devis en attente</h6>
-                <h3 className="mb-0">
-                  {devis.filter(d => d.status === 'attente').length}
-                </h3>
+      <div className="row g-4 mb-4">
+        <div className="col-md-4">
+          <div className="card h-100">
+            <div className="card-body">
+              <div className="d-flex justify-content-between align-items-center">
+                <div>
+                  <h6 className="text-muted mb-2">Devis en attente</h6>
+                  <h3 className="mb-0">
+                    {devis.filter(d => d.status === 'attente').length}
+                  </h3>
+                </div>
+                <div className="bg-primary bg-opacity-10 p-3 rounded">
+                  <FileText className="text-primary" size={24} />
+                </div>
               </div>
-              <div className="bg-primary bg-opacity-10 p-3 rounded">
-                <FileText className="text-primary" size={24} />
+            </div>
+          </div>
+        </div>
+        
+        <div className="col-md-4">
+          <div className="card h-100">
+            <div className="card-body">
+              <div className="d-flex justify-content-between align-items-center">
+                <div>
+                  <h6 className="text-muted mb-2">Devis acceptés</h6>
+                  <h3 className="mb-0">
+                    {devis.filter(d => d.status === 'accepte').length}
+                  </h3>
+                </div>
+                <div className="bg-success bg-opacity-10 p-3 rounded">
+                  <CheckCircle className="text-success" size={24} />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div className="col-md-4">
+          <div className="card h-100">
+            <div className="card-body">
+              <div className="d-flex justify-content-between align-items-center">
+                <div>
+                  <h6 className="text-muted mb-2">Envois en cours</h6>
+                  <h3 className="mb-0">0</h3>
+                </div>
+                <div className="bg-warning bg-opacity-10 p-3 rounded">
+                  <Truck className="text-warning" size={24} />
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-      
-      <div className="col-md-4">
-        <div className="card h-100">
-          <div className="card-body">
-            <div className="d-flex justify-content-between align-items-center">
-              <div>
-                <h6 className="text-muted mb-2">Devis acceptés</h6>
-                <h3 className="mb-0">
-                  {devis.filter(d => d.status === 'accepte').length}
-                </h3>
-              </div>
-              <div className="bg-success bg-opacity-10 p-3 rounded">
-                <CheckCircle className="text-success" size={24} />
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      <div className="col-md-4">
-        <div className="card h-100">
-          <div className="card-body">
-            <div className="d-flex justify-content-between align-items-center">
-              <div>
-                <h6 className="text-muted mb-2">Envois en cours</h6>
-                <h3 className="mb-0">0</h3>
-              </div>
-              <div className="bg-warning bg-opacity-10 p-3 rounded">
-                <Truck className="text-warning" size={24} />
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
 
-    <div className="card">
-      <div className="card-header bg-white d-flex justify-content-between align-items-center">
-        <h5 className="mb-0">Derniers devis</h5>
-        <button 
-          className="btn btn-sm btn-outline-primary"
-          onClick={() => setSection('devis')}
-        >
-          Voir tout
-        </button>
+      <div className="row mb-4">
+        <div className="col-12">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 max-w-3xl mx-auto my-6 text-center">
+            <p className="text-blue-800 font-medium">
+              Information : Votre devis peut être envoyé à tous les transitaires via la page Nouveau devis, 
+              ou vous pouvez choisir un transitaire spécifique depuis la page Rechercher un transitaire.
+            </p>
+          </div>
+        </div>
       </div>
-      <div className="card-body p-0">
-        <div className="table-responsive">
-          <table className="table table-hover mb-0">
-            <thead className="table-light">
-              <tr>
-                <th>Référence</th>
-                <th>Date</th>
-                <th>Statut</th>
-                <th className="text-end">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {devisLoading ? (
+
+      <div className="card">
+        <div className="card-header bg-white d-flex justify-content-between align-items-center">
+          <h5 className="mb-0">Derniers devis</h5>
+          <button 
+            className="btn btn-sm btn-outline-primary"
+            onClick={() => setSection('devis')}
+          >
+            Voir tout
+          </button>
+        </div>
+        <div className="card-body p-0">
+          <div className="table-responsive">
+            <table className="table table-hover mb-0">
+              <thead className="table-light">
                 <tr>
-                  <td colSpan="4" className="text-center py-4">
-                    <div className="spinner-border text-primary" role="status">
-                      <span className="visually-hidden">Chargement...</span>
-                    </div>
-                  </td>
+                  <th>Référence</th>
+                  <th>Date</th>
+                  <th>Statut</th>
+                  <th className="text-end">Actions</th>
                 </tr>
-              ) : devisError ? (
-                <tr>
-                  <td colSpan="4" className="text-center text-danger py-4">
-                    {devisError}
-                  </td>
-                </tr>
-              ) : devis.length === 0 ? (
-                <tr>
-                  <td colSpan="4" className="text-center text-muted py-4">
-                    Aucun devis trouvé
-                  </td>
-                </tr>
-              ) : (
-                devis.slice(0, 5).map((devisItem) => (
-                  <tr key={devisItem.id}>
-                    <td>{devisItem.reference || 'N/A'}</td>
-                    <td>{new Date(devisItem.createdAt).toLocaleDateString('fr-FR')}</td>
-                    <td>
-                      <span className={`badge bg-${devisItem.status === 'accepte' ? 'success' : 
-                                     devisItem.status === 'attente' ? 'warning' : 'secondary'}`}>
-                        {devisItem.statusLabel}
-                      </span>
-                    </td>
-                    <td className="text-end">
-                      <button 
-                        className="btn btn-sm btn-outline-primary me-2"
-                        onClick={() => onViewDevis(devisItem.id)}
-                      >
-                        Voir
-                      </button>
-                      {devisItem.status === 'attente' && (
-                        <button 
-                          className="btn btn-sm btn-outline-danger"
-                          onClick={() => handleArchive(devisItem.id)}
-                          disabled={isArchiving}
-                        >
-                          {isArchiving ? 'Archivage...' : 'Archiver'}
-                        </button>
-                      )}
+              </thead>
+              <tbody>
+                {devisLoading ? (
+                  <tr>
+                    <td colSpan="4" className="text-center py-4">
+                      <div className="spinner-border text-primary" role="status">
+                        <span className="visually-hidden">Chargement...</span>
+                      </div>
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                ) : devisError ? (
+                  <tr>
+                    <td colSpan="4" className="text-center text-danger py-4">
+                      {devisError}
+                    </td>
+                  </tr>
+                ) : devis.length === 0 ? (
+                  <tr>
+                    <td colSpan="4" className="text-center text-muted py-4">
+                      Aucun devis trouvé
+                    </td>
+                  </tr>
+                ) : (
+                  devis.slice(0, 5).map((devisItem) => (
+                    <tr key={devisItem.id}>
+                      <td>{devisItem.reference || 'N/A'}</td>
+                      <td>{new Date(devisItem.createdAt).toLocaleDateString('fr-FR')}</td>
+                      <td>
+                        <span className={`badge bg-${devisItem.status === 'accepte' ? 'success' : 
+                                       devisItem.status === 'attente' ? 'warning' : 'secondary'}`}>
+                          {devisItem.statusLabel}
+                        </span>
+                      </td>
+                      <td className="text-end">
+                        <button 
+                          className="btn btn-sm btn-outline-primary me-2"
+                          onClick={() => onViewDevis(devisItem.id)}
+                        >
+                          Voir
+                        </button>
+                        {devisItem.status === 'attente' && (
+                          <button 
+                            className="btn btn-sm btn-outline-danger"
+                            onClick={() => handleArchive(devisItem.id)}
+                            disabled={isArchiving}
+                          >
+                            {isArchiving ? 'Archivage...' : 'Archiver'}
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
-  </div>
-);
+  );
 
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    
+    const body = document.body;
+    if (sidebarOpen) {
+      body.classList.add('sidebar-open');
+      body.classList.remove('sidebar-collapsed');
+    } else {
+      body.classList.add('sidebar-collapsed');
+      body.classList.remove('sidebar-open');
+    }
+    
+    return () => {
+      if (typeof document !== 'undefined') {
+        body.classList.remove('sidebar-open', 'sidebar-collapsed');
+      }
+    };
+  }, [sidebarOpen]);
+
+  return (
+    <div className="d-flex" style={{ ...clientStyles.layout, backgroundColor: 'var(--bg)', position: 'relative' }}>
+      <style>{clientCss}</style>
+      <style>{
+        `:root {
+          --sidebar-width: ${sidebarOpen ? '240px' : '56px'};
+          --content-transition: ${clientStyles.contentTransition};
+        }`
+      }</style>
+      <SideBare
+        activeId={section}
+        onOpenChange={setSidebarOpen}
+        open={sidebarOpen}
+        isLgUp={isLgUp}
+        collapsible={true}
+        closeOnNavigate={!isLgUp}
+        onNavigate={(id) => {
+          setSection(id);
+          if (id === 'dashboard') {
+            window.location.hash = '#/dashboard-client';
+          } else if (id === 'recherche') {
+            window.location.hash = '#/recherche-transitaire';
+          } else if (id === 'devis') {
+            window.location.hash = '#/nouveau-devis';
+          } else if (id === 'envois') {
+            window.location.hash = '#/envois';
+          } else if (id === 'profil') {
+            window.location.hash = '#/profil-client';
+          } else if (id === 'historique-devis') {
+            window.location.hash = '#/historique-devis';
+          } else if (id === 'fichiers-recus') {
+            window.location.hash = '#/mes-fichiers-recus';
+          }
+        }}
+      />
+    
+      <div className="flex-grow-1" style={{ 
+        paddingLeft: 0, 
+        minWidth: 0, 
+        position: 'relative', 
+        backgroundColor: 'var(--bg)',
+        minHeight: 'calc(100vh - 96px)',
+        marginTop: '96px'
+      }}>
+        <div className="w-100 d-flex align-items-center gap-2 px-2 px-md-3 py-2" style={{
+          position: 'fixed',
+          top: 0,
+          right: 0,
+          left: isLgUp ? (sidebarOpen ? '240px' : '56px') : '0',
+          zIndex: 1000,
+          backgroundColor: 'var(--card)',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+          transition: 'left 0.3s ease',
+          height: '64px',
+          alignItems: 'center'
+        }}>
+          {!isLgUp && (
+            <button 
+              className="btn btn-link p-1" 
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              aria-label="Toggle menu"
+              style={{ marginRight: 'auto' }}
+            >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="3" y1="12" x2="21" y2="12"></line>
+                <line x1="3" y1="6" x2="21" y2="6"></line>
+                <line x1="3" y1="18" x2="21" y2="18"></line>
+              </svg>
+            </button>
+          )}
+          <div className="ms-auto d-flex align-items-center gap-2 position-relative">
+            <button 
+              className="btn btn-link position-relative p-1" 
+              onClick={onBellClick} 
+              aria-label="Notifications"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '40px',
+                height: '40px',
+                borderRadius: '50%',
+                transition: 'background-color 0.2s',
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.05)';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent';
+              }}
+            >
+              <Bell size={24} className="text-dark" />
+              {unreadCount > 0 && (
+                <span 
+                  className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                  style={{ fontSize: '0.6rem', padding: '0.2rem 0.35rem' }}
+                >
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
+            </button>
+            {notifOpen && (
+              <div className="card shadow-sm" style={{ position: 'absolute', top: '100%', right: 0, zIndex: 1050, minWidth: 320 }}>
+                <div className="card-body p-0">
+                  <div className="d-flex justify-content-between align-items-center px-3 py-2 border-bottom">
+                    <div className="fw-semibold">Notifications</div>
+                    <button className="btn btn-sm btn-link" onClick={onMarkAll}>Tout marquer lu</button>
+                  </div>
+                  {notifLoading ? (
+                    <div className="p-3 small text-muted">Chargement...</div>
+                  ) : (
+                    <div className="list-group list-group-flush">
+                      {(notifs.length ? notifs : []).map(n => (
+                        <button key={n.id || n._id} className={`list-group-item list-group-item-action d-flex justify-content-between ${n.read ? '' : 'fw-semibold'}`} onClick={() => onNotifClick(n.id || n._id, n)}>
+                          <div className="me-2" style={{ whiteSpace: 'normal', textAlign: 'left' }}>
+                            <div>{n.title || 'Notification'}</div>
+                            {n.body && <div className="small text-muted">{n.body}</div>}
+                          </div>
+                          {!n.read && <span className="badge bg-primary">Nouveau</span>}
+                        </button>
+                      ))}
+                      {!notifs.length && <div className="p-3 small text-muted">Aucune notification</div>}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+            <button 
+              className="btn p-0 border-0 bg-transparent position-relative" 
+              onClick={() => setProfileMenuOpen(!profileMenuOpen)} 
+              aria-label="Ouvrir menu profil"
+              style={{
+                width: '40px',
+                height: '40px',
+                borderRadius: '50%',
+                overflow: 'hidden',
+                border: '2px solid #e9ecef',
+                padding: '2px',
+                transition: 'border-color 0.2s',
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.borderColor = '#adb5bd';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.borderColor = '#e9ecef';
+              }}
+            >
+              <img 
+                src={avatarUrl} 
+                alt="Profil" 
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src = 'https://ui-avatars.com/api/?name=' + encodeURIComponent(userName || 'U') + '&background=random';
+                }}
+                style={{ 
+                  width: '100%', 
+                  height: '100%', 
+                  objectFit: 'cover',
+                  borderRadius: '50%'
+                }} 
+              />
+            </button>
+            {profileMenuOpen && (
+              <div className="card shadow-sm" style={{ position: 'absolute', top: '100%', right: 0, zIndex: 1050, minWidth: '200px' }}>
+                <div className="list-group list-group-flush">
+                  <button className="list-group-item list-group-item-action" onClick={() => { setProfileMenuOpen(false); setSection('profil'); }}>
+                    Modifier profil
+                  </button>
+                  <button className="list-group-item list-group-item-action" onClick={() => { setProfileMenuOpen(false); window.location.hash = '#/modifierModpss'; }}>
+                    Modifier mot de passe
+                  </button>
+                  <button className="list-group-item list-group-item-action text-danger" onClick={async () => { setProfileMenuOpen(false); try { await logout(); } finally { window.location.hash = '#/connexion'; } }}>
+                    Se déconnecter
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="container-fluid px-2 px-md-4 py-3 py-md-4" style={{ backgroundColor: 'var(--bg)' }}>
+          {(() => {
+            if (isGotoDevis) {
+              return <NouveauDevis />;
+            }
+            switch(section) {
+              case 'envois':
+                return <TrackingApp />;
+              case 'profil':
+                return <ModofierProfClient />;
+              case 'historique':
+              case 'historique-devis':
+                return <HistoriqueDevis />;
+              case 'recherche':
+                return <RechercheTransitaire />;
+              case 'devis':
+                return <NouveauDevis />;
+              case 'dashboard':
+              default:
+                return renderDashboard();
+            }
+          })()}
+        </div>
+      </div>
+    </div>
+  );
 };
 
 export default ClientDashboard;
-// Reste du code inchangé...
-  
