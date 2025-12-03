@@ -69,7 +69,7 @@ const ClientDashboard = () => {
     return () => window.removeEventListener('storage', onStorage);
   }, []);
 
-  // Charger la photo de profil depuis l'API et la mÃ©moriser pour persistance entre sessions
+  // Charger la photo de profil depuis l'API et la mémoriser pour persistance entre sessions
   useEffect(() => {
     (async () => {
       try {
@@ -104,9 +104,13 @@ const ClientDashboard = () => {
   const [notifs, setNotifs] = useState([]);
   const [notifLoading, setNotifLoading] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [menuOpen, setMenuOpen] = useState(null); // Pour gÃ©rer l'ouverture du menu d'options
-  const [hiddenNotifs, setHiddenNotifs] = useState(new Set()); // Pour suivre les notifications masquÃ©es
-  const [disabledNotifTypes, setDisabledNotifTypes] = useState(new Set()); // Pour dÃ©sactiver des types de notifications
+  const [menuOpen, setMenuOpen] = useState(null); // Pour gérer l'ouverture du menu d'options
+  const [hiddenNotifs, setHiddenNotifs] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('hiddenNotifs') || '[]'); } catch { return []; }
+  });
+  const [disabledNotifTypes, setDisabledNotifTypes] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('disabledNotifTypes') || '[]'); } catch { return []; }
+  });
   const loadNotifs = async () => {
     try { setNotifLoading(true); const data = await listNotifications(10); const items = Array.isArray(data?.items) ? data.items : (Array.isArray(data) ? data : []); setNotifs(items); setUnreadCount(items.filter(n=>!n.read).length); } catch {} finally { setNotifLoading(false); }
   };
@@ -118,13 +122,13 @@ const ClientDashboard = () => {
         const item = prev.find(n => n.id === id);
         const next = prev.map(n => n.id === id ? { ...n, read: true } : n);
         setUnreadCount(next.filter(n=>!n.read).length);
-        // Router vers la ressource associÃ©e si connue
+        // Router vers la ressource associée si connue
         try {
           const data = item?.data || {};
           if (data.devisId) {
             window.location.hash = `#/detail-devis-client?id=${encodeURIComponent(data.devisId)}`;
           } else if (data.translataireId) {
-            // Ouvrir les avis du transitaire ciblÃ©
+            // Ouvrir les avis du transitaire ciblé
             const params = new URLSearchParams({ transId: String(data.translataireId), open: 'reviews' });
             window.location.hash = `#/recherche-transitaire?${params.toString()}`;
           }
@@ -133,20 +137,20 @@ const ClientDashboard = () => {
       });
     } catch {}
   };
-  // Masquer une notification spÃ©cifique
+  // Masquer une notification spécifique
   const hideNotification = (id) => {
     setHiddenNotifs(prev => new Set([...prev, id]));
     setMenuOpen(null);
   };
 
-  // DÃ©sactiver un type de notification
+  // Désactiver un type de notification
   const disableNotificationType = (type) => {
     setDisabledNotifTypes(prev => new Set([...prev, type]));
     setMenuOpen(null);
-    // Ici, vous devriez Ã©galement appeler une API pour enregistrer cette prÃ©fÃ©rence
+    // Ici, vous devriez également appeler une API pour enregistrer cette préférence
   };
 
-  // VÃ©rifier si une notification doit Ãªtre affichÃ©e
+  // Vérifier si une notification doit être affichée
   const shouldShowNotification = (notif) => {
     return !hiddenNotifs.has(notif.id) && 
            !(notif.type && disabledNotifTypes.has(notif.type));
@@ -187,7 +191,7 @@ const ClientDashboard = () => {
 
   // Sync section with current hash for proper navigation between pages
   useEffect(() => {
-    // Guard: accÃ¨s client uniquement
+    // Guard: accès client uniquement
     try {
       const { token } = getAuth();
       if (!token) {
@@ -223,9 +227,9 @@ const ClientDashboard = () => {
     };
     const onHash = () => syncFromHash();
     window.addEventListener('hashchange', onHash);
-    // Synchronisation immÃ©diate
+    // Synchronisation immédiate
     syncFromHash();
-    // Si dÃ©jÃ  sur goto=nouveau-devis, forcer la section
+    // Si déjà sur goto=nouveau-devis, forcer la section
     if ((window.location.hash || '').includes('goto=nouveau-devis')) {
       setSection('devis');
     }
@@ -268,8 +272,13 @@ const ClientDashboard = () => {
   const [editTemperature, setEditTemperature] = useState(false);
   const [editFragile, setEditFragile] = useState(false);
 
+  const [showWelcomeMessage, setShowWelcomeMessage] = useState(() => {
+    // Vérifier si c'est un rechargement de page ou une nouvelle session
+    const hasSeenWelcome = sessionStorage.getItem('hasSeenWelcome') === 'true';
+    return !hasSeenWelcome;
+  });
 
-  // Dessin de la courbe sur canvas (basÃ©e sur les devis rÃ©els des 12 derniers mois)
+  // Dessin de la courbe sur canvas (basée sur les devis réels des 12 derniers mois)
   useEffect(() => {
     if (section !== 'dashboard') return;
     const canvas = document.getElementById(chartId);
@@ -307,7 +316,7 @@ const ClientDashboard = () => {
     const maxVal = Math.max(1, Math.max(...counts)) * 1.2;
     const stepX = (width - padding * 2) / (counts.length - 1);
 
-    // Fond (suivre le thÃ¨me)
+    // Fond (suivre le thème)
     ctx.clearRect(0, 0, width, height);
     const cssVars = getComputedStyle(document.documentElement);
     const cardBg = (cssVars.getPropertyValue('--card') || '#ffffff').trim();
@@ -349,220 +358,235 @@ const ClientDashboard = () => {
     ctx.fill();
   }, [section, devis, chartFilter]);
 
-const fetchDevis = async (opts) => {
-  try {
-    setDevisLoading(true);
-    setDevisError('');
-    const curPage = opts?.page || page;
-    const curLimit = opts?.limit || limit;
-    const res = await listMesDevisApi({ page: curPage, limit: curLimit });
-    const list = (res?.devis || res?.items || res || []);
-    const rows = list.map(d => {
-      const raw = (d.statut || d.status || '').toString().toLowerCase();
-      const norm = raw.includes('appr') || raw.includes('accept') ? 'accepte'
-                : raw.includes('refus') ? 'refuse'
-                : raw.includes('annul') ? 'annule'
-                : 'attente';
-      return {
-        id: d.id || d._id || '',
-        routeLabel: d.route || d.itineraire || d.trajet || '-',
-        status: norm,
-        statusLabel: norm === 'accepte' ? 'AcceptÃ©' : norm === 'refuse' ? 'RefusÃ©' : norm === 'annule' ? 'AnnulÃ©' : 'En attente',
-        createdAt: d.createdAt || d.date || Date.now(),
-        date: new Date(d.createdAt || d.date || Date.now()).toLocaleDateString('fr-FR')
-      };
-    });
-    setDevis(rows);
-    setTotal(Number(res?.total || res?.count || 0) || (Array.isArray(res?.devis) ? Number(res.devis.length) : rows.length * (curPage || 1)));
-  } catch (e) {
-    if (e?.status === 429) {
-      setDevisError('');
-      setTimeout(() => { fetchDevis({ page, limit }); }, 3000);
-    } else {
-      setDevisError(e?.message || 'Erreur de chargement des devis');
-    }
-  } finally { setDevisLoading(false); }
-};
-
-useEffect(() => { fetchDevis({ page: 1, limit }); }, []);
-
-const onOpenEdit = async (d) => {
-  setEditId(d.id);
-  setEditOpen(true);
-  setEditLoading(true);
-  try {
-    const res = await getMonDevisById(d.id);
-    const dv = res?.devis || res || {};
-    const typeService = dv.typeService || dv.type || '';
-    const description = dv.description || dv.remarque || '';
-    const origin = dv.origin || dv.origine || '';
-    const destination = dv.destination || dv.route || '';
-    const dateExp = dv.dateExpiration ? new Date(dv.dateExpiration).toISOString().slice(0,10) : '';
-    const weight = dv.weight || dv.poids || '';
-    const packageType = dv.packageType || dv.emballage || '';
-    const length = dv.length || dv.longueur || '';
-    const width = dv.width || dv.largeur || '';
-    const height = dv.height || dv.hauteur || '';
-    const pickupAddress = dv.pickupAddress || origin || '';
-    const deliveryAddress = dv.deliveryAddress || destination || '';
-    const pickupDate = dv.pickupDate || dateExp || '';
-    const deliveryDate = dv.deliveryDate || '';
-    const notes = dv.notes || '';
-    const special = dv.specialRequirements || {};
-    setEditTypeService(typeService || '');
-    setEditDescription(description || '');
-    setEditOrigin(origin || '');
-    setEditDestination(destination || '');
-    setEditDateExpiration(dateExp || '');
-    setEditWeight(String(weight || ''));
-    setEditPackageType(String(packageType || ''));
-    setEditLength(String(length || ''));
-    setEditWidth(String(width || ''));
-    setEditHeight(String(height || ''));
-    setEditPickupAddress(String(pickupAddress || ''));
-    setEditPickupDate(String(pickupDate || ''));
-    setEditDeliveryAddress(String(deliveryAddress || ''));
-    setEditDeliveryDate(String(deliveryDate || ''));
-    setEditNotes(String(notes || ''));
-    setEditDangerous(!!(special.dangerous));
-    setEditTemperature(!!(special.temperature));
-    setEditFragile(!!(special.fragile));
-    setEditFiles([]);
-  } catch (e) {
-    // fallback sans commentaires
-    setEditTypeService('');
-    setEditDescription('');
-    setEditOrigin('');
-    setEditDestination('');
-    setEditDateExpiration('');
-    setEditWeight('');
-    setEditPackageType('');
-    setEditLength('');
-    setEditWidth('');
-    setEditHeight('');
-    setEditPickupAddress('');
-    setEditPickupDate('');
-    setEditDeliveryAddress('');
-    setEditDeliveryDate('');
-    setEditNotes('');
-    setEditDangerous(false);
-    setEditTemperature(false);
-    setEditFragile(false);
-  } finally { setEditLoading(false); }
-};
-
-const onSubmitEdit = async () => {
-  try {
-    setEditLoading(true);
-    const fd = new FormData();
-    if (editTypeService) fd.append('typeService', editTypeService);
-    if (editDescription) fd.append('description', editDescription);
-    if (editOrigin) fd.append('origin', editOrigin);
-    if (editDestination) fd.append('destination', editDestination);
-    if (editDateExpiration) fd.append('dateExpiration', editDateExpiration);
-    if (editWeight) fd.append('weight', editWeight);
-    if (editPackageType) fd.append('packageType', editPackageType);
-    if (editLength) fd.append('length', editLength);
-    if (editWidth) fd.append('width', editWidth);
-    if (editHeight) fd.append('height', editHeight);
-    if (editPickupAddress) fd.append('pickupAddress', editPickupAddress);
-    if (editPickupDate) fd.append('pickupDate', editPickupDate);
-    if (editDeliveryAddress) fd.append('deliveryAddress', editDeliveryAddress);
-    if (editDeliveryDate) fd.append('deliveryDate', editDeliveryDate);
-    if (editNotes) fd.append('notes', editNotes);
-    fd.append('specialRequirements[dangerous]', editDangerous ? 'true' : 'false');
-    fd.append('specialRequirements[temperature]', editTemperature ? 'true' : 'false');
-    fd.append('specialRequirements[fragile]', editFragile ? 'true' : 'false');
-    if (editFiles && editFiles.length) Array.from(editFiles).forEach(f => f && fd.append('fichier', f));
-    await updateMonDevis(editId, fd);
-    setEditOpen(false);
-    await fetchDevis({ page: 1, limit });
-    toast.success('Demande mise Ã  jour');
-  } catch (e) {
-    toast.error(e?.message || 'Ã‰chec de la mise Ã  jour');
-  } finally { setEditLoading(false); }
-};
-
-const cancelDevis = async (id) => {
-  if (confirmCancelId !== id) {
-    setConfirmCancelId(id);
-    setTimeout(() => { setConfirmCancelId(prev => prev === id ? null : prev); }, 4000);
-    return;
-  }
-  try {
-    await cancelDevisApi(id);
-    setConfirmCancelId(null);
-    await fetchDevis();
-    toast.success('Devis annulÃ© avec succÃ¨s.');
-  } catch (e) {
-    setConfirmCancelId(null);
-    toast.error(e?.message || 'Erreur lors de l\'annulation');
-  }
-};
-
-// Charger 5 notifications récentes pour la colonne "Activité récente"
-useEffect(() => {
-  (async () => {
+  const fetchDevis = async (opts) => {
     try {
-      const items = await listNotifications(5);
-      const arr = Array.isArray(items?.items) ? items.items : (Array.isArray(items) ? items : []);
-      const mapped = arr
-        .filter(n => shouldShowNotification({
-          id: n.id || n._id || String(Math.random()),
-          type: n.type || 'general'
-        }))
-        .slice(0, 5)
-        .map(n => ({
-          id: n.id || n._id || String(Math.random()),
-          title: n.title || 'Nouvelle notification',
-          message: n.body || n.message || '',
-          date: n.createdAt ? new Date(n.createdAt) : new Date(),
-          read: n.read || false,
-          type: n.type || 'general',
-          data: n.data || {}
-        }));
-      setRecentActivities(mapped);
-    } catch (error) {
-      console.error('Erreur lors du chargement des notifications:', error);
+      setDevisLoading(true);
+      setDevisError('');
+      const curPage = opts?.page || page;
+      const curLimit = opts?.limit || limit;
+      const res = await listMesDevisApi({ page: curPage, limit: curLimit });
+      const list = (res?.devis || res?.items || res || []);
+      const rows = list.map(d => {
+        const raw = (d.statut || d.status || '').toString().toLowerCase();
+        const norm = raw.includes('appr') || raw.includes('accept') ? 'accepte'
+              : raw.includes('refus') ? 'refuse'
+              : raw.includes('annul') ? 'annule'
+              : 'attente';
+        return {
+          id: d.id || d._id || '',
+          routeLabel: d.route || d.itineraire || d.trajet || '-',
+          status: norm,
+          statusLabel: norm === 'accepte' ? 'Accepté' : norm === 'refuse' ? 'Refusé' : norm === 'annule' ? 'Annulé' : 'En attente',
+          createdAt: d.createdAt || d.date || Date.now(),
+          date: new Date(d.createdAt || d.date || Date.now()).toLocaleDateString('fr-FR')
+        };
+      });
+      setDevis(rows);
+      setTotal(Number(res?.total || res?.count || 0) || (Array.isArray(res?.devis) ? Number(res.devis.length) : rows.length * (curPage || 1)));
+    } catch (e) {
+      if (e?.status === 429) {
+        setDevisError('');
+        setTimeout(() => { fetchDevis({ page, limit }); }, 3000);
+      } else {
+        setDevisError(e?.message || 'Erreur de chargement des devis');
+      }
+    } finally { setDevisLoading(false); }
+  };
+
+  useEffect(() => { fetchDevis({ page: 1, limit }); }, []);
+
+  const onOpenEdit = async (d) => {
+    setEditId(d.id);
+    setEditOpen(true);
+    setEditLoading(true);
+    try {
+      const res = await getMonDevisById(d.id);
+      const dv = res?.devis || res || {};
+      const typeService = dv.typeService || dv.type || '';
+      const description = dv.description || dv.remarque || '';
+      const origin = dv.origin || dv.origine || '';
+      const destination = dv.destination || dv.route || '';
+      const dateExp = dv.dateExpiration ? new Date(dv.dateExpiration).toISOString().slice(0,10) : '';
+      const weight = dv.weight || dv.poids || '';
+      const packageType = dv.packageType || dv.emballage || '';
+      const length = dv.length || dv.longueur || '';
+      const width = dv.width || dv.largeur || '';
+      const height = dv.height || dv.hauteur || '';
+      const pickupAddress = dv.pickupAddress || origin || '';
+      const deliveryAddress = dv.deliveryAddress || destination || '';
+      const pickupDate = dv.pickupDate || dateExp || '';
+      const deliveryDate = dv.deliveryDate || '';
+      const notes = dv.notes || '';
+      const special = dv.specialRequirements || {};
+      setEditTypeService(typeService || '');
+      setEditDescription(description || '');
+      setEditOrigin(origin || '');
+      setEditDestination(destination || '');
+      setEditDateExpiration(dateExp || '');
+      setEditWeight(String(weight || ''));
+      setEditPackageType(String(packageType || ''));
+      setEditLength(String(length || ''));
+      setEditWidth(String(width || ''));
+      setEditHeight(String(height || ''));
+      setEditPickupAddress(String(pickupAddress || ''));
+      setEditPickupDate(String(pickupDate || ''));
+      setEditDeliveryAddress(String(deliveryAddress || ''));
+      setEditDeliveryDate(String(deliveryDate || ''));
+      setEditNotes(String(notes || ''));
+      setEditDangerous(!!(special.dangerous));
+      setEditTemperature(!!(special.temperature));
+      setEditFragile(!!(special.fragile));
+      setEditFiles([]);
+    } catch (e) {
+      // fallback sans commentaires
+      setEditTypeService('');
+      setEditDescription('');
+      setEditOrigin('');
+      setEditDestination('');
+      setEditDateExpiration('');
+      setEditWeight('');
+      setEditPackageType('');
+      setEditLength('');
+      setEditWidth('');
+      setEditHeight('');
+      setEditPickupAddress('');
+      setEditPickupDate('');
+      setEditDeliveryAddress('');
+      setEditDeliveryDate('');
+      setEditNotes('');
+      setEditDangerous(false);
+      setEditTemperature(false);
+      setEditFragile(false);
+    } finally { setEditLoading(false); }
+  };
+
+  const onSubmitEdit = async () => {
+    try {
+      setEditLoading(true);
+      const fd = new FormData();
+      if (editTypeService) fd.append('typeService', editTypeService);
+      if (editDescription) fd.append('description', editDescription);
+      if (editOrigin) fd.append('origin', editOrigin);
+      if (editDestination) fd.append('destination', editDestination);
+      if (editDateExpiration) fd.append('dateExpiration', editDateExpiration);
+      if (editWeight) fd.append('weight', editWeight);
+      if (editPackageType) fd.append('packageType', editPackageType);
+      if (editLength) fd.append('length', editLength);
+      if (editWidth) fd.append('width', editWidth);
+      if (editHeight) fd.append('height', editHeight);
+      if (editPickupAddress) fd.append('pickupAddress', editPickupAddress);
+      if (editPickupDate) fd.append('pickupDate', editPickupDate);
+      if (editDeliveryAddress) fd.append('deliveryAddress', editDeliveryAddress);
+      if (editDeliveryDate) fd.append('deliveryDate', editDeliveryDate);
+      if (editNotes) fd.append('notes', editNotes);
+      fd.append('specialRequirements[dangerous]', editDangerous ? 'true' : 'false');
+      fd.append('specialRequirements[temperature]', editTemperature ? 'true' : 'false');
+      fd.append('specialRequirements[fragile]', editFragile ? 'true' : 'false');
+      if (editFiles && editFiles.length) Array.from(editFiles).forEach(f => f && fd.append('fichier', f));
+      await updateMonDevis(editId, fd);
+      setEditOpen(false);
+      await fetchDevis({ page: 1, limit });
+      toast.success('Demande mise à jour');
+    } catch (e) {
+      toast.error(e?.message || 'Échec de la mise à jour');
+    } finally { setEditLoading(false); }
+  };
+
+  const cancelDevis = async (id) => {
+    if (confirmCancelId !== id) {
+      setConfirmCancelId(id);
+      setTimeout(() => { setConfirmCancelId(prev => prev === id ? null : prev); }, 4000);
+      return;
     }
-  })();
-}, [hiddenNotifs, disabledNotifTypes]);
+    try {
+      await cancelDevisApi(id);
+      setConfirmCancelId(null);
+      await fetchDevis();
+      toast.success('Devis annulé avec succès.');
+    } catch (e) {
+      setConfirmCancelId(null);
+      toast.error(e?.message || 'Erreur lors de l\'annulation');
+    }
+  };
 
-const onProfileClick = () => {
-  setProfileMenuOpen(false);
-  setSection('profil');
-  window.location.hash = '#/profil-client';
-};
+  // Charger 5 notifications récentes pour la colonne "Activité récente"
+  useEffect(() => {
+    (async () => {
+      try {
+        const items = await listNotifications(5);
+        const arr = Array.isArray(items?.items) ? items.items : (Array.isArray(items) ? items : []);
+        const mapped = arr
+          .filter(n => shouldShowNotification({
+            id: n.id || n._id || String(Math.random()),
+            type: n.type || 'general'
+          }))
+          .slice(0, 5)
+          .map(n => ({
+            id: n.id || n._id || String(Math.random()),
+            title: n.title || 'Nouvelle notification',
+            message: n.body || n.message || '',
+            date: n.createdAt ? new Date(n.createdAt) : new Date(),
+            read: n.read || false,
+            type: n.type || 'general',
+            data: n.data || {}
+          }));
+        setRecentActivities(mapped);
+      } catch (error) {
+        console.error('Erreur lors du chargement des notifications:', error);
+      }
+    })();
+  }, [hiddenNotifs, disabledNotifTypes]);
 
-const onLogout = async () => {
-  try {
-    await logout();
-    window.location.hash = '#/connexion';
-  } catch (error) {
-    console.error('Erreur lors de la déconnexion:', error);
-  }
-};
+  const onProfileClick = () => {
+    setProfileMenuOpen(false);
+    setSection('profil');
+    window.location.hash = '#/profil-client';
+  };
 
-const recentQuotes = devis.slice(0, 5);
-const stats = {
-  pendingQuotes: devis.filter(d => d.status === 'attente').length,
-  acceptedQuotes: devis.filter(d => d.status === 'accepte').length,
-  rejectedQuotes: devis.filter(d => d.status === 'refuse').length
-};
+  const onLogout = async () => {
+    try {
+      await logout();
+      window.location.hash = '#/connexion';
+    } catch (error) {
+      console.error('Erreur lors de la déconnexion:', error);
+    }
+  };
 
-// Fonction pour obtenir le nom d'affichage de l'utilisateur
-const getUserDisplayName = () => {
-  const auth = getAuth();
-  // Vérifier d'abord le nom d'utilisateur stocké
-  if (userName && userName.trim()) return userName.trim();
-  // Ensuite vérifier dans l'objet auth
-  if (auth?.user?.displayName) return auth.user.displayName;
-  if (auth?.user?.name) return auth.user.name;
-  // En dernier recours, utiliser l'email ou une valeur par défaut
-  return auth?.user?.email?.split('@')[0] || 'Utilisateur';
-};
+  const recentQuotes = devis.slice(0, 5);
+  const stats = {
+    pendingQuotes: devis.filter(d => d.status === 'attente').length,
+    acceptedQuotes: devis.filter(d => d.status === 'accepte').length,
+    rejectedQuotes: devis.filter(d => d.status === 'refuse').length
+  };
 
-const userDisplayName = getUserDisplayName();
+  // Fonction pour obtenir le nom d'affichage de l'utilisateur
+  const getUserDisplayName = () => {
+    const auth = getAuth();
+    // Vérifier d'abord le nom d'utilisateur stocké
+    if (userName && userName.trim()) return userName.trim();
+    // Ensuite vérifier dans l'objet auth
+    if (auth?.user?.displayName) return auth.user.displayName;
+    if (auth?.user?.name) return auth.user.name;
+    // En dernier recours, utiliser l'email ou une valeur par défaut
+    return auth?.user?.email?.split('@')[0] || 'Utilisateur';
+  };
+
+  const userDisplayName = getUserDisplayName();
+
+  // Gérer l'affichage temporaire du message de bienvenue
+  useEffect(() => {
+    if (showWelcomeMessage) {
+      // Marquer comme vu dans la session
+      sessionStorage.setItem('hasSeenWelcome', 'true');
+      
+      // Masquer le message après 10 secondes
+      const timer = setTimeout(() => {
+        setShowWelcomeMessage(false);
+      }, 10000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [showWelcomeMessage]);
 
   return (
     <div className="d-flex" style={{ ...clientStyles.layout, backgroundColor: 'var(--bg)' }}>
@@ -794,19 +818,80 @@ const userDisplayName = getUserDisplayName();
             <div className="row">
               {/* Section principale - Gauche */}
               <div className="col-12 col-lg-8">
-                {/* Carte de bienvenue */}
-                <div className="card border-0 shadow-sm mb-4">
-                  <div className="card-body">
-                    <h2 className="h4 fw-bold mb-3">
-                      {t('client.dashboard.welcome')}, {userDisplayName} !
-                    </h2>
-                    <p className="text-muted mb-0">
-                      {t('client.dashboard.subtitle')}
-                    </p>
+                {/* Carte de bienvenue (affichée uniquement au moment de la connexion) */}
+                {showWelcomeMessage && (
+                  <div className="card border-0 shadow-sm mb-4">
+                    <div className="card-body">
+                      <div className="d-flex justify-content-between align-items-start">
+                        <div>
+                          <h2 className="h4 fw-bold mb-1">
+                            Bonjour, bienvenue {userDisplayName}
+                          </h2>
+                          <p className="text-muted mb-0">
+                            {t('client.dashboard.subtitle')}
+                          </p>
+                        </div>
+                        <button 
+                          type="button" 
+                          className="btn-close" 
+                          onClick={() => setShowWelcomeMessage(false)}
+                          aria-label="Fermer"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Cartes de statistiques */}
+                <div className="row mb-4">
+                  <div className="col-md-4 mb-3 mb-md-0">
+                    <div className="card border-0 shadow-sm h-100">
+                      <div className="card-body">
+                        <div className="d-flex justify-content-between align-items-center">
+                          <div>
+                            <h6 className="text-muted mb-1">Devis en attente</h6>
+                            <h3 className="mb-0">{stats.pendingQuotes}</h3>
+                          </div>
+                          <div className="bg-warning bg-opacity-10 p-3 rounded">
+                            <Clock className="text-warning" size={24} />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="col-md-4 mb-3 mb-md-0">
+                    <div className="card border-0 shadow-sm h-100">
+                      <div className="card-body">
+                        <div className="d-flex justify-content-between align-items-center">
+                          <div>
+                            <h6 className="text-muted mb-1">Devis acceptés</h6>
+                            <h3 className="mb-0">{stats.acceptedQuotes}</h3>
+                          </div>
+                          <div className="bg-success bg-opacity-10 p-3 rounded">
+                            <CheckCircle className="text-success" size={24} />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="col-md-4">
+                    <div className="card border-0 shadow-sm h-100">
+                      <div className="card-body">
+                        <div className="d-flex justify-content-between align-items-center">
+                          <div>
+                            <h6 className="text-muted mb-1">Devis refusés</h6>
+                            <h3 className="mb-0">{stats.rejectedQuotes}</h3>
+                          </div>
+                          <div className="bg-danger bg-opacity-10 p-3 rounded">
+                            <XCircle className="text-danger" size={24} />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
-                {/* Mes devis rÃ©cents */}
+                {/* Mes devis récents */}
                 <div className="card border-0 shadow-sm mb-4">
                   <div className="card-body">
                     <div className="d-flex justify-content-between align-items-center mb-3">
@@ -862,47 +947,9 @@ const userDisplayName = getUserDisplayName();
                 </div>
               </div>
 
-              {/* Section de droite - ActivitÃ© rÃ©cente et statistiques */}
+              {/* Section de droite - Espace pour d'autres éléments */}
               <div className="col-12 col-lg-4">
-                {/* ActivitÃ© rÃ©cente */}
-                <div className="card border-0 shadow-sm mb-4">
-                  <div className="card-body">
-                    <div className="d-flex justify-content-between align-items-center mb-3">
-                      <h5 className="fw-bold mb-0">ActivitÃ© rÃ©cente</h5>
-                      <button 
-                        className="btn btn-link p-0" 
-                        onClick={onBellClick}
-                        title="Voir toutes les notifications"
-                      >
-                        <Bell size={18} />
-                      </button>
-                    </div>
-                    <div className="d-flex flex-column gap-3" style={{ maxHeight: '400px', overflowY: 'auto' }}>
-                      {recentActivities && recentActivities.length > 0 ? (
-                        recentActivities.map((activity, index) => (
-                          <div key={index} className="d-flex gap-2 p-2 rounded" style={{ backgroundColor: 'var(--bs-gray-100)' }}>
-                            <div className="flex-shrink-0">
-                              <div className="rounded-circle bg-primary bg-opacity-10 d-flex align-items-center justify-content-center" style={{ width: '36px', height: '36px' }}>
-                                <Bell size={18} className="text-primary" />
-                              </div>
-                            </div>
-                            <div className="flex-grow-1">
-                              <div className="small fw-medium">{activity.title}</div>
-                              <div className="small text-muted">{activity.text}</div>
-                              <div className="text-muted" style={{ fontSize: '0.75rem' }}>
-                                {new Date(activity.createdAt).toLocaleString()}
-                              </div>
-                            </div>
-                          </div>
-                        ))
-                      ) : (
-                        <div className="text-center py-3 text-muted">
-                          Aucune activitÃ© rÃ©cente
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
+                {/* Espace réservé pour d'autres éléments */}
 
                 {/* Statistiques rapides */}
                 <div className="card border-0 shadow-sm">
