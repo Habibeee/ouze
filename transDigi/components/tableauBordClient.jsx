@@ -139,7 +139,7 @@ const ClientDashboard = () => {
       setDevisError('');
       const curPage = opts?.page || page;
       const curLimit = opts?.limit || limit;
-      const res = await get('/devis');
+      const res = await get('/users/mes-devis');
       const list = (res?.devis || res?.items || res || []);
       const rows = list.map(d => {
         const raw = (d.statut || d.status || '').toString().toLowerCase();
@@ -179,7 +179,7 @@ const ClientDashboard = () => {
     setEditOpen(true);
     setEditLoading(true);
     try {
-      const res = await get(`/devis/${d.id}`);
+      const res = await get(`/users/devis/${d.id}`);
       const dv = res?.devis || res || {};
       const typeService = dv.typeService || dv.type || '';
       const description = dv.description || dv.remarque || '';
@@ -263,7 +263,7 @@ const ClientDashboard = () => {
       fd.append('specialRequirements[temperature]', editTemperature ? 'true' : 'false');
       fd.append('specialRequirements[fragile]', editFragile ? 'true' : 'false');
       if (editFiles && editFiles.length) Array.from(editFiles).forEach(f => f && fd.append('fichier', f));
-      await post(`/devis/${editId}`, fd);
+      await post(`/api/devis/${editId}`, fd); // Mise à jour de l'URL de l'API
       setEditOpen(false);
       await fetchDevis({ page: 1, limit });
       toast.success('Demande mise à jour');
@@ -283,7 +283,7 @@ const ClientDashboard = () => {
       return;
     }
     try {
-      await post(`/devis/${id}/cancel`);
+      await post(`/users/devis/${id}/cancel`);
       await fetchDevis({ page, limit });
       toast.success('Le devis a été annulé avec succès');
     } catch (e) {
