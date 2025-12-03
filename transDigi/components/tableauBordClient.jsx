@@ -11,7 +11,7 @@ import ModofierProfClient from './modofierProfClient.jsx';
 import HistoriqueDevis from './historiqueDevis.jsx';
 import { get, listNotifications, markNotificationRead, markAllNotificationsRead, getUnreadNotificationsCount, archiveDevis as archiveDevisApi } from '../services/apiClient.js';
 import { useToast } from './ui/ToastProvider.jsx';
-import { getAuth, logout } from '../services/authStore.js';
+import { getAuth, clearAuth } from '../services/authStore.js';
 
 const ClientDashboard = () => {
   const toast = useToast();
@@ -62,7 +62,7 @@ const ClientDashboard = () => {
   const [notifLoading, setNotifLoading] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isGotoDevis, setIsGotoDevis] = useState(false);
-  const [avatarUrl, setAvatarUrl] = useState('');
+  const [avatarUrl, setAvatarUrl] = useState('https://ui-avatars.com/api/?name=U&background=random');
 
   useEffect(() => {
     const user = getAuth();
@@ -601,36 +601,38 @@ const ClientDashboard = () => {
             </button>
           )}
           <div className="ms-auto d-flex align-items-center gap-2 position-relative">
-            <button 
-              className="btn btn-link position-relative p-1" 
-              onClick={onBellClick} 
-              aria-label="Notifications"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: '40px',
-                height: '40px',
-                borderRadius: '50%',
-                transition: 'background-color 0.2s',
-              }}
-              onMouseOver={(e) => {
-                e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.05)';
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.backgroundColor = 'transparent';
-              }}
-            >
-              <Bell size={24} className="text-dark" />
-              {unreadCount > 0 && (
-                <span 
-                  className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
-                  style={{ fontSize: '0.6rem', padding: '0.2rem 0.35rem' }}
-                >
-                  {unreadCount > 9 ? '9+' : unreadCount}
-                </span>
-              )}
-            </button>
+            <div className="position-relative">
+              <button 
+                className="btn btn-link position-relative p-1" 
+                onClick={onBellClick} 
+                aria-label="Notifications"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: '50%',
+                  transition: 'background-color 0.2s',
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.05)';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                }}
+              >
+                <Bell size={24} className="text-dark" />
+                {unreadCount > 0 && (
+                  <span 
+                    className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                    style={{ fontSize: '0.6rem', padding: '0.2rem 0.35rem' }}
+                  >
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
+              </button>
+            </div>
             {notifOpen && (
               <div className="card shadow-sm" style={{ position: 'absolute', top: '100%', right: 0, zIndex: 1050, minWidth: 320 }}>
                 <div className="card-body p-0">
@@ -677,20 +679,22 @@ const ClientDashboard = () => {
                 e.currentTarget.style.borderColor = '#e9ecef';
               }}
             >
-              <img 
-                src={avatarUrl} 
-                alt="Profil" 
-                onError={(e) => {
-                  e.target.onerror = null;
-                  e.target.src = 'https://ui-avatars.com/api/?name=' + encodeURIComponent(userName || 'U') + '&background=random';
+              <div 
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: '#e9ecef',
+                  borderRadius: '50%',
+                  color: '#6c757d',
+                  fontWeight: 'bold',
+                  fontSize: '16px'
                 }}
-                style={{ 
-                  width: '100%', 
-                  height: '100%', 
-                  objectFit: 'cover',
-                  borderRadius: '50%'
-                }} 
-              />
+              >
+                {userName ? userName.charAt(0).toUpperCase() : 'U'}
+              </div>
             </button>
             {profileMenuOpen && (
               <div className="card shadow-sm" style={{ position: 'absolute', top: '100%', right: 0, zIndex: 1050, minWidth: '200px' }}>
@@ -701,7 +705,7 @@ const ClientDashboard = () => {
                   <button className="list-group-item list-group-item-action" onClick={() => { setProfileMenuOpen(false); window.location.hash = '#/modifierModpss'; }}>
                     Modifier mot de passe
                   </button>
-                  <button className="list-group-item list-group-item-action text-danger" onClick={async () => { setProfileMenuOpen(false); try { await logout(); } finally { window.location.hash = '#/connexion'; } }}>
+                  <button className="list-group-item list-group-item-action text-danger" onClick={async () => { setProfileMenuOpen(false); try { clearAuth(); } finally { window.location.hash = '#/connexion'; } }}>
                     Se déconnecter
                   </button>
                 </div>
