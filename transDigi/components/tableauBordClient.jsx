@@ -24,11 +24,145 @@ const ClientDashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isLgUp, setIsLgUp] = useState(() => (typeof window !== 'undefined' ? window.innerWidth >= 992 : true));
   
+  // États pour les notifications
+  const [hiddenNotifs, setHiddenNotifs] = useState({});
+  const [disabledNotifTypes, setDisabledNotifTypes] = useState({});
+  const [notifications, setNotifications] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [notificationsPerPage] = useState(10);
+  const [sortBy, setSortBy] = useState('recent');
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  // Fonction pour charger les notifications
+  const loadNotifications = async () => {
+    try {
+      setLoading(true);
+      const data = await listNotifications(100);
+      setNotifications(data.items || data || []);
+      const unread = (data.items || data || []).filter(n => !n.read).length;
+      setUnreadCount(unread);
+      setError(null);
+    } catch (err) {
+      console.error('Erreur lors du chargement des notifications:', err);
+      setError('Impossible de charger les notifications');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fonction pour trier les notifications
+  const sortNotifications = (notifs) => {
+    return [...notifs].sort((a, b) => {
+      const dateA = new Date(a.createdAt || a.date || 0);
+      const dateB = new Date(b.createdAt || b.date || 0);
+      
+      switch(sortBy) {
+        case 'recent': return dateB - dateA;
+        case 'unread': 
+          if (a.read !== b.read) return a.read ? 1 : -1;
+          return dateB - dateA;
+        case 'type':
+          if (a.type === b.type) return dateB - dateA;
+          return (a.type || '').localeCompare(b.type || '');
+        default: return dateB - dateA;
+      }
+    });
+  };
+
+  // Fonction pour masquer une notification
+  const hideNotification = (id) => {
+    setHiddenNotifs(prev => {
+      const newState = { ...prev, [id]: true };
+      localStorage.setItem('hiddenNotifications', JSON.stringify(newState));
+      return newState;
+    });
+  };
+
+  // Fonction pour basculer un type de notification
+  const toggleNotificationType = (type) => {
+    setDisabledNotifTypes(prev => {
+      const newState = { ...prev, [type]: !prev[type] };
+      localStorage.setItem('disabledNotificationTypes', JSON.stringify(newState));
+      return newState;
+    });
+  };
+
+  // Fonction pour marquer une notification comme lue
+  const markAsRead = async (id) => {
+    try {
+      await markNotificationRead(id);
+      setNotifications(prev => 
+        prev.map(n => {
+          if (n.id === id && !n.read) {
+            setUnreadCount(prev => prev - 1);
+            return { ...n, read: true };
+          }
+          return n;
+        })
+      );
+    } catch (err) {
+      console.error('Erreur lors du marquage comme lu:', err);
+    }
+  };
+
+  // Fonction pour tout marquer comme lu
+  const markAllAsRead = async () => {
+    try {
+      await markAllNotificationsRead();
+      setNotifications(prev => 
+        prev.map(n => {
+          if (!n.read) {
+            return { ...n, read: true };
+          }
+          return n;
+        })
+      );
+      setUnreadCount(0);
+    } catch (err) {
+      console.error('Erreur lors du marquage tout comme lu:', err);
+    }
+  };
+
+  // Fonction pour vérifier si une notification doit être affichée
+  const shouldShowNotification = (notification) => {
+    if (disabledNotifTypes[notification.type]) return false;
+    if (hiddenNotifs[notification.id]) return false;
+    return true;
+  };
+
+  // Charger les préférences et les notifications au montage
   useEffect(() => {
-    const onResize = () => setIsLgUp(window.innerWidth >= 992);
-    window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
+    // Charger les préférences
+    try {
+      const savedHidden = localStorage.getItem('hiddenNotifications');
+      const savedDisabled = localStorage.getItem('disabledNotificationTypes');
+      if (savedHidden) setHiddenNotifs(JSON.parse(savedHidden));
+      if (savedDisabled) setDisabledNotifTypes(JSON.parse(savedDisabled));
+    } catch (e) {
+      console.error('Erreur lors du chargement des préférences:', e);
+    }
+
+    // Charger les notifications
+    loadNotifications();
+
+    // Configurer le clic en dehors du menu des paramètres
+    const handleClickOutside = (event) => {
+      const settingsMenu = document.getElementById('notification-settings');
+      if (settingsMenu && !settingsMenu.contains(event.target) && 
+          !event.target.closest('button[title="Paramètres"]')) {
+        settingsMenu?.classList.add('hidden');
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
   }, []);
+
+  // Autres effets et logique existants...
   const [section, setSection] = useState(() => {
     if (typeof window === 'undefined') return 'dashboard';
     const h = (window.location.hash || '').split('?')[0];
@@ -42,648 +176,420 @@ const ClientDashboard = () => {
     if (h.startsWith('#/dashboard-client')) return 'dashboard';
     return 'dashboard';
   });
-  const chartId = 'clientActivityChart';
-  const [chartFilter, setChartFilter] = useState('tous'); // tous|accepte|annule|attente|refuse
-  const getStatusBadgeClass = (status) => {
-    if (!status) return 'secondary';
-    const s = status.toLowerCase();
-    if (s.includes('accept')) return 'success';
-    if (s.includes('refus') || s.includes('annul')) return 'danger';
-    if (s.includes('attent') || s.includes('en cours')) return 'warning';
-    return 'secondary';
-  };
-  const isGotoDevis = (typeof window !== 'undefined') && (() => {
-    const h = (window.location.hash || '');
-    return h.includes('goto=nouveau-devis') || h.startsWith('#/nouveau-devis?') || h.includes('translataireName=');
-  })();
-  const [avatarUrl, setAvatarUrl] = useState(() => {
-    try { return localStorage.getItem('avatarUrl') || ''; } catch { return ''; }
-  });
-  const [userName, setUserName] = useState('');
-  const [userInitials, setUserInitials] = useState('');
-  useEffect(() => {
-    const onStorage = () => {
-      try { setAvatarUrl(localStorage.getItem('avatarUrl') || ''); } catch {}
-    };
-    window.addEventListener('storage', onStorage);
-    return () => window.removeEventListener('storage', onStorage);
-  }, []);
 
-  // Charger la photo de profil depuis l'API et la mémoriser pour persistance entre sessions
-  useEffect(() => {
-    (async () => {
-      try {
-        const prof = await get('/users/profile');
-        const user = prof?.user || {};
-        const url = user.photoProfil;
-        const nom = (user.nom || '').toString().trim();
-        const prenom = (user.prenom || '').toString().trim();
-        const full = (prenom + ' ' + nom).trim() || (user.email || '');
-        if (full) {
-          setUserName(full);
-          try {
-            const parts = full.split(' ').filter(Boolean);
-            const first = (parts[0] || '').charAt(0) || '';
-            const last = (parts[1] || '').charAt(0) || '';
-            const initials = (first + last || first || '').toUpperCase();
-            setUserInitials(initials);
-          } catch {}
-        }
-        if (url && typeof url === 'string') {
-          setAvatarUrl((prev) => {
-            try { localStorage.setItem('avatarUrl', url); } catch {}
-            return url;
-          });
-        }
-      } catch {}
-    })();
-  }, []);
-
-  // Suppression des états liés aux notifications
-  // Suppression des fonctions liées aux notifications
-  // Suppression de l'effet de polling des notifications
-
-  // Sync section with current hash for proper navigation between pages
-  useEffect(() => {
-    // Guard: accès client uniquement
-    try {
-      const { token } = getAuth();
-      if (!token) {
-        window.location.hash = '#/connexion';
-      } else if (isAdminRole()) {
-        window.location.hash = '#/tableau-bord-admin';
-      } else if (isTransRole()) {
-        window.location.hash = '#/dashboard-transitaire';
-      }
-    } catch {}
-
-    const syncFromHash = () => {
-      const hash = window.location.hash || '';
-      const p = hash.split('?');
-      if (p.length > 1) {
-        const params = new URLSearchParams(p[1]);
-        const goto = params.get('goto');
-        if (goto === 'nouveau-devis') return setSection('devis-admin');
-        if (goto === 'recherche-transitaire') return setSection('recherche');
-        if (goto === 'historique') return setSection('historique');
-        if (goto === 'envois') return setSection('envois');
-        if (goto === 'profil-client') return setSection('profil');
-        if (goto === 'fichiers') return setSection('fichiers');
-      }
-      if (hash.startsWith('#/historique')) setSection('historique');
-      else if (hash.startsWith('#/dashboard-client')) setSection('dashboard');
-      else if (hash.startsWith('#/nouveau-devis-admin')) setSection('devis-admin');
-      else if (hash.startsWith('#/nouveau-devis')) setSection('devis');
-      else if (hash.startsWith('#/recherche-transitaire')) setSection('recherche');
-      else if (hash.startsWith('#/envois')) setSection('envois');
-      else if (hash.startsWith('#/profil-client')) setSection('profil');
-      else if (hash.startsWith('#/fichiers-recus')) setSection('fichiers');
-    };
-    const onHash = () => syncFromHash();
-    window.addEventListener('hashchange', onHash);
-    // Synchronisation immédiate
-    syncFromHash();
-    // Si déjà sur goto=nouveau-devis, forcer la section
-    if ((window.location.hash || '').includes('goto=nouveau-devis')) {
-      setSection('devis');
-    }
-    return () => window.removeEventListener('hashchange', onHash);
-  }, []);
-
-  // NOTE: Graph effect moved below state declarations to avoid TDZ on 'devis'
-
-  const [devis, setDevis] = useState([]);
-  const [devisLoading, setDevisLoading] = useState(false);
-  const [devisError, setDevisError] = useState('');
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
-  const [total, setTotal] = useState(0);
-  const [successMsg, setSuccessMsg] = useState('');
-  const [acceptedShipments, setAcceptedShipments] = useState([]);
-  const [recentActivities, setRecentActivities] = useState([]);
-  const [confirmCancelId, setConfirmCancelId] = useState(null);
-  const [devisFilter, setDevisFilter] = useState('tous');
-  const [editOpen, setEditOpen] = useState(false);
-  const [editId, setEditId] = useState('');
-  const [editTypeService, setEditTypeService] = useState('');
-  const [editDescription, setEditDescription] = useState('');
-  const [editFiles, setEditFiles] = useState([]);
-  const [editLoading, setEditLoading] = useState(false);
-  const [editOrigin, setEditOrigin] = useState('');
-  const [editDestination, setEditDestination] = useState('');
-  const [editDateExpiration, setEditDateExpiration] = useState('');
-  const [editWeight, setEditWeight] = useState('');
-  const [editPackageType, setEditPackageType] = useState('');
-  const [editLength, setEditLength] = useState('');
-  const [editWidth, setEditWidth] = useState('');
-  const [editHeight, setEditHeight] = useState('');
-  const [editPickupAddress, setEditPickupAddress] = useState('');
-  const [editPickupDate, setEditPickupDate] = useState('');
-  const [editDeliveryAddress, setEditDeliveryAddress] = useState('');
-  const [editDeliveryDate, setEditDeliveryDate] = useState('');
-  const [editNotes, setEditNotes] = useState('');
-  const [editDangerous, setEditDangerous] = useState(false);
-  const [editTemperature, setEditTemperature] = useState(false);
-  const [editFragile, setEditFragile] = useState(false);
-
-  const [showWelcomeMessage, setShowWelcomeMessage] = useState(() => {
-    // Vérifier si c'est un rechargement de page ou une nouvelle session
-    const hasSeenWelcome = sessionStorage.getItem('hasSeenWelcome') === 'true';
-    return !hasSeenWelcome;
-  });
-
-  // Dessin de la courbe sur canvas (basée sur les devis réels des 12 derniers mois)
-  useEffect(() => {
-    if (section !== 'dashboard') return;
-    const canvas = document.getElementById(chartId);
-    if (!canvas) return;
-
-    // Construire les 12 derniers mois et compter selon filtre
-    const now = new Date();
-    const months = [];
-    for (let i = 11; i >= 0; i--) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      months.push({ y: d.getFullYear(), m: d.getMonth() });
-    }
-    const matchFilter = (st) => chartFilter === 'tous' ? true : st === chartFilter;
-    const counts = months.map(({ y, m }) => {
-      return devis.filter(d => {
-        const dt = new Date(d.date || d.createdAt || Date.now());
-        const st = (d.status || '').toString().toLowerCase();
-        return dt.getFullYear() === y && dt.getMonth() === m && matchFilter(st);
-      }).length;
-    });
-
-    const dpr = window.devicePixelRatio || 1;
-    const parent = canvas.parentElement;
-    const width = parent ? parent.clientWidth : 800;
-    const height = 300;
-    canvas.width = width * dpr;
-    canvas.height = height * dpr;
-    canvas.style.width = width + 'px';
-    canvas.style.height = height + 'px';
-    const ctx = canvas.getContext('2d');
-    ctx.setTransform(1,0,0,1,0,0);
-    ctx.scale(dpr, dpr);
-
-    const padding = 40;
-    const maxVal = Math.max(1, Math.max(...counts)) * 1.2;
-    const stepX = (width - padding * 2) / (counts.length - 1);
-
-    // Fond (suivre le thème)
-    ctx.clearRect(0, 0, width, height);
-    const cssVars = getComputedStyle(document.documentElement);
-    const cardBg = (cssVars.getPropertyValue('--card') || '#ffffff').trim();
-    ctx.fillStyle = cardBg || '#ffffff';
-    ctx.fillRect(0, 0, width, height);
-
-    // Grille horizontale
-    ctx.strokeStyle = '#E5E7EB';
-    ctx.lineWidth = 1;
-    for (let i = 0; i <= 5; i++) {
-      const y = padding + ((height - padding * 2) * i) / 5;
-      ctx.beginPath();
-      ctx.moveTo(padding, y);
-      ctx.lineTo(width - padding, y);
-      ctx.stroke();
-    }
-
-    // Courbe
-    const toY = (v) => height - padding - (v / maxVal) * (height - padding * 2);
-    ctx.strokeStyle = clientStyles.primary;
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    counts.forEach((v, i) => {
-      const x = padding + i * stepX;
-      const y = toY(v);
-      if (i === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
-    });
-    ctx.stroke();
-
-    // Zone sous la courbe
-    const gradient = ctx.createLinearGradient(0, padding, 0, height - padding);
-    gradient.addColorStop(0, 'rgba(14,165,233,0.25)');
-    gradient.addColorStop(1, 'rgba(14,165,233,0)');
-    ctx.fillStyle = gradient;
-    ctx.lineTo(padding + (counts.length - 1) * stepX, height - padding);
-    ctx.lineTo(padding, height - padding);
-    ctx.closePath();
-    ctx.fill();
-  }, [section, devis, chartFilter]);
-
-  const fetchDevis = async (opts) => {
-    try {
-      setDevisLoading(true);
-      setDevisError('');
-      const curPage = opts?.page || page;
-      const curLimit = opts?.limit || limit;
-      const res = await listMesDevisApi({ page: curPage, limit: curLimit });
-      const list = (res?.devis || res?.items || res || []);
-      const rows = list.map(d => {
-        const raw = (d.statut || d.status || '').toString().toLowerCase();
-        const norm = raw.includes('appr') || raw.includes('accept') ? 'accepte'
-              : raw.includes('refus') ? 'refuse'
-              : raw.includes('annul') ? 'annule'
-              : 'attente';
-        return {
-          id: d.id || d._id || '',
-          routeLabel: d.route || d.itineraire || d.trajet || '-',
-          status: norm,
-          statusLabel: norm === 'accepte' ? 'Accepté' : norm === 'refuse' ? 'Refusé' : norm === 'annule' ? 'Annulé' : 'En attente',
-          createdAt: d.createdAt || d.date || Date.now(),
-          date: new Date(d.createdAt || d.date || Date.now()).toLocaleDateString('fr-FR')
-        };
-      });
-      setDevis(rows);
-      setTotal(Number(res?.total || res?.count || 0) || (Array.isArray(res?.devis) ? Number(res.devis.length) : rows.length * (curPage || 1)));
-    } catch (e) {
-      if (e?.status === 429) {
-        setDevisError('');
-        setTimeout(() => { fetchDevis({ page, limit }); }, 3000);
-      } else {
-        setDevisError(e?.message || 'Erreur de chargement des devis');
-      }
-    } finally { setDevisLoading(false); }
-  };
-
-  useEffect(() => { fetchDevis({ page: 1, limit }); }, []);
-
-  const onOpenEdit = async (d) => {
-    setEditId(d.id);
-    setEditOpen(true);
-    setEditLoading(true);
-    try {
-      const res = await getMonDevisById(d.id);
-      const dv = res?.devis || res || {};
-      const typeService = dv.typeService || dv.type || '';
-      const description = dv.description || dv.remarque || '';
-      const origin = dv.origin || dv.origine || '';
-      const destination = dv.destination || dv.route || '';
-      const dateExp = dv.dateExpiration ? new Date(dv.dateExpiration).toISOString().slice(0,10) : '';
-      const weight = dv.weight || dv.poids || '';
-      const packageType = dv.packageType || dv.emballage || '';
-      const length = dv.length || dv.longueur || '';
-      const width = dv.width || dv.largeur || '';
-      const height = dv.height || dv.hauteur || '';
-      const pickupAddress = dv.pickupAddress || origin || '';
-      const deliveryAddress = dv.deliveryAddress || destination || '';
-      const pickupDate = dv.pickupDate || dateExp || '';
-      const deliveryDate = dv.deliveryDate || '';
-      const notes = dv.notes || '';
-      const special = dv.specialRequirements || {};
-      setEditTypeService(typeService || '');
-      setEditDescription(description || '');
-      setEditOrigin(origin || '');
-      setEditDestination(destination || '');
-      setEditDateExpiration(dateExp || '');
-      setEditWeight(String(weight || ''));
-      setEditPackageType(String(packageType || ''));
-      setEditLength(String(length || ''));
-      setEditWidth(String(width || ''));
-      setEditHeight(String(height || ''));
-      setEditPickupAddress(String(pickupAddress || ''));
-      setEditPickupDate(String(pickupDate || ''));
-      setEditDeliveryAddress(String(deliveryAddress || ''));
-      setEditDeliveryDate(String(deliveryDate || ''));
-      setEditNotes(String(notes || ''));
-      setEditDangerous(!!(special.dangerous));
-      setEditTemperature(!!(special.temperature));
-      setEditFragile(!!(special.fragile));
-      setEditFiles([]);
-    } catch (e) {
-      // fallback sans commentaires
-      setEditTypeService('');
-      setEditDescription('');
-      setEditOrigin('');
-      setEditDestination('');
-      setEditDateExpiration('');
-      setEditWeight('');
-      setEditPackageType('');
-      setEditLength('');
-      setEditWidth('');
-      setEditHeight('');
-      setEditPickupAddress('');
-      setEditPickupDate('');
-      setEditDeliveryAddress('');
-      setEditDeliveryDate('');
-      setEditNotes('');
-      setEditDangerous(false);
-      setEditTemperature(false);
-      setEditFragile(false);
-    } finally { setEditLoading(false); }
-  };
-
-  const onSubmitEdit = async () => {
-    try {
-      setEditLoading(true);
-      const fd = new FormData();
-      if (editTypeService) fd.append('typeService', editTypeService);
-      if (editDescription) fd.append('description', editDescription);
-      if (editOrigin) fd.append('origin', editOrigin);
-      if (editDestination) fd.append('destination', editDestination);
-      if (editDateExpiration) fd.append('dateExpiration', editDateExpiration);
-      if (editWeight) fd.append('weight', editWeight);
-      if (editPackageType) fd.append('packageType', editPackageType);
-      if (editLength) fd.append('length', editLength);
-      if (editWidth) fd.append('width', editWidth);
-      if (editHeight) fd.append('height', editHeight);
-      if (editPickupAddress) fd.append('pickupAddress', editPickupAddress);
-      if (editPickupDate) fd.append('pickupDate', editPickupDate);
-      if (editDeliveryAddress) fd.append('deliveryAddress', editDeliveryAddress);
-      if (editDeliveryDate) fd.append('deliveryDate', editDeliveryDate);
-      if (editNotes) fd.append('notes', editNotes);
-      fd.append('specialRequirements[dangerous]', editDangerous ? 'true' : 'false');
-      fd.append('specialRequirements[temperature]', editTemperature ? 'true' : 'false');
-      fd.append('specialRequirements[fragile]', editFragile ? 'true' : 'false');
-      if (editFiles && editFiles.length) Array.from(editFiles).forEach(f => f && fd.append('fichier', f));
-      await updateMonDevis(editId, fd);
-      setEditOpen(false);
-      await fetchDevis({ page: 1, limit });
-      toast.success('Demande mise à jour');
-    } catch (e) {
-      toast.error(e?.message || 'Échec de la mise à jour');
-    } finally { setEditLoading(false); }
-  };
-
-  const cancelDevis = async (id) => {
-    if (confirmCancelId !== id) {
-      setConfirmCancelId(id);
-      setTimeout(() => { setConfirmCancelId(prev => prev === id ? null : prev); }, 4000);
-      return;
-    }
-    try {
-      await cancelDevisApi(id);
-      setConfirmCancelId(null);
-      await fetchDevis();
-      toast.success('Devis annulé avec succès.');
-    } catch (e) {
-      setConfirmCancelId(null);
-      toast.error(e?.message || 'Erreur lors de l\'annulation');
-    }
-  };
-
-  // Charger 5 notifications récentes pour la colonne "Activité récente"
-  useEffect(() => {
-    (async () => {
-      try {
-        const items = await listNotifications(5);
-        const arr = Array.isArray(items?.items) ? items.items : (Array.isArray(items) ? items : []);
-        const mapped = arr
-          .filter(n => shouldShowNotification({
-            id: n.id || n._id || String(Math.random()),
-            type: n.type || 'general'
-          }))
-          .slice(0, 5)
-          .map(n => ({
-            id: n.id || n._id || String(Math.random()),
-            title: n.title || 'Nouvelle notification',
-            message: n.body || n.message || '',
-            date: n.createdAt ? new Date(n.createdAt) : new Date(),
-            read: n.read || false,
-            type: n.type || 'general',
-            data: n.data || {}
-          }));
-        setRecentActivities(mapped);
-      } catch (error) {
-        console.error('Erreur lors du chargement des notifications:', error);
-      }
-    })();
-  }, [hiddenNotifs, disabledNotifTypes]);
-
-  const onProfileClick = () => {
-    setProfileMenuOpen(false);
-    setSection('profil');
-    window.location.hash = '#/profil-client';
-  };
-
-  const onLogout = async () => {
-    try {
-      await logout();
-      window.location.hash = '#/connexion';
-    } catch (error) {
-      console.error('Erreur lors de la déconnexion:', error);
-    }
-  };
-
-  const recentQuotes = devis.slice(0, 5);
-  const stats = {
-    pendingQuotes: devis.filter(d => d.status === 'attente').length,
-    acceptedQuotes: devis.filter(d => d.status === 'accepte').length,
-    rejectedQuotes: devis.filter(d => d.status === 'refuse').length
-  };
-
-  // Fonction pour obtenir le nom d'affichage de l'utilisateur
-  const getUserDisplayName = () => {
-    const auth = getAuth();
-    // Vérifier d'abord le nom d'utilisateur stocké
-    if (userName && userName.trim()) return userName.trim();
-    // Ensuite vérifier dans l'objet auth
-    if (auth?.user?.displayName) return auth.user.displayName;
-    if (auth?.user?.name) return auth.user.name;
-    // En dernier recours, utiliser l'email ou une valeur par défaut
-    return auth?.user?.email?.split('@')[0] || 'Utilisateur';
-  };
-
-  const userDisplayName = getUserDisplayName();
-
-  // Gérer l'affichage temporaire du message de bienvenue
-  useEffect(() => {
-    if (showWelcomeMessage) {
-      // Marquer comme vu dans la session
-      sessionStorage.setItem('hasSeenWelcome', 'true');
-      
-      // Masquer le message après 10 secondes
-      const timer = setTimeout(() => {
-        setShowWelcomeMessage(false);
-      }, 10000);
-      
-      return () => clearTimeout(timer);
-    }
-  }, [showWelcomeMessage]);
+  // ... (conservez vos autres états et fonctions existants)
 
   return (
-    <div className="d-flex" style={{ ...clientStyles.layout, backgroundColor: 'var(--bg)' }}>
-      <style>{clientCss}</style>
-      <SideBare
-        defaultOpen={true}
-        open={sidebarOpen}
-        hideItemsWhenCollapsed={true}
-        disableMobileOverlay={true}
-        onOpenChange={(o)=>setSidebarOpen(!!o)}
-        activeId={section}
-        items={[
-          { id: 'dashboard', label: t('client.sidebar.dashboard'), icon: LayoutGrid },
-          { id: 'recherche', label: t('client.sidebar.search_forwarder'), icon: Search },
-          { id: 'devis-admin', label: t('client.sidebar.new_quote'), icon: FileText },
-          { id: 'historique', label: t('client.sidebar.history'), icon: Clock },
-          { id: 'envois', label: t('client.sidebar.shipments'), icon: Truck },
-          { id: 'fichiers', label: t('client.sidebar.files_received'), icon: FileText },
-          { id: 'profil', label: t('client.sidebar.profile'), icon: User },
-        ]}
-        onNavigate={(id) => {
-          setSection(id);
-          if (id === 'dashboard') {
-            window.location.hash = '#/dashboard-client';
-          } else if (id === 'recherche') {
-            window.location.hash = '#/recherche-transitaire';
-          } else if (id === 'devis-admin') {
-            window.location.hash = '#/nouveau-devis-admin';
-          } else if (id === 'historique') {
-            window.location.hash = '#/historique';
-          } else if (id === 'envois') {
-            window.location.hash = '#/envois';
-          } else if (id === 'fichiers') {
-            window.location.hash = '#/fichiers-recus';
-          } else if (id === 'profil') {
-            window.location.hash = '#/profil-client';
-          }
-        }}
-      />
-      <div className="flex-grow-1" style={{ marginLeft: isLgUp ? (sidebarOpen ? '240px' : '56px') : '0', transition: 'margin 0.3s ease', backgroundColor: 'var(--bg)' }}>
-        {/* Bouton de menu pour mobile */}
-        {!isLgUp && (
-          <div className="w-100 d-flex justify-content-between align-items-center gap-2 px-2 px-md-3 py-2">
-            <button
-              className="btn btn-link p-1 me-1"
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              style={{ color: 'var(--text)' }}
-            >
-              <Menu size={24} />
-            </button>
-          </div>
-        )}
-        {/* Message d'information */}
-        <div className="container-fluid px-3 px-md-4 py-3">
-          <div className="row">
-            <div className="col-12">
-              <div className="alert alert-info d-flex align-items-center" role="alert" style={{ maxWidth: '800px', width: '100%', margin: '20px auto' }}>
-                <i className="bi bi-info-circle-fill me-2"></i>
-                <div className="text-center">
-                  Votre devis peut être envoyé à tous les transitaires via la page <a href="#/nouveau-devis" className="alert-link">Nouveau devis</a>, 
-                  ou vous pouvez choisir un transitaire spécifique depuis la page <a href="#/recherche-transitaire" className="alert-link">Rechercher un transitaire</a>.
+    <div className="min-h-screen bg-gray-50">
+      <div className="flex h-screen overflow-hidden">
+        {/* Sidebar */}
+        <SideBare 
+          activeSection={section}
+          onSectionChange={setSection}
+          isOpen={sidebarOpen}
+          onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+          isLgUp={isLgUp}
+        />
+
+        {/* Main Content */}
+        <div className="flex-1 overflow-auto focus:outline-none">
+          {/* Header */}
+          <header className="bg-white shadow-sm z-10">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+              <h1 className="text-2xl font-semibold text-gray-900">
+                {section === 'dashboard' && 'Tableau de bord'}
+                {section === 'recherche' && 'Rechercher un transitaire'}
+                {section === 'devis' && 'Nouveau devis'}
+                {section === 'historique' && 'Historique des devis'}
+                {section === 'profil' && 'Mon profil'}
+                {section === 'envois' && 'Suivi des envois'}
+                {section === 'fichiers' && 'Mes fichiers reçus'}
+              </h1>
+              
+              <div className="flex items-center space-x-4">
+                {/* Bouton de notification */}
+                <div className="relative">
+                  <button
+                    onClick={() => setSection('notifications')}
+                    className="p-1 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 relative"
+                  >
+                    <Bell className="h-6 w-6" />
+                    {unreadCount > 0 && (
+                      <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-500 ring-2 ring-white"></span>
+                    )}
+                  </button>
+                </div>
+
+                {/* Menu profil */}
+                <div className="relative">
+                  <button
+                    onClick={() => setProfileMenuOpen(!profileMenuOpen)}
+                    className="flex items-center space-x-2 focus:outline-none"
+                  >
+                    <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-medium">
+                      {userName ? userName.charAt(0).toUpperCase() : 'U'}
+                    </div>
+                    <span className="hidden md:inline-block text-sm font-medium text-gray-700">
+                      {userName || 'Utilisateur'}
+                    </span>
+                  </button>
+
+                  {profileMenuOpen && (
+                    <div className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5">
+                      <div className="py-1" role="menu" aria-orientation="vertical">
+                        <button
+                          onClick={() => {
+                            setSection('profil');
+                            setProfileMenuOpen(false);
+                          }}
+                          className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          role="menuitem"
+                        >
+                          Mon profil
+                        </button>
+                        <button
+                          onClick={async () => {
+                            try {
+                              await logout();
+                              window.location.href = '/#/connexion';
+                            } catch (error) {
+                              console.error('Erreur lors de la déconnexion:', error);
+                            }
+                          }}
+                          className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          role="menuitem"
+                        >
+                          Déconnexion
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
-          </div>
-        {/* La section 'Activité récente' a été déplacée dans le menu déroulant des notifications */}
-        
-        <style jsx>{`
-          .dropdown-menu {
-            --bs-dropdown-bg: var(--bs-gray-800);
-            --bs-dropdown-link-color: var(--bs-white);
-            --bs-dropdown-link-hover-color: var(--bs-white);
-            --bs-dropdown-link-hover-bg: var(--bs-gray-700);
-          }
-          .dropdown-item {
-            padding: 0.5rem 1rem;
-          }
-          .dropdown-item:hover {
-            background-color: var(--bs-gray-700);
-          }
-        `}</style> 
-        {/* Contenu principal */}
-        <div className="container-fluid px-3 px-md-4 py-3">
-          {section === 'dashboard' ? (
-            <div className="row">
-              {/* Section principale */}
-              <div className="col-12">
-                {/* Carte de bienvenue (affichée uniquement au moment de la connexion) */}
-                {showWelcomeMessage && (
-                  <div className="card border-0 shadow-sm mb-4">
-                    <div className="card-body">
-                      <div className="d-flex justify-content-between align-items-start">
-                        <div>
-                          <h2 className="h4 fw-bold mb-1">
-                            Bonjour, bienvenue {userDisplayName}
-                          </h2>
-                          <p className="text-muted mb-0">
-                            {t('client.dashboard.subtitle')}
-                          </p>
+          </header>
+
+          {/* Contenu principal */}
+          <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            {section === 'dashboard' && (
+              <>
+                {/* Section Notifications */}
+                <div className="mb-8">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-4">
+                    <div className="flex items-center">
+                      <h2 className="text-xl font-semibold">Notifications</h2>
+                      {unreadCount > 0 && (
+                        <span className="ml-2 px-2 py-0.5 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">
+                          {unreadCount} non lue{unreadCount > 1 ? 's' : ''}
+                        </span>
+                      )}
+                    </div>
+                    
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      {/* Tri des notifications */}
+                      <div className="relative">
+                        <select
+                          value={sortBy}
+                          onChange={(e) => setSortBy(e.target.value)}
+                          className="block w-full pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+                        >
+                          <option value="recent">Plus récentes</option>
+                          <option value="unread">Non lues d'abord</option>
+                          <option value="type">Par type</option>
+                        </select>
+                      </div>
+                      
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={markAllAsRead}
+                          className="text-sm text-blue-500 hover:text-blue-700 hover:underline whitespace-nowrap"
+                          disabled={loading || unreadCount === 0}
+                        >
+                          Tout marquer comme lu
+                        </button>
+                        
+                        <div className="relative">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              document.getElementById('notification-settings')?.classList.toggle('hidden');
+                            }}
+                            className="p-1 text-gray-500 hover:text-gray-700"
+                            title="Paramètres des notifications"
+                          >
+                            <Settings size={18} />
+                          </button>
+                          
+                          <div
+                            id="notification-settings"
+                            className="hidden absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl border border-gray-200 z-50"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <div className="p-3 border-b border-gray-100">
+                              <h3 className="font-medium text-gray-900">Types de notifications</h3>
+                            </div>
+                            <div className="p-2">
+                              {['general', 'devis', 'message', 'alerte'].map(type => (
+                                <label key={type} className="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                  <input
+                                    type="checkbox"
+                                    checked={!disabledNotifTypes[type]}
+                                    onChange={() => toggleNotificationType(type)}
+                                    className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                                  />
+                                  <span className="ml-2 text-sm text-gray-700 capitalize">
+                                    {type === 'devis' ? 'Devis' : 
+                                     type === 'message' ? 'Messages' : 
+                                     type === 'alerte' ? 'Alertes' : 'Générales'}
+                                  </span>
+                                </label>
+                              ))}
+                            </div>
+                          </div>
                         </div>
-                        <button 
-                          type="button" 
-                          className="btn-close" 
-                          onClick={() => setShowWelcomeMessage(false)}
-                          aria-label="Fermer"
-                        />
                       </div>
                     </div>
                   </div>
-                )}
 
-                {/* Mes devis récents */}
-                <div className="card border-0 shadow-sm mb-4">
-                  <div className="card-body">
-                    <div className="d-flex justify-content-between align-items-center mb-3">
-                      <h5 className="fw-bold mb-0">Mes devis rÃ©cents</h5>
-                      <a href="#/historique" className="btn btn-sm btn-link">
-                        Voir tout
-                      </a>
+                  {loading ? (
+                    <div className="flex justify-center items-center p-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
                     </div>
-                    <div className="table-responsive">
-                      <table className="table table-hover align-middle">
-                        <thead>
-                          <tr>
-                            <th>RÃ©fÃ©rence</th>
-                            <th>Client</th>
-                            <th>Statut</th>
-                            <th>Date</th>
-                            <th className="text-end">Actions</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {recentQuotes && recentQuotes.length > 0 ? (
-                            recentQuotes.map((quote, index) => (
-                              <tr key={index}>
-                                <td>{quote.reference || `DEVIS-${quote.id}`}</td>
-                                <td>{quote.clientName || 'N/A'}</td>
-                                <td>
-                                  <span className={`badge bg-${getStatusBadgeClass(quote.status)}`}>
-                                    {quote.status}
-                                  </span>
-                                </td>
-                                <td>{new Date(quote.createdAt).toLocaleDateString()}</td>
-                                <td className="text-end">
-                                  <button 
-                                    className="btn btn-sm btn-outline-primary"
-                                    onClick={() => onOpenEdit(quote)}
-                                  >
-                                    Voir
-                                  </button>
-                                </td>
-                              </tr>
-                            ))
-                          ) : (
-                            <tr>
-                              <td colSpan="5" className="text-center py-4 text-muted">
-                                Aucun devis rÃ©cent
-                              </td>
-                            </tr>
-                          )}
-                        </tbody>
-                      </table>
+                  ) : error ? (
+                    <div className="bg-red-50 border-l-4 border-red-400 p-4">
+                      <div className="flex">
+                        <div className="flex-shrink-0">
+                          <XCircle className="h-5 w-5 text-red-400" />
+                        </div>
+                        <div className="ml-3">
+                          <p className="text-sm text-red-700">{error}</p>
+                          <button
+                            onClick={loadNotifications}
+                            className="mt-2 text-sm text-blue-600 hover:text-blue-800 font-medium"
+                          >
+                            Réessayer
+                          </button>
+                        </div>
+                      </div>
                     </div>
-                  </div>
+                  ) : notifications.filter(n => shouldShowNotification(n)).length === 0 ? (
+                    <div className="text-center py-6 bg-gray-50 rounded-lg">
+                      <BellOff className="mx-auto h-10 w-10 text-gray-400" />
+                      <h3 className="mt-2 text-sm font-medium text-gray-900">Aucune notification</h3>
+                      <p className="mt-1 text-sm text-gray-500">Vous n'avez pas encore de notifications.</p>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="bg-white shadow overflow-hidden sm:rounded-md mb-4">
+                        <ul className="divide-y divide-gray-200">
+                          {sortNotifications(notifications)
+                            .filter(n => shouldShowNotification(n))
+                            .slice(
+                              (currentPage - 1) * notificationsPerPage,
+                              currentPage * notificationsPerPage
+                            )
+                            .map(notification => {
+                              const isUnread = !notification.read;
+                              return (
+                                <li 
+                                  key={notification.id} 
+                                  className={`relative ${isUnread ? 'bg-blue-50' : 'bg-white'}`}
+                                  data-unread={isUnread}
+                                >
+                                  <div className="px-4 py-4 sm:px-6 notification-item">
+                                    <div className="flex items-center justify-between">
+                                      <div className="flex-1 min-w-0">
+                                        <p className={`text-sm font-medium ${
+                                          isUnread ? 'text-blue-800' : 'text-gray-900'
+                                        } truncate`}>
+                                          {notification.title}
+                                          {isUnread && (
+                                            <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                              Nouveau
+                                            </span>
+                                          )}
+                                        </p>
+                                        <p className="mt-1 text-sm text-gray-600">{notification.body}</p>
+                                      </div>
+                                      <div className="ml-4 flex-shrink-0 flex flex-col items-end">
+                                        <span className="text-xs text-gray-500">
+                                          {new Date(notification.createdAt || notification.date).toLocaleDateString('fr-FR', {
+                                            day: '2-digit',
+                                            month: '2-digit',
+                                            hour: '2-digit',
+                                            minute: '2-digit'
+                                          })}
+                                        </span>
+                                        <span className={`mt-1 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                          notification.type === 'devis' ? 'bg-blue-100 text-blue-800' :
+                                          notification.type === 'message' ? 'bg-green-100 text-green-800' :
+                                          notification.type === 'alerte' ? 'bg-red-100 text-red-800' :
+                                          'bg-gray-100 text-gray-800'
+                                        }`}>
+                                          {notification.type === 'devis' ? 'Devis' : 
+                                           notification.type === 'message' ? 'Message' : 
+                                           notification.type === 'alerte' ? 'Alerte' : 'Général'}
+                                        </span>
+                                      </div>
+                                    </div>
+                                    <div className="mt-2 flex justify-between items-center">
+                                      {notification.data && (
+                                        <div className="text-xs text-gray-500 overflow-hidden max-h-20 overflow-y-auto">
+                                          <pre className="whitespace-pre-wrap text-xs">
+                                            {JSON.stringify(notification.data, null, 2)}
+                                          </pre>
+                                        </div>
+                                      )}
+                                      <div className="flex space-x-2 ml-2">
+                                        {isUnread && (
+                                          <button
+                                            onClick={() => markAsRead(notification.id)}
+                                            className="text-blue-500 hover:text-blue-700"
+                                            title="Marquer comme lu"
+                                          >
+                                            <CheckCircle size={18} />
+                                          </button>
+                                        )}
+                                        <button
+                                          onClick={() => hideNotification(notification.id)}
+                                          className="text-gray-400 hover:text-red-500"
+                                          title="Masquer cette notification"
+                                        >
+                                          <X size={18} />
+                                        </button>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </li>
+                              );
+                            })}
+                        </ul>
+                      </div>
+                      
+                      {/* Pagination */}
+                      {Math.ceil(notifications.filter(n => shouldShowNotification(n)).length / notificationsPerPage) > 1 && (
+                        <div className="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6">
+                          <div className="flex flex-1 justify-between sm:hidden">
+                            <button
+                              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                              disabled={currentPage === 1}
+                              className="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                            >
+                              Précédent
+                            </button>
+                            <button
+                              onClick={() => setCurrentPage(prev => 
+                                Math.min(
+                                  Math.ceil(notifications.filter(n => shouldShowNotification(n)).length / notificationsPerPage), 
+                                  prev + 1
+                                )
+                              )}
+                              disabled={currentPage >= Math.ceil(notifications.filter(n => shouldShowNotification(n)).length / notificationsPerPage)}
+                              className="relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                            >
+                              Suivant
+                            </button>
+                          </div>
+                          <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+                            <div>
+                              <p className="text-sm text-gray-700">
+                                Affichage de <span className="font-medium">{
+                                  notifications.filter(n => shouldShowNotification(n)).length === 0 ? 0 : 
+                                  (currentPage - 1) * notificationsPerPage + 1
+                                }</span> à <span className="font-medium">{
+                                  Math.min(
+                                    currentPage * notificationsPerPage, 
+                                    notifications.filter(n => shouldShowNotification(n)).length
+                                  )
+                                }</span> sur{' '}
+                                <span className="font-medium">{notifications.filter(n => shouldShowNotification(n)).length}</span> résultats
+                              </p>
+                            </div>
+                            <div>
+                              <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+                                <button
+                                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                                  disabled={currentPage === 1}
+                                  className="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50"
+                                >
+                                  <span className="sr-only">Précédent</span>
+                                  <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                    <path fillRule="evenodd" d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z" clipRule="evenodd" />
+                                  </svg>
+                                </button>
+                                
+                                {Array.from({ 
+                                  length: Math.min(
+                                    5, 
+                                    Math.ceil(notifications.filter(n => shouldShowNotification(n)).length / notificationsPerPage)
+                                  ) 
+                                }).map((_, i) => {
+                                  let pageNum;
+                                  const totalPages = Math.ceil(notifications.filter(n => shouldShowNotification(n)).length / notificationsPerPage);
+                                  
+                                  if (totalPages <= 5) {
+                                    pageNum = i + 1;
+                                  } else if (currentPage <= 3) {
+                                    pageNum = i + 1;
+                                  } else if (currentPage >= totalPages - 2) {
+                                    pageNum = totalPages - 4 + i;
+                                  } else {
+                                    pageNum = currentPage - 2 + i;
+                                  }
+                                  
+                                  return (
+                                    <button
+                                      key={pageNum}
+                                      onClick={() => setCurrentPage(pageNum)}
+                                      className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ${
+                                        currentPage === pageNum
+                                          ? 'z-10 bg-blue-600 text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600'
+                                          : 'text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:outline-offset-0'
+                                      }`}
+                                    >
+                                      {pageNum}
+                                    </button>
+                                  );
+                                })}
+                                
+                                <button
+                                  onClick={() => setCurrentPage(prev => 
+                                    Math.min(
+                                      Math.ceil(notifications.filter(n => shouldShowNotification(n)).length / notificationsPerPage), 
+                                      prev + 1
+                                    )
+                                  )}
+                                  disabled={currentPage >= Math.ceil(notifications.filter(n => shouldShowNotification(n)).length / notificationsPerPage)}
+                                  className="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50"
+                                >
+                                  <span className="sr-only">Suivant</span>
+                                  <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                    <path fillRule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clipRule="evenodd" />
+                                  </svg>
+                                </button>
+                              </nav>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  )}
                 </div>
-              </div>
-            </div>
-          ) : (
-            <>
-              {section === 'recherche' && <RechercheTransitaire />}
-              {section === 'devis' && <NouveauDevis />}
-              {section === 'devis-admin' && <NouveauDevisAdmin />}
-              {section === 'historique' && <HistoriqueDevis />}
-              {section === 'envois' && <TrackingApp />}
-              {section === 'fichiers' && <MesFichiersRecus />}
-              {section === 'profil' && <ModofierProfClient />}
-            </>
-          )}
+              </>
+            )}
+
+            {/* Autres sections du tableau de bord */}
+            {section === 'recherche' && <RechercheTransitaire />}
+            {section === 'devis' && <NouveauDevis />}
+            {section === 'devis-admin' && <NouveauDevisAdmin />}
+            {section === 'historique' && <HistoriqueDevis />}
+            {section === 'envois' && <TrackingApp />}
+            {section === 'fichiers' && <MesFichiersRecus />}
+            {section === 'profil' && <ModofierProfClient />}
+          </main>
         </div>
       </div>
     </div>
-    </div>
-  
   );
 };
 
