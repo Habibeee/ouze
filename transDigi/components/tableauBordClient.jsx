@@ -550,6 +550,18 @@ const stats = {
   rejectedQuotes: devis.filter(d => d.status === 'refuse').length
 };
 
+// Fonction pour obtenir le nom d'affichage de l'utilisateur
+const getUserDisplayName = () => {
+  const auth = getAuth();
+  // Vérifier d'abord le nom d'utilisateur stocké
+  if (userName && userName.trim()) return userName.trim();
+  // Ensuite vérifier dans l'objet auth
+  if (auth?.user?.displayName) return auth.user.displayName;
+  if (auth?.user?.name) return auth.user.name;
+  // En dernier recours, utiliser l'email ou une valeur par défaut
+  return auth?.user?.email?.split('@')[0] || 'Utilisateur';
+};
+
 const userDisplayName = getUserDisplayName();
 
   return (
