@@ -64,6 +64,10 @@ const ClientDashboard = () => {
   const [isGotoDevis, setIsGotoDevis] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState('https://ui-avatars.com/api/?name=U&background=random');
 
+  const onBellClick = () => {
+    setNotifOpen(!notifOpen);
+  };
+
   useEffect(() => {
     const user = getAuth();
     if (user && user.user) {
