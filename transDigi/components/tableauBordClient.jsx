@@ -9,7 +9,6 @@ import {
   RefreshCw, Map as MapIcon, List, Loader2
 } from 'lucide-react';
 import { toast } from 'react-toastify';
-import 'leaflet/dist/leaflet.css';
 import SideBare from './sideBare.jsx';
 import ExpeditionMarker from './ExpeditionMarker';
 

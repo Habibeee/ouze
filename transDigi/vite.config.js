@@ -1,12 +1,15 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-import { resolve } from 'path'
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import { resolve } from 'path';
 
 export default defineConfig({
-  plugins: [react()],
+  base: '/',
+  plugins: [
+    react()
+  ],
   resolve: {
     alias: {
-      'leaflet': resolve(__dirname, 'node_modules/leaflet'),
+      'leaflet': resolve(__dirname, 'src/leaflet-shim.js'),
       'react-leaflet': resolve(__dirname, 'node_modules/react-leaflet')
     }
   },
@@ -28,17 +31,17 @@ export default defineConfig({
     allowedHosts: ['trans-digi-front-end.onrender.com']
   },
   optimizeDeps: {
-    include: ['leaflet', 'react-leaflet']
+    exclude: ['leaflet']
   },
   define: {
     'process.env': {}
   },
   build: {
     rollupOptions: {
-      external: ['leaflet', 'react-leaflet']
+      external: ['leaflet']
     },
     commonjsOptions: {
-      esmExternals: ['leaflet', 'react-leaflet']
+      esmExternals: ['leaflet']
     }
   }
-})
+});
