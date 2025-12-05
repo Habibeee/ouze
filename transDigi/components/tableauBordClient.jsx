@@ -12,11 +12,8 @@ import { toast } from 'react-toastify';
 import SideBare from './sideBare.jsx';
 import ExpeditionMarker from './ExpeditionMarker';
 
-// Import dynamique des composants Leaflet pour éviter les problèmes de SSR
-const MapContainer = React.lazy(() => import('react-leaflet').then(mod => ({ default: mod.MapContainer })));
-const TileLayer = React.lazy(() => import('react-leaflet').then(mod => ({ default: mod.TileLayer })));
-const Marker = React.lazy(() => import('react-leaflet').then(mod => ({ default: mod.Marker })));
-const Popup = React.lazy(() => import('react-leaflet').then(mod => ({ default: mod.Popup })));
+// Import des composants Leaflet depuis notre shim
+import { MapContainer, TileLayer, Marker, Popup } from '../src/leaflet-shim';
 
 // Composant de chargement pour la carte
 const MapLoading = () => (

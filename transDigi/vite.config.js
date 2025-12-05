@@ -4,14 +4,20 @@ import { resolve } from 'path';
 
 export default defineConfig({
   base: '/',
-  plugins: [
-    react()
-  ],
+  plugins: [react()],
   resolve: {
     alias: {
-      'leaflet': resolve(__dirname, 'src/leaflet-shim.js'),
-      'react-leaflet': resolve(__dirname, 'node_modules/react-leaflet')
+      'leaflet': 'leaflet',
+      'react-leaflet': 'react-leaflet'
     }
+  },
+  build: {
+    rollupOptions: {
+      external: ['leaflet', 'react-leaflet']
+    }
+  },
+  define: {
+    'process.env': {}
   },
   css: {
     preprocessorOptions: {
