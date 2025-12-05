@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import '../src/styles/leaflet.css';
-import SideBare from './SideBare.jsx';
+import SideBare from './sideBare.jsx';
 
 // Composants Leaflet chargés dynamiquement
 const MapContainer = lazy(async () => {
