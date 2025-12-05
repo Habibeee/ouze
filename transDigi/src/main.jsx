@@ -2,6 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import 'leaflet/dist/leaflet.css'
 import './index.css'
+import './global.css'  // Import des styles globaux personnalisés
 import 'bootstrap/dist/css/bootstrap.min.css'
 import 'bootstrap/dist/js/bootstrap.bundle.min.js'
 import App from './App.jsx'

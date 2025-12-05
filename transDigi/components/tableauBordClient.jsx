@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, Suspense, lazy } from 'react';
+import React, { useState, useEffect, useRef, Suspense } from 'react';
 import { 
   Bell, User, Search, Menu, X, 
   FileText, Truck, MapPin, Clock, 
@@ -9,35 +9,23 @@ import {
   RefreshCw, Map as MapIcon, List, Loader2
 } from 'lucide-react';
 import { toast } from 'react-toastify';
-import '../src/styles/leaflet.css';
+import 'leaflet/dist/leaflet.css';
 import SideBare from './sideBare.jsx';
+import ExpeditionMarker from './ExpeditionMarker';
 
-// Composants Leaflet chargés dynamiquement
-const MapContainer = lazy(async () => {
-  const mod = await import('react-leaflet');
-  return { default: mod.MapContainer };
-});
+// Import dynamique des composants Leaflet pour éviter les problèmes de SSR
+const MapContainer = React.lazy(() => import('react-leaflet').then(mod => ({ default: mod.MapContainer })));
+const TileLayer = React.lazy(() => import('react-leaflet').then(mod => ({ default: mod.TileLayer })));
+const Marker = React.lazy(() => import('react-leaflet').then(mod => ({ default: mod.Marker })));
+const Popup = React.lazy(() => import('react-leaflet').then(mod => ({ default: mod.Popup })));
 
-const TileLayer = lazy(async () => {
-  const mod = await import('react-leaflet');
-  return { default: mod.TileLayer };
-});
-
-const Marker = lazy(async () => {
-  const mod = await import('react-leaflet');
-  return { default: mod.Marker };
-});
-
-const Popup = lazy(async () => {
-  const mod = await import('react-leaflet');
-  return { default: mod.Popup };
-});
-
-// Composant de chargement
+// Composant de chargement pour la carte
 const MapLoading = () => (
-  <div className="flex items-center justify-center h-64 bg-gray-100 rounded-lg">
-    <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
-    <span className="ml-2 text-gray-600">Chargement de la carte...</span>
+  <div className="d-flex align-items-center justify-content-center" style={{ height: '500px' }}>
+    <div className="spinner-border text-primary" role="status">
+      <span className="visually-hidden">Chargement de la carte...</span>
+    </div>
+    <span className="ms-2">Chargement de la carte...</span>
   </div>
 );
 
@@ -234,8 +222,8 @@ const ClientDashboard = () => {
                       click: () => setSelectedExpedition(expedition)
                     }}
                   >
-                    <div className={`expedition-marker-icon ${expedition.statut}`}>
-                      {expedition.reference.substring(expedition.reference.length - 3)}
+                    <div className="expedition-marker-wrapper">
+                      <ExpeditionMarker expedition={expedition} />
                     </div>
                     <Popup>
                       <div className="expedition-info-window">
