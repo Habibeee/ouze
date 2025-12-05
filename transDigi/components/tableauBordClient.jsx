@@ -1,719 +1,499 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, Suspense, lazy } from 'react';
 import { 
   Bell, User, Search, Menu, X, 
   FileText, Truck, MapPin, Clock, 
   CheckCircle, XCircle, Archive, ChevronRight,
   Download, Printer, Share2, Filter,
   ChevronDown, ChevronUp, MoreVertical,
-  Settings, LayoutGrid, MessageSquare
+  Settings, LayoutGrid, MessageSquare, AlertCircle,
+  RefreshCw, Map as MapIcon, List, Loader2
 } from 'lucide-react';
 import { toast } from 'react-toastify';
+import '../src/styles/leaflet.css';
 import SideBare from './SideBare';
+
+// Composants Leaflet chargés dynamiquement
+const MapContainer = lazy(async () => {
+  const mod = await import('react-leaflet');
+  return { default: mod.MapContainer };
+});
+
+const TileLayer = lazy(async () => {
+  const mod = await import('react-leaflet');
+  return { default: mod.TileLayer };
+});
+
+const Marker = lazy(async () => {
+  const mod = await import('react-leaflet');
+  return { default: mod.Marker };
+});
+
+const Popup = lazy(async () => {
+  const mod = await import('react-leaflet');
+  return { default: mod.Popup };
+});
+
+// Composant de chargement
+const MapLoading = () => (
+  <div className="flex items-center justify-center h-64 bg-gray-100 rounded-lg">
+    <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+    <span className="ml-2 text-gray-600">Chargement de la carte...</span>
+  </div>
+);
 
 const ClientDashboard = () => {
   // États principaux
   const [section, setSection] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [isLgUp, setIsLgUp] = useState(window.innerWidth >= 992);
-  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [isLgUp, setIsLgUp] = useState(typeof window !== 'undefined' ? window.innerWidth >= 992 : true);
+  const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' ? window.innerWidth <= 768 : false);
+  const [mapView, setMapView] = useState(true); // true pour la carte, false pour la liste
+  const [selectedExpedition, setSelectedExpedition] = useState(null);
+  const mapRef = useRef(null);
   
-  // États pour les devis
-  const [confirmCancelId, setConfirmCancelId] = useState(null);
-  const [isArchiving, setIsArchiving] = useState(false);
+  // États pour les expéditions
+  const [expeditions, setExpeditions] = useState([
+    {
+      id: 1,
+      reference: 'EXP-2023-001',
+      destination: 'Dakar, Sénégal',
+      date_estimee: '15/12/2023',
+      statut: 'en_cours',
+      derniere_mise_a_jour: new Date().toLocaleString('fr-FR'),
+      position: { lat: 14.7167, lng: -17.4677 },
+      adresse: 'Rue 10, Dakar Plateau',
+      client: 'Client 1',
+      type: 'Colis standard',
+      poids: '2.5 kg'
+    },
+    {
+      id: 2,
+      reference: 'EXP-2023-002',
+      destination: 'Thiès, Sénégal',
+      date_estimee: '10/12/2023',
+      statut: 'en_retard',
+      derniere_mise_a_jour: new Date().toLocaleString('fr-FR'),
+      position: { lat: 14.7915, lng: -16.9359 },
+      adresse: 'Avenue Lamine Gueye, Thiès',
+      client: 'Client 2',
+      type: 'Document',
+      poids: '0.5 kg'
+    }
+  ]);
+  const [expeditionsLoading, setExpeditionsLoading] = useState(false);
+  const [expeditionsError, setExpeditionsError] = useState(null);
+
+  // Autres états existants...
   const [devis, setDevis] = useState([]);
   const [devisLoading, setDevisLoading] = useState(false);
   const [devisError, setDevisError] = useState(null);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
-  
-  // États pour les notifications et utilisateur
+  const [confirmCancelId, setConfirmCancelId] = useState(null);
+  const [isArchiving, setIsArchiving] = useState(false);
   const [recentActivities, setRecentActivities] = useState([]);
   const [userName, setUserName] = useState('Utilisateur');
-  const [avatarUrl, setAvatarUrl] = useState('');
   const [notifOpen, setNotifOpen] = useState(false);
   const [notifs, setNotifs] = useState([]);
   const [notifLoading, setNotifLoading] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
-  const [isGotoDevis, setIsGotoDevis] = useState(false);
 
-  // Styles personnalisés
-  const clientStyles = {
-    tableCell: {
-      whiteSpace: 'nowrap',
-      overflow: 'hidden',
-      textOverflow: 'ellipsis',
-      maxWidth: '200px',
-      display: 'inline-block',
-      verticalAlign: 'middle'
-    },
-    layout: {
-      minHeight: '100vh',
-    },
-    contentTransition: 'margin-left 0.3s ease',
-  };
-
-  const clientCss = `
-    .sidebar-open {
-      overflow: hidden;
-    }
-    .sidebar-collapsed .sidebar {
-      width: 56px;
-    }
-  `;
-
-  // Fonctions API (à adapter selon votre backend)
-  const cancelDevisApi = async (id) => {
-    const response = await fetch(`/api/devis/${id}/cancel`, { method: 'POST' });
-    if (!response.ok) throw new Error('Erreur lors de l\'annulation');
-    return await response.json();
-  };
-
-  const archiveDevisApi = async (id) => {
-    const response = await fetch(`/api/devis/${id}/archive`, { method: 'POST' });
-    if (!response.ok) throw new Error('Erreur lors de l\'archivage');
-    return await response.json();
-  };
-
-  const listNotifications = async (limit) => {
-    const response = await fetch(`/api/notifications?limit=${limit}`);
-    if (!response.ok) throw new Error('Erreur lors du chargement des notifications');
-    return await response.json();
-  };
-
-  const logout = async () => {
-    localStorage.clear();
-    sessionStorage.clear();
-  };
-
-  const fetchDevis = async ({ page, limit }) => {
-    setDevisLoading(true);
+  // Fonction pour récupérer les expéditions
+  const fetchExpeditions = async () => {
+    setExpeditionsLoading(true);
     try {
-      const response = await fetch(`/api/devis?page=${page}&limit=${limit}`);
-      const data = await response.json();
-      setDevis(data.items || []);
-      setDevisError(null);
+      // Simulation de chargement
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Pour un déploiement réel, utilisez :
+      // const response = await fetch('/api/expeditions/en-cours');
+      // if (!response.ok) throw new Error('Erreur lors de la récupération des expéditions');
+      // const data = await response.json();
+      // setExpeditions(data);
+      
+      setExpeditionsError(null);
     } catch (error) {
-      setDevisError('Erreur lors du chargement des devis');
-      console.error(error);
+      console.error('Erreur:', error);
+      setExpeditionsError('Impossible de charger les expéditions. Veuillez réessayer plus tard.');
     } finally {
-      setDevisLoading(false);
+      setExpeditionsLoading(false);
     }
   };
 
-  // Gestion des devis
-  const cancelDevis = async (id) => {
-    if (confirmCancelId !== id) {
-      setConfirmCancelId(id);
-      setTimeout(() => { 
-        setConfirmCancelId(prev => prev === id ? null : prev); 
-      }, 4000);
-      return;
-    }
-    try {
-      await cancelDevisApi(id);
-      await fetchDevis({ page, limit });
-      toast.success('Le devis a été annulé avec succès');
-    } catch (e) {
-      toast.error(e?.message || 'Erreur lors de l\'annulation du devis');
-    } finally {
-      setConfirmCancelId(null);
-    }
+  // Fonction pour formater le statut des expéditions
+  const formatExpeditionStatus = (status) => {
+    const statusMap = {
+      'en_cours': 'En cours',
+      'en_transit': 'En transit',
+      'livré': 'Livré',
+      'en_retard': 'En retard'
+    };
+    return statusMap[status] || status;
   };
 
-  const handleArchive = async (id) => {
-    if (!id) {
-      toast.error('ID de devis manquant');
-      return;
-    }
-    
-    if (!window.confirm('Êtes-vous sûr de vouloir archiver ce devis ?')) {
-      return;
-    }
-    
-    setIsArchiving(true);
-    try {
-      const response = await archiveDevisApi(id);
-      
-      if (response && response.success === false) {
-        throw new Error(response.message || 'Échec de l\'archivage du devis');
-      }
-      
-      await fetchDevis({ page, limit });
-      toast.success('Le devis a été archivé avec succès');
-    } catch (error) {
-      console.error('Erreur lors de l\'archivage du devis:', error);
-      
-      if (error.response) {
-        if (error.response.status === 404) {
-          toast.error('La ressource demandée est introuvable. Veuillez réessayer.');
-        } else if (error.response.status === 401) {
-          toast.error('Session expirée. Veuillez vous reconnecter.');
-          window.location.href = '/connexion';
-        } else {
-          const errorMessage = error.response.data?.message || 'Une erreur est survenue lors de l\'archivage du devis';
-          toast.error(errorMessage);
-        }
-      } else if (error.request) {
-        toast.error('Pas de réponse du serveur. Vérifiez votre connexion internet.');
-      } else {
-        toast.error(error.message || 'Erreur lors de la préparation de la requête');
-      }
-    } finally {
-      setIsArchiving(false);
+  // Autres fonctions existantes...
+  const getExpeditionStatusColor = (status) => {
+    switch (status) {
+      case 'en_cours': return 'primary';
+      case 'en_transit': return 'info';
+      case 'livré': return 'success';
+      case 'en_retard': return 'danger';
+      default: return 'secondary';
     }
   };
 
-  const archiverDevis = (id) => {
-    setDevis(prevDevis => prevDevis.filter(devis => devis.id !== id));
-  };
+  // ... (conservez les autres fonctions existantes)
 
-  const annulerDevis = (id) => {
-    setDevis(prevDevis => 
-      prevDevis.map(devis => 
-        devis.id === id 
-          ? { ...devis, status: 'Annulé' } 
-          : devis
-      )
-    );
-  };
-
-  // Gestionnaires d'événements
-  const onViewDevis = (id) => {
-    console.log('Voir devis:', id);
-  };
-
-  const onBellClick = () => {
-    setNotifOpen(!notifOpen);
-  };
-
-  const onMarkAll = () => {
-    console.log('Marquer toutes les notifications comme lues');
-  };
-
-  const onNotifClick = (id, notif) => {
-    console.log('Notification cliquée:', id, notif);
-  };
-
-  const toggleSidebar = () => {
-    setSidebarOpen(!sidebarOpen);
-  };
-
-  const closeSidebar = () => {
-    if (isMobile) {
-      setSidebarOpen(false);
-    }
-  };
-
-  const getStatusClass = (status) => {
-    switch(status?.toLowerCase()) {
-      case 'en attente':
-      case 'attente':
-        return 'bg-warning';
-      case 'approuvé':
-      case 'accepte':
-        return 'bg-success';
-      case 'rejeté':
-      case 'rejete':
-        return 'bg-danger';
-      case 'en transit':
-        return 'bg-primary';
-      case 'livré':
-        return 'bg-info';
-      case 'annulé':
-        return 'bg-secondary';
-      default:
-        return 'bg-secondary';
-    }
-  };
-
-  // Effects
+  // Effet pour charger les expéditions au montage
   useEffect(() => {
-    let isMounted = true;
-    
-    const fetchNotifications = async () => {
-      try {
-        const items = await listNotifications(5);
-        if (!isMounted) return;
-        
-        const arr = Array.isArray(items?.items) ? items.items : (Array.isArray(items) ? items : []);
-        const mapped = arr.slice(0,5).map(n => ({
-          id: n.id || n._id || String(Math.random()),
-          type: (n.type || '').toString().toLowerCase(),
-          title: n.title || 'Notification',
-          text: n.body || n.message || '',
-          time: n.createdAt ? new Date(n.createdAt).toLocaleString() : '',
-          data: n.data || {},
-          read: !!n.read,
-        }));
-        setRecentActivities(mapped);
-        setNotifs(mapped);
-        setUnreadCount(mapped.filter(n => !n.read).length);
-      } catch (error) {
-        console.error('Erreur lors du chargement des notifications:', error);
-      }
-    };
-    
-    fetchNotifications();
-    
-    return () => {
-      isMounted = false;
-    };
+    fetchExpeditions();
+    // Mettre à jour les expéditions toutes les 5 minutes
+    const interval = setInterval(fetchExpeditions, 5 * 60 * 1000);
+    return () => clearInterval(interval);
   }, []);
 
-  useEffect(() => {
-    fetchDevis({ page, limit });
-  }, [page, limit]);
-
-  useEffect(() => {
-    const handleResize = () => {
-      const width = window.innerWidth;
-      setIsLgUp(width >= 992);
-      setIsMobile(width <= 768);
-      if (width > 768) {
-        setSidebarOpen(true);
-      } else {
-        setSidebarOpen(false);
-      }
-    };
-    
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  useEffect(() => {
-    if (typeof document === 'undefined') return;
-    
-    const body = document.body;
-    if (sidebarOpen) {
-      body.classList.add('sidebar-open');
-      body.classList.remove('sidebar-collapsed');
-    } else {
-      body.classList.add('sidebar-collapsed');
-      body.classList.remove('sidebar-open');
-    }
-    
-    return () => {
-      if (typeof document !== 'undefined') {
-        body.classList.remove('sidebar-open', 'sidebar-collapsed');
-      }
-    };
-  }, [sidebarOpen]);
-
-  // Rendu du tableau de bord
-  const renderDashboard = () => (
-    <div className="container-fluid p-4">
-      <div className="row mb-4">
-        <div className="col-12">
-          <h1 className="h2 mb-2">Tableau de bord</h1>
-          <p className="text-muted">Bienvenue, {userName || 'Utilisateur'}</p>
-        </div>
-      </div>
-
-      <div className="row g-4 mb-4">
-        <div className="col-md-4">
-          <div className="card h-100">
-            <div className="card-body">
-              <div className="d-flex justify-content-between align-items-center">
-                <div>
-                  <h6 className="text-muted mb-2">Devis en attente</h6>
-                  <h3 className="mb-0">
-                    {devis.filter(d => d.status === 'attente' || d.status === 'En attente').length}
-                  </h3>
-                </div>
-                <div className="bg-primary bg-opacity-10 p-3 rounded">
-                  <FileText className="text-primary" size={24} />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        <div className="col-md-4">
-          <div className="card h-100">
-            <div className="card-body">
-              <div className="d-flex justify-content-between align-items-center">
-                <div>
-                  <h6 className="text-muted mb-2">Devis acceptés</h6>
-                  <h3 className="mb-0">
-                    {devis.filter(d => d.status === 'accepte' || d.status === 'Approuvé').length}
-                  </h3>
-                </div>
-                <div className="bg-success bg-opacity-10 p-3 rounded">
-                  <CheckCircle className="text-success" size={24} />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        <div className="col-md-4">
-          <div className="card h-100">
-            <div className="card-body">
-              <div className="d-flex justify-content-between align-items-center">
-                <div>
-                  <h6 className="text-muted mb-2">Envois en cours</h6>
-                  <h3 className="mb-0">0</h3>
-                </div>
-                <div className="bg-warning bg-opacity-10 p-3 rounded">
-                  <Truck className="text-warning" size={24} />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="card">
-        <div className="card-header bg-white d-flex justify-content-between align-items-center">
-          <h5 className="mb-0">Derniers devis</h5>
-          <div className="d-flex gap-2">
-            <button className="btn btn-sm btn-outline-secondary">
-              <Filter size={16} className="me-1" />
-              Filtres
+  // Rendu de la section des expéditions avec la carte
+  const renderExpeditionsSection = () => (
+    <div className="card mb-4">
+      <div className="card-header bg-white d-flex justify-content-between align-items-center">
+        <h5 className="mb-0">Suivi des expéditions en temps réel</h5>
+        <div className="d-flex">
+          <div className="btn-group me-2" role="group">
+            <button 
+              className={`btn btn-sm ${mapView ? 'btn-outline-primary' : 'btn-outline-secondary'}`}
+              onClick={() => setMapView(true)}
+              title="Vue carte"
+            >
+              <MapIcon size={16} />
             </button>
             <button 
-              className="btn btn-sm btn-outline-primary"
-              onClick={() => setSection('devis')}
+              className={`btn btn-sm ${!mapView ? 'btn-outline-primary' : 'btn-outline-secondary'}`}
+              onClick={() => setMapView(false)}
+              title="Vue liste"
             >
-              Voir tout
+              <List size={16} />
             </button>
           </div>
+          <button 
+            className="btn btn-sm btn-outline-secondary" 
+            onClick={fetchExpeditions}
+            disabled={expeditionsLoading}
+            title="Rafraîchir"
+          >
+            {expeditionsLoading ? (
+              <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+            ) : (
+              <RefreshCw size={16} />
+            )}
+          </button>
         </div>
-        <div className="card-body p-0">
-          <div className="table-responsive">
-            <table className="table table-hover mb-0" style={{ tableLayout: 'fixed', width: '100%' }}>
-              <thead className="table-light">
-                <tr>
-                  <th style={{ width: '15%' }}>Référence</th>
-                  <th style={{ width: '20%' }}>Destination</th>
-                  <th style={{ width: '15%' }}>Date</th>
-                  <th style={{ width: '15%' }}>Statut</th>
-                  <th style={{ width: '15%' }}>Montant</th>
-                  <th className="text-end" style={{ width: '20%' }}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {devisLoading ? (
-                  <tr>
-                    <td colSpan="6" className="text-center py-4">
-                      <div className="spinner-border text-primary" role="status">
-                        <span className="visually-hidden">Chargement...</span>
-                      </div>
-                    </td>
-                  </tr>
-                ) : devisError ? (
-                  <tr>
-                    <td colSpan="6" className="text-center text-danger py-4">
-                      {devisError}
-                    </td>
-                  </tr>
-                ) : devis.length === 0 ? (
-                  <tr>
-                    <td colSpan="6" className="text-center text-muted py-4">
-                      Aucun devis trouvé
-                    </td>
-                  </tr>
-                ) : (
-                  devis.slice(0, 5).map((devisItem) => (
-                    <tr key={devisItem.id}>
-                      <td style={{ ...clientStyles.tableCell, width: '15%' }} title={devisItem.reference || devisItem.id || 'N/A'}>
-                        {devisItem.reference || devisItem.id || 'N/A'}
-                      </td>
-                      <td style={{ width: '20%' }}>
-                        <div className="d-flex align-items-center" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                          <MapPin size={14} className="me-1 text-muted flex-shrink-0" />
-                          <span className="text-truncate" style={{ display: 'inline-block', maxWidth: 'calc(100% - 20px)' }} title={devisItem.destination || 'N/A'}>
-                            {devisItem.destination || 'N/A'}
-                          </span>
-                        </div>
-                      </td>
-                      <td style={{ width: '15%' }} title={devisItem.date || (devisItem.createdAt ? new Date(devisItem.createdAt).toLocaleDateString('fr-FR') : 'N/A')}>
-                        {devisItem.date || (devisItem.createdAt ? new Date(devisItem.createdAt).toLocaleDateString('fr-FR') : 'N/A')}
-                      </td>
-                      <td style={{ width: '15%' }}>
-                        <span className={`badge ${getStatusClass(devisItem.status)}`} style={{ whiteSpace: 'nowrap' }}>
-                          {devisItem.statusLabel || devisItem.status}
-                        </span>
-                      </td>
-                      <td className="fw-bold" style={{ width: '15%' }}>{devisItem.amount || devisItem.montant || 'N/A'}</td>
-                      <td className="text-end">
-                        <div className="d-flex gap-2 justify-content-end">
-                          <button 
-                            className="btn btn-sm btn-outline-primary"
-                            onClick={() => onViewDevis(devisItem.id)}
-                          >
-                            Voir
-                          </button>
-                          {(devisItem.status === 'attente' || devisItem.status === 'En attente') && (
-                            <>
-                              <button 
-                                className="btn btn-sm btn-outline-danger"
-                                onClick={() => annulerDevis(devisItem.id)}
-                              >
-                                Annuler
-                              </button>
-                              <button 
-                                className="btn btn-sm btn-outline-secondary"
-                                onClick={() => handleArchive(devisItem.id)}
-                                disabled={isArchiving}
-                              >
-                                {isArchiving ? 'Archivage...' : 'Archiver'}
-                              </button>
-                            </>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+      </div>
+      
+      {expeditionsLoading ? (
+        <div className="text-center p-4">
+          <div className="spinner-border text-primary" role="status">
+            <span className="visually-hidden">Chargement des expéditions...</span>
           </div>
         </div>
-        <div className="card-body border-top">
-          <div className="d-flex justify-content-between align-items-center text-muted">
-            <div>Affichage de 1 à {Math.min(devis.length, 5)} sur {devis.length} entrées</div>
-            <div className="d-flex gap-2">
-              <button className="btn btn-sm btn-outline-secondary" disabled={page === 1} onClick={() => setPage(p => p - 1)}>
-                Précédent
-              </button>
-              <button className="btn btn-sm btn-secondary">
-                {page}
-              </button>
-              <button className="btn btn-sm btn-outline-secondary" onClick={() => setPage(p => p + 1)}>
-                Suivant
-              </button>
+      ) : expeditionsError ? (
+        <div className="alert alert-warning m-3">
+          <AlertCircle className="me-2" />
+          {expeditionsError}
+          <button 
+            className="btn btn-sm btn-link p-0 ms-2" 
+            onClick={fetchExpeditions}
+          >
+            Réessayer
+          </button>
+        </div>
+      ) : expeditions.length === 0 ? (
+        <div className="text-muted p-4 text-center">
+          Aucune expédition en cours pour le moment
+        </div>
+      ) : mapView ? (
+        // Vue Carte
+        <div className="position-relative" style={{ height: '500px' }}>
+          <Suspense fallback={<MapLoading />}>
+            <div style={{ height: '100%', width: '100%' }}>
+              <MapContainer 
+                center={[14.4974, -14.4524]} 
+                zoom={7} 
+                style={{ height: '100%', width: '100%' }}
+                whenCreated={(map) => mapRef.current = map}
+              >
+                <TileLayer
+                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                />
+                {expeditions.map((expedition) => (
+                  <Marker 
+                    key={expedition.id} 
+                    position={[expedition.position.lat, expedition.position.lng]}
+                    eventHandlers={{
+                      click: () => setSelectedExpedition(expedition)
+                    }}
+                  >
+                    <div className={`expedition-marker-icon ${expedition.statut}`}>
+                      {expedition.reference.substring(expedition.reference.length - 3)}
+                    </div>
+                    <Popup>
+                      <div className="expedition-info-window">
+                        <h6 className="mb-1 fw-bold">{expedition.reference}</h6>
+                        <p className="mb-1">
+                          <MapPin size={14} className="me-1" />
+                          {expedition.destination}
+                        </p>
+                        <p className="mb-1">
+                          <Clock size={14} className="me-1" />
+                          {expedition.date_estimee}
+                        </p>
+                        <span className={`badge bg-${getExpeditionStatusColor(expedition.statut)}`}>
+                          {formatExpeditionStatus(expedition.statut)}
+                        </span>
+                      </div>
+                    </Popup>
+                  </Marker>
+                ))}
+              </MapContainer>
+            </div>
+          </Suspense>
+          <style jsx global>{`
+            .leaflet-container {
+              width: 100%;
+              height: 100%;
+              z-index: 1;
+            }
+            .leaflet-popup-content-wrapper {
+              border-radius: 4px;
+            }
+            .expedition-marker {
+              background: none;
+              border: none;
+            }
+            .expedition-marker-icon {
+              width: 30px;
+              height: 30px;
+              border-radius: 50% 50% 50% 0;
+              background: #0d6efd;
+              position: relative;
+              transform: rotate(-45deg);
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              color: white;
+              font-size: 12px;
+              font-weight: bold;
+            }
+            .expedition-marker-icon.en_cours { background: #0d6efd; }
+            .expedition-marker-icon.en_retard { background: #dc3545; }
+            .expedition-marker-icon.en_transit { background: #ffc107; color: #000; }
+            .expedition-marker-icon.livre { background: #198754; }
+            
+            .expedition-info-window {
+              min-width: 200px;
+            }
+            .expedition-info-window h5 {
+              font-size: 1rem;
+              margin-bottom: 0.5rem;
+              color: #0d6efd;
+            }
+            .expedition-info-window p {
+              margin-bottom: 0.25rem;
+              font-size: 0.85rem;
+            }
+            .expedition-status {
+              display: inline-block;
+              padding: 0.2rem 0.5rem;
+              border-radius: 20px;
+              font-size: 0.75rem;
+              font-weight: 600;
+              text-transform: uppercase;
+              letter-spacing: 0.5px;
+            }
+            .status-en_cours { background-color: #cfe2ff; color: #084298; }
+            .status-en_retard { background-color: #f8d7da; color: #842029; }
+            .status-en_transit { background-color: #fff3cd; color: #664d03; }
+            .status-livre { background-color: #d1e7dd; color: #0f5132; }
+            
+            .expedition-list-item {
+              cursor: pointer;
+              transition: all 0.2s;
+            }
+            .expedition-list-item:hover {
+              background-color: #f8f9fa;
+            }
+            .expedition-list-item.active {
+              background-color: #e7f1ff;
+              border-left: 3px solid #0d6efd;
+            }
+          `}</style>
+          
+          <MapContainer 
+            center={[14.4974, -14.4524]} // Centre du Sénégal
+            zoom={7} 
+            style={{ height: '100%', width: '100%' }}
+            whenCreated={mapInstance => { mapRef.current = mapInstance }}
+          >
+            <TileLayer
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            />
+            
+            {expeditions.map((expedition) => (
+              <Marker 
+                key={expedition.id} 
+                position={[expedition.position.lat, expedition.position.lng]}
+                eventHandlers={{
+                  click: () => setSelectedExpedition(expedition.id === selectedExpedition ? null : expedition.id)
+                }}
+              >
+                <div className={`expedition-marker-icon ${expedition.statut}`}>
+                  {expedition.reference.split('-').pop()}
+                </div>
+                <Popup>
+                  <div className="expedition-info-window">
+                    <h5>{expedition.reference}</h5>
+                    <p><strong>Destination:</strong> {expedition.destination}</p>
+                    <p><strong>Client:</strong> {expedition.client}</p>
+                    <p><strong>Type:</strong> {expedition.type}</p>
+                    <p><strong>Poids:</strong> {expedition.poids}</p>
+                    <p>
+                      <strong>Statut:</strong>{' '}
+                      <span className={`expedition-status status-${expedition.statut}`}>
+                        {formatExpeditionStatus(expedition.statut)}
+                      </span>
+                    </p>
+                    <p className="text-muted small mt-2">
+                      Dernière mise à jour: {expedition.derniere_mise_a_jour}
+                    </p>
+                  </div>
+                </Popup>
+              </Marker>
+            ))}
+          </MapContainer>
+          
+          {/* Légende de la carte */}
+          <div className="position-absolute bottom-0 end-0 m-3 p-2 bg-white rounded shadow-sm" style={{ zIndex: 1000 }}>
+            <div className="d-flex flex-column">
+              <small className="mb-1 fw-bold">Légende:</small>
+              <div className="d-flex align-items-center mb-1">
+                <div className="expedition-marker-icon en_cours me-2"></div>
+                <small>En cours</small>
+              </div>
+              <div className="d-flex align-items-center mb-1">
+                <div className="expedition-marker-icon en_retard me-2"></div>
+                <small>En retard</small>
+              </div>
+              <div className="d-flex align-items-center mb-1">
+                <div className="expedition-marker-icon en_transit me-2"></div>
+                <small>En transit</small>
+              </div>
+              <div className="d-flex align-items-center">
+                <div className="expedition-marker-icon livre me-2"></div>
+                <small>Livré</small>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      ) : (
+        // Vue Liste
+        <div className="table-responsive">
+          <table className="table table-hover mb-0">
+            <thead className="table-light">
+              <tr>
+                <th>Référence</th>
+                <th>Destination</th>
+                <th>Client</th>
+                <th>Type</th>
+                <th>Poids</th>
+                <th>Statut</th>
+                <th>Dernière mise à jour</th>
+                <th className="text-end">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {expeditions.map((expedition) => (
+                <tr 
+                  key={expedition.id} 
+                  className={`expedition-list-item ${selectedExpedition === expedition.id ? 'active' : ''}`}
+                  onClick={() => {
+                    setSelectedExpedition(expedition.id);
+                    if (mapRef.current) {
+                      mapRef.current.flyTo(
+                        [expedition.position.lat, expedition.position.lng], 
+                        12, 
+                        { duration: 1 }
+                      );
+                    }
+                    if (window.innerWidth <= 768) {
+                      setMapView(true);
+                    }
+                  }}
+                >
+                  <td className="fw-medium">{expedition.reference}</td>
+                  <td>{expedition.destination}</td>
+                  <td>{expedition.client}</td>
+                  <td>{expedition.type}</td>
+                  <td>{expedition.poids}</td>
+                  <td>
+                    <span className={`expedition-status status-${expedition.statut}`}>
+                      {formatExpeditionStatus(expedition.statut)}
+                    </span>
+                  </td>
+                  <td>{expedition.derniere_mise_a_jour}</td>
+                  <td className="text-end">
+                    <button 
+                      className="btn btn-sm btn-outline-primary"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        // Action pour voir les détails
+                        console.log('Voir détails:', expedition.id);
+                      }}
+                    >
+                      Détails
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 
-  return (
-    <div className="d-flex min-vh-100" style={{ ...clientStyles.layout, backgroundColor: 'var(--bg)', position: 'relative' }}>
-      <style>{clientCss}</style>
-      <style>{
-        `:root {
-          --sidebar-width: ${sidebarOpen ? '240px' : '56px'};
-          --content-transition: ${clientStyles.contentTransition};
-        }`
-      }</style>
+  // ... (conservez le reste de votre code existant)
+
+  // Dans le rendu du tableau de bord, remplacez l'ancienne section des expéditions par :
+  const renderDashboard = () => (
+    <div className="container-fluid p-4">
+      {/* ... autres parties du tableau de bord ... */}
       
-      <SideBare
-        activeId={section}
-        onOpenChange={setSidebarOpen}
-        open={sidebarOpen}
-        isLgUp={isLgUp}
-        collapsible={true}
-        closeOnNavigate={!isLgUp}
-        onNavigate={(id) => {
-          setSection(id);
-          if (id === 'dashboard') {
-            window.location.hash = '#/dashboard-client';
-          } else if (id === 'recherche') {
-            window.location.hash = '#/recherche-transitaire';
-          } else if (id === 'devis') {
-            window.location.hash = '#/nouveau-devis';
-          } else if (id === 'envois') {
-            window.location.hash = '#/envois';
-          } else if (id === 'profil') {
-            window.location.hash = '#/profil-client';
-          } else if (id === 'historique-devis') {
-            window.location.hash = '#/historique-devis';
-          } else if (id === 'fichiers-recus') {
-            window.location.hash = '#/mes-fichiers-recus';
-          }
-        }}
-      />
+      {renderExpeditionsSection()}
+      
+      {/* ... reste du contenu du tableau de bord ... */}
+    </div>
+  );
 
-      {/* Overlay pour mobile */}
-      {sidebarOpen && isMobile && (
-        <div 
-          className="position-fixed top-0 start-0 w-100 h-100 bg-dark bg-opacity-50"
-          onClick={closeSidebar}
-          style={{zIndex: 1010}}
-        />
-      )}
-    
-      <div className="flex-grow-1" style={{ 
-        paddingLeft: 0, 
-        minWidth: 0, 
-        position: 'relative', 
-        backgroundColor: 'var(--bg)',
-        minHeight: 'calc(100vh - 96px)',
-        marginTop: '96px'
-      }}>
-        <div className="w-100 d-flex align-items-center gap-2 px-2 px-md-3 py-2" style={{
-          position: 'fixed',
-          top: 0,
-          right: 0,
-          left: isLgUp ? (sidebarOpen ? '240px' : '56px') : '0',
-          zIndex: 1000,
-          backgroundColor: 'var(--card)',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-          transition: 'left 0.3s ease',
-          height: '64px',
-          alignItems: 'center'
-        }}>
-          {!isLgUp && (
-            <button 
-              className="btn btn-link p-1" 
-              onClick={toggleSidebar}
-              aria-label="Toggle menu"
-              style={{ marginRight: 'auto' }}
-            >
-              {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
-            </button>
-          )}
-          
-          <div className="d-none d-md-flex align-items-center bg-light rounded-pill px-3 mx-auto" style={{width: '24rem'}}>
-            <Search size={18} className="text-muted me-2" />
-            <input 
-              type="text" 
-              placeholder="Rechercher..." 
-              className="form-control border-0 bg-transparent"
-            />
-          </div>
-          
-          <div className="ms-auto d-flex align-items-center gap-2 position-relative">
-            <button 
-              className="btn btn-link position-relative p-1" 
-              onClick={onBellClick} 
-              aria-label="Notifications"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: '40px',
-                height: '40px',
-                borderRadius: '50%',
-                transition: 'background-color 0.2s',
-              }}
-              onMouseOver={(e) => {
-                e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.05)';
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.backgroundColor = 'transparent';
-              }}
-            >
-              <Bell size={24} className="text-dark" />
-              {unreadCount > 0 && (
-                <span 
-                  className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
-                  style={{ fontSize: '0.6rem', padding: '0.2rem 0.35rem' }}
-                >
-                  {unreadCount > 9 ? '9+' : unreadCount}
-                </span>
-              )}
-            </button>
-            {notifOpen && (
-              <div className="card shadow-sm" style={{ position: 'absolute', top: '100%', right: 0, zIndex: 1050, minWidth: 320 }}>
-                <div className="card-body p-0">
-                  <div className="d-flex justify-content-between align-items-center px-3 py-2 border-bottom">
-                    <div className="fw-semibold">Notifications</div>
-                    <button className="btn btn-sm btn-link" onClick={onMarkAll}>Tout marquer lu</button>
-                  </div>
-                  {notifLoading ? (
-                    <div className="p-3 small text-muted">Chargement...</div>
-                  ) : (
-                    <div className="list-group list-group-flush">
-                      {(notifs.length ? notifs : []).map(n => (
-                        <button key={n.id || n._id} className={`list-group-item list-group-item-action d-flex justify-content-between ${n.read ? '' : 'fw-semibold'}`} onClick={() => onNotifClick(n.id || n._id, n)}>
-                          <div className="me-2" style={{ whiteSpace: 'normal', textAlign: 'left' }}>
-                            <div>{n.title || 'Notification'}</div>
-                            {n.text && <div className="small text-muted">{n.text}</div>}
-                          </div>
-                          {!n.read && <span className="badge bg-primary">Nouveau</span>}
-                        </button>
-                      ))}
-                      {!notifs.length && <div className="p-3 small text-muted">Aucune notification</div>}
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-            <button 
-              className="btn p-0 border-0 bg-transparent position-relative" 
-              onClick={() => setProfileMenuOpen(!profileMenuOpen)} 
-              aria-label="Ouvrir menu profil"
-              style={{
-                width: '40px',
-                height: '40px',
-                borderRadius: '50%',
-                overflow: 'hidden',
-                border: '2px solid #e9ecef',
-                padding: '2px',
-                transition: 'border-color 0.2s',
-              }}
-              onMouseOver={(e) => {
-                e.currentTarget.style.borderColor = '#adb5bd';
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.borderColor = '#e9ecef';
-              }}
-            >
-              <img 
-                src={avatarUrl || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(userName || 'U') + '&background=random'} 
-                alt="Profil" 
-                onError={(e) => {
-                  e.target.onerror = null;
-                  e.target.src = 'https://ui-avatars.com/api/?name=' + encodeURIComponent(userName || 'U') + '&background=random';
-                }}
-                style={{ 
-                  width: '100%', 
-                  height: '100%', 
-                  objectFit: 'cover',
-                  borderRadius: '50%'
-                }} 
-              />
-            </button>
-            {profileMenuOpen && (
-              <div className="card shadow-sm" style={{ position: 'absolute', top: '100%', right: 0, zIndex: 1050, minWidth: '200px' }}>
-                <div className="list-group list-group-flush">
-                  <button className="list-group-item list-group-item-action" onClick={() => { setProfileMenuOpen(false); setSection('profil'); }}>
-                    Modifier profil
-                  </button>
-                  <button className="list-group-item list-group-item-action" onClick={() => { setProfileMenuOpen(false); window.location.hash = '#/modifierModpss'; }}>
-                    Modifier mot de passe
-                  </button>
-                  <button className="list-group-item list-group-item-action text-danger" onClick={async () => { setProfileMenuOpen(false); try { await logout(); } finally { window.location.hash = '#/connexion'; } }}>
-                    Se déconnecter
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
+  // ... (conservez le reste de votre code existant)
 
-        <div className="container-fluid px-2 px-md-4 py-3 py-md-4" style={{ backgroundColor: 'var(--bg)' }}>
-          {(() => {
-            if (isGotoDevis) {
-              return <NouveauDevis />;
-            }
-            switch(section) {
-              case 'envois':
-              case 'profil':
-              case 'historique':
-              case 'historique-devis':
-              case 'recherche':
-              case 'devis':
-                return (
-                  <div className="alert alert-info m-4">
-                    <h4>Fonctionnalité en cours de développement</h4>
-                    <p>Cette section sera bientôt disponible.</p>
-                  </div>
-                );
-              case 'dashboard':
-              default:
-                return renderDashboard();
-            }
-          })()}
-        </div>
-      </div>
+  return (
+    <div className="d-flex min-vh-100" style={{ backgroundColor: '#f8f9fa', position: 'relative' }}>
+      <style>{`
+        .sidebar-open {
+          overflow: hidden;
+        }
+        .sidebar-collapsed .sidebar {
+          width: 56px;
+        }
+      `}</style>
+      
+      {/* ... reste de votre rendu existant ... */}
+      
+      {renderDashboard()}
     </div>
   );
 };
 
-export default ClientDashboard;
+export default ClientDashboard
