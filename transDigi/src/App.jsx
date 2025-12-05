@@ -4,7 +4,7 @@ import Header from '../layout/header.jsx';
 import Footer from '../layout/footer.jsx';
 import HomeHero from '../components/index.jsx';
 import SideBare from '../components/sideBare.jsx';
-import { LayoutGrid, Search, FileText, Clock, Truck, User } from 'lucide-react';
+import { LayoutGrid, Search, FileText, Clock, Truck, User, MapPin } from 'lucide-react';
 import Contact from '../components/contact.jsx';
 import Connexion from '../components/connexion.jsx';
 import Signup from '../components/signup.jsx';
@@ -36,6 +36,7 @@ import OAuthCallback from '../components/oauthCallback.jsx';
 import { ToastProvider } from '../components/ui/ToastProvider.jsx';
 import { clientCss } from '../styles/tableauBordClientStyle.jsx';
 import BackToTop from '../components/BackToTop.jsx';
+import CartePage from './pages/CartePage.jsx';
 
 function App() {
   const [route, setRoute] = useState(window.location.hash || '#/');
@@ -146,6 +147,7 @@ function App() {
     '#/dashboard-client',
     '#/recherche-transitaire',
     '#/nouveau-devis',
+    '#/carte',
     '#/nouveau-devis-admin',
     '#/historique',
     '#/profil-client',
@@ -217,7 +219,9 @@ function App() {
       case '#/detail-devis-client':
         return <DetailDevisClient />;
       case '#/nouveau-devis':
-        return <ClientDashboard />;
+        return <NouveauDevis />;
+      case '#/carte':
+        return <CartePage />;
       case '#/nouveau-devis-admin':
         return <ClientDashboard />;
       case '#/connexion':
@@ -266,6 +270,7 @@ function App() {
               { id: 'devis', label: 'Nouveau devis', icon: FileText },
               { id: 'historique', label: 'Historique', icon: Clock },
               { id: 'envois', label: 'Suivi des envois', icon: Truck },
+              { id: 'carte', label: 'Carte des transitaires', icon: MapPin },
               { id: 'profile', label: 'Mon profil', icon: User },
             ]}
             onNavigate={(id) => {
@@ -275,6 +280,7 @@ function App() {
                 case 'devis': window.location.hash = '#/nouveau-devis'; break;
                 case 'historique': window.location.hash = '#/historique'; break;
                 case 'envois': window.location.hash = '#/envois'; break;
+                case 'carte': window.location.hash = '#/carte'; break;
                 case 'profile': window.location.hash = '#/profil-client'; break;
                 default: break;
               }
