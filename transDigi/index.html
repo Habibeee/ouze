@@ -5,22 +5,51 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>TransDigi</title>
+    
     <!-- Bootstrap Icons CDN -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <!-- Font Awesome CDN -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+    
     <!-- Leaflet CSS from CDN -->
     <link 
       rel="stylesheet" 
       href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
       integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
-      crossorigin=""
+      crossorigin="anonymous"
     />
-    <!-- Make L available globally -->
+    
+    <!-- Script pour initialiser Leaflet de manière asynchrone -->
     <script>
-      window.leafletModule = {
-        L: window.L
-      };
+      // Fonction pour charger Leaflet de manière asynchrone
+      function loadLeaflet() {
+        return new Promise((resolve, reject) => {
+          if (window.L) return resolve(window.L);
+          
+          const script = document.createElement('script');
+          script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+          script.integrity = 'sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=';
+          script.crossOrigin = 'anonymous';
+          script.onload = () => {
+            // Configuration des icônes par défaut
+            delete window.L.Icon.Default.prototype._getIconUrl;
+            window.L.Icon.Default.mergeOptions({
+              iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+              iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+              shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+            });
+            
+            // Déclenche un événement personnalisé lorsque Leaflet est chargé
+            window.dispatchEvent(new Event('leaflet:loaded'));
+            resolve(window.L);
+          };
+          script.onerror = reject;
+          document.head.appendChild(script);
+        });
+      }
+      
+      // Expose la fonction de chargement pour une utilisation dans l'application
+      window.loadLeaflet = loadLeaflet;
     </script>
     <style>
       /* Style pour les marqueurs personnalisés */
