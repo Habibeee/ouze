@@ -39,6 +39,14 @@ const ClientDashboard = () => {
 
   // Styles personnalisés
   const clientStyles = {
+    tableCell: {
+      whiteSpace: 'nowrap',
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+      maxWidth: '200px',
+      display: 'inline-block',
+      verticalAlign: 'middle'
+    },
     layout: {
       minHeight: '100vh',
     },
@@ -374,15 +382,15 @@ const ClientDashboard = () => {
         </div>
         <div className="card-body p-0">
           <div className="table-responsive">
-            <table className="table table-hover mb-0">
+            <table className="table table-hover mb-0" style={{ tableLayout: 'fixed', width: '100%' }}>
               <thead className="table-light">
                 <tr>
-                  <th>Référence</th>
-                  <th>Destination</th>
-                  <th>Date</th>
-                  <th>Statut</th>
-                  <th>Montant</th>
-                  <th className="text-end">Actions</th>
+                  <th style={{ width: '15%' }}>Référence</th>
+                  <th style={{ width: '20%' }}>Destination</th>
+                  <th style={{ width: '15%' }}>Date</th>
+                  <th style={{ width: '15%' }}>Statut</th>
+                  <th style={{ width: '15%' }}>Montant</th>
+                  <th className="text-end" style={{ width: '20%' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -409,20 +417,26 @@ const ClientDashboard = () => {
                 ) : (
                   devis.slice(0, 5).map((devisItem) => (
                     <tr key={devisItem.id}>
-                      <td>{devisItem.reference || devisItem.id || 'N/A'}</td>
-                      <td>
-                        <div className="d-flex align-items-center">
-                          <MapPin size={14} className="me-1 text-muted" />
-                          {devisItem.destination || 'N/A'}
+                      <td style={{ ...clientStyles.tableCell, width: '15%' }} title={devisItem.reference || devisItem.id || 'N/A'}>
+                        {devisItem.reference || devisItem.id || 'N/A'}
+                      </td>
+                      <td style={{ width: '20%' }}>
+                        <div className="d-flex align-items-center" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          <MapPin size={14} className="me-1 text-muted flex-shrink-0" />
+                          <span className="text-truncate" style={{ display: 'inline-block', maxWidth: 'calc(100% - 20px)' }} title={devisItem.destination || 'N/A'}>
+                            {devisItem.destination || 'N/A'}
+                          </span>
                         </div>
                       </td>
-                      <td>{devisItem.date || (devisItem.createdAt ? new Date(devisItem.createdAt).toLocaleDateString('fr-FR') : 'N/A')}</td>
-                      <td>
-                        <span className={`badge ${getStatusClass(devisItem.status)}`}>
+                      <td style={{ width: '15%' }} title={devisItem.date || (devisItem.createdAt ? new Date(devisItem.createdAt).toLocaleDateString('fr-FR') : 'N/A')}>
+                        {devisItem.date || (devisItem.createdAt ? new Date(devisItem.createdAt).toLocaleDateString('fr-FR') : 'N/A')}
+                      </td>
+                      <td style={{ width: '15%' }}>
+                        <span className={`badge ${getStatusClass(devisItem.status)}`} style={{ whiteSpace: 'nowrap' }}>
                           {devisItem.statusLabel || devisItem.status}
                         </span>
                       </td>
-                      <td className="fw-bold">{devisItem.amount || devisItem.montant || 'N/A'}</td>
+                      <td className="fw-bold" style={{ width: '15%' }}>{devisItem.amount || devisItem.montant || 'N/A'}</td>
                       <td className="text-end">
                         <div className="d-flex gap-2 justify-content-end">
                           <button 
