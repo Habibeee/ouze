@@ -1,331 +1,703 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  LayoutGrid, Search, FileText, Truck, Clock, Settings, LogOut,
-  CheckCircle, Mail, XCircle, X, User, Bell
+  Bell, User, Search, Menu, X, 
+  FileText, Truck, MapPin, Clock, 
+  CheckCircle, XCircle, Archive, ChevronRight,
+  Download, Printer, Share2, Filter,
+  ChevronDown, ChevronUp, MoreVertical,
+  Settings, LayoutGrid, MessageSquare
 } from 'lucide-react';
-import { clientStyles, clientCss } from '../styles/tableauBordClientStyle.jsx';
-import SideBare from './sideBare';
-import RechercheTransitaire from './rechercheTransitaire.jsx';
-import NouveauDevis from './nouveauDevis.jsx';
-import TrackingApp from './suiviEnvoi.jsx';
-import ModofierProfClient from './modofierProfClient.jsx';
-import HistoriqueDevis from './historiqueDevis.jsx';
+import { toast } from 'react-toastify';
+import SideBare from './SideBare';
 
 const ClientDashboard = () => {
+  // États principaux
+  const [section, setSection] = useState('dashboard');
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [isLgUp, setIsLgUp] = useState(window.innerWidth >= 992);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  
+  // États pour les devis
+  const [confirmCancelId, setConfirmCancelId] = useState(null);
+  const [isArchiving, setIsArchiving] = useState(false);
+  const [devis, setDevis] = useState([]);
+  const [devisLoading, setDevisLoading] = useState(false);
+  const [devisError, setDevisError] = useState(null);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  
+  // États pour les notifications et utilisateur
+  const [recentActivities, setRecentActivities] = useState([]);
+  const [userName, setUserName] = useState('Utilisateur');
+  const [avatarUrl, setAvatarUrl] = useState('');
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [notifs, setNotifs] = useState([]);
+  const [notifLoading, setNotifLoading] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
-  const [section, setSection] = useState(() => (typeof window !== 'undefined' && window.location.hash === '#/historique') ? 'historique' : 'dashboard');
-  const chartId = 'clientActivityChart';
-  const avatarUrl = 'https://i.pravatar.cc/64?img=5';
+  const [isGotoDevis, setIsGotoDevis] = useState(false);
 
-  // Sync section with current hash (so #/historique opens Historique with sidebar)
-  useEffect(() => {
-    const syncFromHash = () => {
-      const hash = window.location.hash;
-      if (hash === '#/historique') {
-        setSection('historique');
-      } else if (hash === '#/dashboard-client') {
-        setSection('dashboard');
-      }
-    };
-    syncFromHash();
-    window.addEventListener('hashchange', syncFromHash);
-    return () => window.removeEventListener('hashchange', syncFromHash);
-  }, []);
-
-  // Dessin de la courbe sur canvas (simple, sans lib)
-  useEffect(() => {
-    if (section !== 'dashboard') return;
-    const canvas = document.getElementById(chartId);
-    if (!canvas) return;
-    const dpr = window.devicePixelRatio || 1;
-    const parent = canvas.parentElement;
-    const width = parent ? parent.clientWidth : 800;
-    const height = 300;
-    canvas.width = width * dpr;
-    canvas.height = height * dpr;
-    canvas.style.width = width + 'px';
-    canvas.style.height = height + 'px';
-    const ctx = canvas.getContext('2d');
-    ctx.scale(dpr, dpr);
-
-    // Données d'exemple "réelles" (expéditions par mois)
-    const data = [5, 8, 12, 15, 13, 19, 24, 22, 27, 30, 28, 34];
-    const padding = 40;
-    const maxVal = Math.max(...data) * 1.1;
-    const stepX = (width - padding * 2) / (data.length - 1);
-
-    // Fond
-    ctx.clearRect(0, 0, width, height);
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, width, height);
-
-    // Grille horizontale
-    ctx.strokeStyle = '#E5E7EB';
-    ctx.lineWidth = 1;
-    for (let i = 0; i <= 5; i++) {
-      const y = padding + ((height - padding * 2) * i) / 5;
-      ctx.beginPath();
-      ctx.moveTo(padding, y);
-      ctx.lineTo(width - padding, y);
-      ctx.stroke();
-    }
-
-    // Courbe
-    const toY = (v) => height - padding - (v / maxVal) * (height - padding * 2);
-    ctx.strokeStyle = clientStyles.primary;
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    data.forEach((v, i) => {
-      const x = padding + i * stepX;
-      const y = toY(v);
-      if (i === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
-    });
-    ctx.stroke();
-
-    // Zone sous la courbe
-    const gradient = ctx.createLinearGradient(0, padding, 0, height - padding);
-    gradient.addColorStop(0, 'rgba(14,165,233,0.25)');
-    gradient.addColorStop(1, 'rgba(14,165,233,0)');
-    ctx.fillStyle = gradient;
-    ctx.lineTo(padding + (data.length - 1) * stepX, height - padding);
-    ctx.lineTo(padding, height - padding);
-    ctx.closePath();
-    ctx.fill();
-  }, [section]);
-
-  const [devis, setDevis] = useState([
-    { id: '#12345', destination: 'New York, USA', status: 'approuve', statusLabel: 'Approuvé', statusColor: '#E8F5E9', statusTextColor: '#28A745', date: '2023-10-27' },
-    { id: '#12346', destination: 'Londres, UK', status: 'en-attente', statusLabel: 'En attente', statusColor: '#FFF9E6', statusTextColor: '#F57C00', date: '2023-10-26' },
-  ]);
-
-  const cancelDevis = (id) => {
-    const ok = window.confirm('Confirmer l\'annulation de ce devis ?');
-    if (!ok) return;
-    setDevis(prev => prev.map(d => d.id === id ? {
-      ...d,
-      status: 'annule',
-      statusLabel: 'Annulé',
-      statusColor: '#FEE2E2',
-      statusTextColor: '#DC2626'
-    } : d));
+  // Styles personnalisés
+  const clientStyles = {
+    layout: {
+      minHeight: '100vh',
+    },
+    contentTransition: 'margin-left 0.3s ease',
   };
 
-  const envoysActifs = [
-    { id: '#SH5829', status: 'En transit', destination: 'Los Angeles, USA' },
-    { id: '#SH5830', status: 'En transit', destination: 'Shanghai, Chine' },
-  ];
+  const clientCss = `
+    .sidebar-open {
+      overflow: hidden;
+    }
+    .sidebar-collapsed .sidebar {
+      width: 56px;
+    }
+  `;
 
-  const activities = [
-    { type: 'success', icon: CheckCircle, bgColor: '#E8F5E9', iconColor: '#28A745', text: 'Le devis #12345 a été approuvé.', time: 'Il y a 2 heures' },
-    { type: 'info', icon: Mail, bgColor: '#E3F2FD', iconColor: '#2196F3', text: 'Nouveau message de Global Forwarding Inc.', time: 'Il y a 1 jour' },
-  ];
+  // Fonctions API (à adapter selon votre backend)
+  const cancelDevisApi = async (id) => {
+    const response = await fetch(`/api/devis/${id}/cancel`, { method: 'POST' });
+    if (!response.ok) throw new Error('Erreur lors de l\'annulation');
+    return await response.json();
+  };
 
-  const isLgUp = typeof window !== 'undefined' ? window.innerWidth >= 992 : false;
-  const isHistoriqueHash = typeof window !== 'undefined' && window.location.hash === '#/historique';
+  const archiveDevisApi = async (id) => {
+    const response = await fetch(`/api/devis/${id}/archive`, { method: 'POST' });
+    if (!response.ok) throw new Error('Erreur lors de l\'archivage');
+    return await response.json();
+  };
+
+  const listNotifications = async (limit) => {
+    const response = await fetch(`/api/notifications?limit=${limit}`);
+    if (!response.ok) throw new Error('Erreur lors du chargement des notifications');
+    return await response.json();
+  };
+
+  const logout = async () => {
+    localStorage.clear();
+    sessionStorage.clear();
+  };
+
+  const fetchDevis = async ({ page, limit }) => {
+    setDevisLoading(true);
+    try {
+      const response = await fetch(`/api/devis?page=${page}&limit=${limit}`);
+      const data = await response.json();
+      setDevis(data.items || []);
+      setDevisError(null);
+    } catch (error) {
+      setDevisError('Erreur lors du chargement des devis');
+      console.error(error);
+    } finally {
+      setDevisLoading(false);
+    }
+  };
+
+  // Gestion des devis
+  const cancelDevis = async (id) => {
+    if (confirmCancelId !== id) {
+      setConfirmCancelId(id);
+      setTimeout(() => { 
+        setConfirmCancelId(prev => prev === id ? null : prev); 
+      }, 4000);
+      return;
+    }
+    try {
+      await cancelDevisApi(id);
+      await fetchDevis({ page, limit });
+      toast.success('Le devis a été annulé avec succès');
+    } catch (e) {
+      toast.error(e?.message || 'Erreur lors de l\'annulation du devis');
+    } finally {
+      setConfirmCancelId(null);
+    }
+  };
+
+  const handleArchive = async (id) => {
+    if (!id) {
+      toast.error('ID de devis manquant');
+      return;
+    }
+    
+    if (!window.confirm('Êtes-vous sûr de vouloir archiver ce devis ?')) {
+      return;
+    }
+    
+    setIsArchiving(true);
+    try {
+      const response = await archiveDevisApi(id);
+      
+      if (response && response.success === false) {
+        throw new Error(response.message || 'Échec de l\'archivage du devis');
+      }
+      
+      await fetchDevis({ page, limit });
+      toast.success('Le devis a été archivé avec succès');
+    } catch (error) {
+      console.error('Erreur lors de l\'archivage du devis:', error);
+      
+      if (error.response) {
+        if (error.response.status === 404) {
+          toast.error('La ressource demandée est introuvable. Veuillez réessayer.');
+        } else if (error.response.status === 401) {
+          toast.error('Session expirée. Veuillez vous reconnecter.');
+          window.location.href = '/connexion';
+        } else {
+          const errorMessage = error.response.data?.message || 'Une erreur est survenue lors de l\'archivage du devis';
+          toast.error(errorMessage);
+        }
+      } else if (error.request) {
+        toast.error('Pas de réponse du serveur. Vérifiez votre connexion internet.');
+      } else {
+        toast.error(error.message || 'Erreur lors de la préparation de la requête');
+      }
+    } finally {
+      setIsArchiving(false);
+    }
+  };
+
+  const archiverDevis = (id) => {
+    setDevis(prevDevis => prevDevis.filter(devis => devis.id !== id));
+  };
+
+  const annulerDevis = (id) => {
+    setDevis(prevDevis => 
+      prevDevis.map(devis => 
+        devis.id === id 
+          ? { ...devis, status: 'Annulé' } 
+          : devis
+      )
+    );
+  };
+
+  // Gestionnaires d'événements
+  const onViewDevis = (id) => {
+    console.log('Voir devis:', id);
+  };
+
+  const onBellClick = () => {
+    setNotifOpen(!notifOpen);
+  };
+
+  const onMarkAll = () => {
+    console.log('Marquer toutes les notifications comme lues');
+  };
+
+  const onNotifClick = (id, notif) => {
+    console.log('Notification cliquée:', id, notif);
+  };
+
+  const toggleSidebar = () => {
+    setSidebarOpen(!sidebarOpen);
+  };
+
+  const closeSidebar = () => {
+    if (isMobile) {
+      setSidebarOpen(false);
+    }
+  };
+
+  const getStatusClass = (status) => {
+    switch(status?.toLowerCase()) {
+      case 'en attente':
+      case 'attente':
+        return 'bg-warning';
+      case 'approuvé':
+      case 'accepte':
+        return 'bg-success';
+      case 'rejeté':
+      case 'rejete':
+        return 'bg-danger';
+      case 'en transit':
+        return 'bg-primary';
+      case 'livré':
+        return 'bg-info';
+      case 'annulé':
+        return 'bg-secondary';
+      default:
+        return 'bg-secondary';
+    }
+  };
+
+  // Effects
+  useEffect(() => {
+    let isMounted = true;
+    
+    const fetchNotifications = async () => {
+      try {
+        const items = await listNotifications(5);
+        if (!isMounted) return;
+        
+        const arr = Array.isArray(items?.items) ? items.items : (Array.isArray(items) ? items : []);
+        const mapped = arr.slice(0,5).map(n => ({
+          id: n.id || n._id || String(Math.random()),
+          type: (n.type || '').toString().toLowerCase(),
+          title: n.title || 'Notification',
+          text: n.body || n.message || '',
+          time: n.createdAt ? new Date(n.createdAt).toLocaleString() : '',
+          data: n.data || {},
+          read: !!n.read,
+        }));
+        setRecentActivities(mapped);
+        setNotifs(mapped);
+        setUnreadCount(mapped.filter(n => !n.read).length);
+      } catch (error) {
+        console.error('Erreur lors du chargement des notifications:', error);
+      }
+    };
+    
+    fetchNotifications();
+    
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    fetchDevis({ page, limit });
+  }, [page, limit]);
+
+  useEffect(() => {
+    const handleResize = () => {
+      const width = window.innerWidth;
+      setIsLgUp(width >= 992);
+      setIsMobile(width <= 768);
+      if (width > 768) {
+        setSidebarOpen(true);
+      } else {
+        setSidebarOpen(false);
+      }
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    
+    const body = document.body;
+    if (sidebarOpen) {
+      body.classList.add('sidebar-open');
+      body.classList.remove('sidebar-collapsed');
+    } else {
+      body.classList.add('sidebar-collapsed');
+      body.classList.remove('sidebar-open');
+    }
+    
+    return () => {
+      if (typeof document !== 'undefined') {
+        body.classList.remove('sidebar-open', 'sidebar-collapsed');
+      }
+    };
+  }, [sidebarOpen]);
+
+  // Rendu du tableau de bord
+  const renderDashboard = () => (
+    <div className="container-fluid p-4">
+      <div className="row mb-4">
+        <div className="col-12">
+          <h1 className="h2 mb-2">Tableau de bord</h1>
+          <p className="text-muted">Bienvenue, {userName || 'Utilisateur'}</p>
+        </div>
+      </div>
+
+      <div className="row g-4 mb-4">
+        <div className="col-md-4">
+          <div className="card h-100">
+            <div className="card-body">
+              <div className="d-flex justify-content-between align-items-center">
+                <div>
+                  <h6 className="text-muted mb-2">Devis en attente</h6>
+                  <h3 className="mb-0">
+                    {devis.filter(d => d.status === 'attente' || d.status === 'En attente').length}
+                  </h3>
+                </div>
+                <div className="bg-primary bg-opacity-10 p-3 rounded">
+                  <FileText className="text-primary" size={24} />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div className="col-md-4">
+          <div className="card h-100">
+            <div className="card-body">
+              <div className="d-flex justify-content-between align-items-center">
+                <div>
+                  <h6 className="text-muted mb-2">Devis acceptés</h6>
+                  <h3 className="mb-0">
+                    {devis.filter(d => d.status === 'accepte' || d.status === 'Approuvé').length}
+                  </h3>
+                </div>
+                <div className="bg-success bg-opacity-10 p-3 rounded">
+                  <CheckCircle className="text-success" size={24} />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div className="col-md-4">
+          <div className="card h-100">
+            <div className="card-body">
+              <div className="d-flex justify-content-between align-items-center">
+                <div>
+                  <h6 className="text-muted mb-2">Envois en cours</h6>
+                  <h3 className="mb-0">0</h3>
+                </div>
+                <div className="bg-warning bg-opacity-10 p-3 rounded">
+                  <Truck className="text-warning" size={24} />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="card">
+        <div className="card-header bg-white d-flex justify-content-between align-items-center">
+          <h5 className="mb-0">Derniers devis</h5>
+          <div className="d-flex gap-2">
+            <button className="btn btn-sm btn-outline-secondary">
+              <Filter size={16} className="me-1" />
+              Filtres
+            </button>
+            <button 
+              className="btn btn-sm btn-outline-primary"
+              onClick={() => setSection('devis')}
+            >
+              Voir tout
+            </button>
+          </div>
+        </div>
+        <div className="card-body p-0">
+          <div className="table-responsive">
+            <table className="table table-hover mb-0">
+              <thead className="table-light">
+                <tr>
+                  <th>Référence</th>
+                  <th>Destination</th>
+                  <th>Date</th>
+                  <th>Statut</th>
+                  <th>Montant</th>
+                  <th className="text-end">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {devisLoading ? (
+                  <tr>
+                    <td colSpan="6" className="text-center py-4">
+                      <div className="spinner-border text-primary" role="status">
+                        <span className="visually-hidden">Chargement...</span>
+                      </div>
+                    </td>
+                  </tr>
+                ) : devisError ? (
+                  <tr>
+                    <td colSpan="6" className="text-center text-danger py-4">
+                      {devisError}
+                    </td>
+                  </tr>
+                ) : devis.length === 0 ? (
+                  <tr>
+                    <td colSpan="6" className="text-center text-muted py-4">
+                      Aucun devis trouvé
+                    </td>
+                  </tr>
+                ) : (
+                  devis.slice(0, 5).map((devisItem) => (
+                    <tr key={devisItem.id}>
+                      <td>{devisItem.reference || devisItem.id || 'N/A'}</td>
+                      <td>
+                        <div className="d-flex align-items-center">
+                          <MapPin size={14} className="me-1 text-muted" />
+                          {devisItem.destination || 'N/A'}
+                        </div>
+                      </td>
+                      <td>{devisItem.date || (devisItem.createdAt ? new Date(devisItem.createdAt).toLocaleDateString('fr-FR') : 'N/A')}</td>
+                      <td>
+                        <span className={`badge ${getStatusClass(devisItem.status)}`}>
+                          {devisItem.statusLabel || devisItem.status}
+                        </span>
+                      </td>
+                      <td className="fw-bold">{devisItem.amount || devisItem.montant || 'N/A'}</td>
+                      <td className="text-end">
+                        <div className="d-flex gap-2 justify-content-end">
+                          <button 
+                            className="btn btn-sm btn-outline-primary"
+                            onClick={() => onViewDevis(devisItem.id)}
+                          >
+                            Voir
+                          </button>
+                          {(devisItem.status === 'attente' || devisItem.status === 'En attente') && (
+                            <>
+                              <button 
+                                className="btn btn-sm btn-outline-danger"
+                                onClick={() => annulerDevis(devisItem.id)}
+                              >
+                                Annuler
+                              </button>
+                              <button 
+                                className="btn btn-sm btn-outline-secondary"
+                                onClick={() => handleArchive(devisItem.id)}
+                                disabled={isArchiving}
+                              >
+                                {isArchiving ? 'Archivage...' : 'Archiver'}
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div className="card-body border-top">
+          <div className="d-flex justify-content-between align-items-center text-muted">
+            <div>Affichage de 1 à {Math.min(devis.length, 5)} sur {devis.length} entrées</div>
+            <div className="d-flex gap-2">
+              <button className="btn btn-sm btn-outline-secondary" disabled={page === 1} onClick={() => setPage(p => p - 1)}>
+                Précédent
+              </button>
+              <button className="btn btn-sm btn-secondary">
+                {page}
+              </button>
+              <button className="btn btn-sm btn-outline-secondary" onClick={() => setPage(p => p + 1)}>
+                Suivant
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 
   return (
-    <div className="d-flex bg-body" style={clientStyles.layout}>
+    <div className="d-flex min-vh-100" style={{ ...clientStyles.layout, backgroundColor: 'var(--bg)', position: 'relative' }}>
       <style>{clientCss}</style>
-      {/* Sidebar (SideBare) */}
+      <style>{
+        `:root {
+          --sidebar-width: ${sidebarOpen ? '240px' : '56px'};
+          --content-transition: ${clientStyles.contentTransition};
+        }`
+      }</style>
+      
       <SideBare
-        topOffset={96}
-        activeId={isHistoriqueHash ? 'historique' : section}
-        closeOnNavigate={false}
-        defaultOpen={true}
-        items={[
-          { id: 'dashboard', label: 'Tableau de bord', icon: LayoutGrid },
-          { id: 'trouver-transitaire', label: 'Trouver un transitaire', icon: Search },
-          { id: 'nouveau-devis', label: 'Nouveau devis', icon: FileText },
-          { id: 'envois', label: 'Suivi des envois', icon: Truck },
-          { id: 'historique', label: 'Historique', icon: Clock },
-          { id: 'profil', label: 'Mon profil', icon: User },
-        ]}
+        activeId={section}
+        onOpenChange={setSidebarOpen}
+        open={sidebarOpen}
+        isLgUp={isLgUp}
+        collapsible={true}
+        closeOnNavigate={!isLgUp}
         onNavigate={(id) => {
           setSection(id);
-          switch(id){
-            case 'dashboard':
-              window.location.hash = '#/dashboard-client';
-              break;
-            case 'trouver-transitaire':
-              window.location.hash = '#/recherche-transitaire';
-              break;
-            case 'nouveau-devis':
-              window.location.hash = '#/nouveau-devis';
-              break;
-            case 'historique':
-              window.location.hash = '#/historique';
-              break;
-            case 'profil':
-              window.location.hash = '#/profil-client';
-              break;
-            case 'envois':
-              window.location.hash = '#/envois';
-              break;
-            default:
-              break;
+          if (id === 'dashboard') {
+            window.location.hash = '#/dashboard-client';
+          } else if (id === 'recherche') {
+            window.location.hash = '#/recherche-transitaire';
+          } else if (id === 'devis') {
+            window.location.hash = '#/nouveau-devis';
+          } else if (id === 'envois') {
+            window.location.hash = '#/envois';
+          } else if (id === 'profil') {
+            window.location.hash = '#/profil-client';
+          } else if (id === 'historique-devis') {
+            window.location.hash = '#/historique-devis';
+          } else if (id === 'fichiers-recus') {
+            window.location.hash = '#/mes-fichiers-recus';
           }
         }}
       />
 
-      {/* Main Content */}
-      <div className="flex-grow-1 bg-body" style={{ marginLeft: '0' }}>
-        <div className="d-flex justify-content-end align-items-center gap-2 position-relative">
-          <button className="btn btn-link">
-            <Bell size={20} />
-          </button>
-          <button className="btn p-0 border-0 bg-transparent" onClick={() => setProfileMenuOpen(!profileMenuOpen)} aria-label="Ouvrir menu profil">
-            <img src={avatarUrl} alt="Profil" className="rounded-circle" style={{ width: 36, height: 36, objectFit: 'cover', border: '2px solid #e9ecef' }} />
-          </button>
-          {profileMenuOpen && (
-            <div className="card shadow-sm" style={{ position: 'absolute', top: '100%', right: 0, zIndex: 1050, minWidth: '200px' }}>
-              <div className="list-group list-group-flush">
-                <button className="list-group-item list-group-item-action" onClick={() => { setProfileMenuOpen(false); setSection('profil'); }}>
-                  Modifier profil
-                </button>
-                <button className="list-group-item list-group-item-action" onClick={() => { setProfileMenuOpen(false); window.location.hash = '#/modifierModpss'; }}>
-                  Modifier mot de passe
-                </button>
-                <button className="list-group-item list-group-item-action text-danger" onClick={() => { setProfileMenuOpen(false); window.location.hash = '#/connexion'; }}>
-                  Se déconnecter
-                </button>
-              </div>
-            </div>
+      {/* Overlay pour mobile */}
+      {sidebarOpen && isMobile && (
+        <div 
+          className="position-fixed top-0 start-0 w-100 h-100 bg-dark bg-opacity-50"
+          onClick={closeSidebar}
+          style={{zIndex: 1010}}
+        />
+      )}
+    
+      <div className="flex-grow-1" style={{ 
+        paddingLeft: 0, 
+        minWidth: 0, 
+        position: 'relative', 
+        backgroundColor: 'var(--bg)',
+        minHeight: 'calc(100vh - 96px)',
+        marginTop: '96px'
+      }}>
+        <div className="w-100 d-flex align-items-center gap-2 px-2 px-md-3 py-2" style={{
+          position: 'fixed',
+          top: 0,
+          right: 0,
+          left: isLgUp ? (sidebarOpen ? '240px' : '56px') : '0',
+          zIndex: 1000,
+          backgroundColor: 'var(--card)',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+          transition: 'left 0.3s ease',
+          height: '64px',
+          alignItems: 'center'
+        }}>
+          {!isLgUp && (
+            <button 
+              className="btn btn-link p-1" 
+              onClick={toggleSidebar}
+              aria-label="Toggle menu"
+              style={{ marginRight: 'auto' }}
+            >
+              {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
+            </button>
           )}
+          
+          <div className="d-none d-md-flex align-items-center bg-light rounded-pill px-3 mx-auto" style={{width: '24rem'}}>
+            <Search size={18} className="text-muted me-2" />
+            <input 
+              type="text" 
+              placeholder="Rechercher..." 
+              className="form-control border-0 bg-transparent"
+            />
+          </div>
+          
+          <div className="ms-auto d-flex align-items-center gap-2 position-relative">
+            <button 
+              className="btn btn-link position-relative p-1" 
+              onClick={onBellClick} 
+              aria-label="Notifications"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '40px',
+                height: '40px',
+                borderRadius: '50%',
+                transition: 'background-color 0.2s',
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.05)';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent';
+              }}
+            >
+              <Bell size={24} className="text-dark" />
+              {unreadCount > 0 && (
+                <span 
+                  className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                  style={{ fontSize: '0.6rem', padding: '0.2rem 0.35rem' }}
+                >
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
+            </button>
+            {notifOpen && (
+              <div className="card shadow-sm" style={{ position: 'absolute', top: '100%', right: 0, zIndex: 1050, minWidth: 320 }}>
+                <div className="card-body p-0">
+                  <div className="d-flex justify-content-between align-items-center px-3 py-2 border-bottom">
+                    <div className="fw-semibold">Notifications</div>
+                    <button className="btn btn-sm btn-link" onClick={onMarkAll}>Tout marquer lu</button>
+                  </div>
+                  {notifLoading ? (
+                    <div className="p-3 small text-muted">Chargement...</div>
+                  ) : (
+                    <div className="list-group list-group-flush">
+                      {(notifs.length ? notifs : []).map(n => (
+                        <button key={n.id || n._id} className={`list-group-item list-group-item-action d-flex justify-content-between ${n.read ? '' : 'fw-semibold'}`} onClick={() => onNotifClick(n.id || n._id, n)}>
+                          <div className="me-2" style={{ whiteSpace: 'normal', textAlign: 'left' }}>
+                            <div>{n.title || 'Notification'}</div>
+                            {n.text && <div className="small text-muted">{n.text}</div>}
+                          </div>
+                          {!n.read && <span className="badge bg-primary">Nouveau</span>}
+                        </button>
+                      ))}
+                      {!notifs.length && <div className="p-3 small text-muted">Aucune notification</div>}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+            <button 
+              className="btn p-0 border-0 bg-transparent position-relative" 
+              onClick={() => setProfileMenuOpen(!profileMenuOpen)} 
+              aria-label="Ouvrir menu profil"
+              style={{
+                width: '40px',
+                height: '40px',
+                borderRadius: '50%',
+                overflow: 'hidden',
+                border: '2px solid #e9ecef',
+                padding: '2px',
+                transition: 'border-color 0.2s',
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.borderColor = '#adb5bd';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.borderColor = '#e9ecef';
+              }}
+            >
+              <img 
+                src={avatarUrl || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(userName || 'U') + '&background=random'} 
+                alt="Profil" 
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src = 'https://ui-avatars.com/api/?name=' + encodeURIComponent(userName || 'U') + '&background=random';
+                }}
+                style={{ 
+                  width: '100%', 
+                  height: '100%', 
+                  objectFit: 'cover',
+                  borderRadius: '50%'
+                }} 
+              />
+            </button>
+            {profileMenuOpen && (
+              <div className="card shadow-sm" style={{ position: 'absolute', top: '100%', right: 0, zIndex: 1050, minWidth: '200px' }}>
+                <div className="list-group list-group-flush">
+                  <button className="list-group-item list-group-item-action" onClick={() => { setProfileMenuOpen(false); setSection('profil'); }}>
+                    Modifier profil
+                  </button>
+                  <button className="list-group-item list-group-item-action" onClick={() => { setProfileMenuOpen(false); window.location.hash = '#/modifierModpss'; }}>
+                    Modifier mot de passe
+                  </button>
+                  <button className="list-group-item list-group-item-action text-danger" onClick={async () => { setProfileMenuOpen(false); try { await logout(); } finally { window.location.hash = '#/connexion'; } }}>
+                    Se déconnecter
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Main Content Area */}
-        <div className="container-fluid bg-body px-4 py-4">
-          {section === 'envois' ? (
-            <TrackingApp />
-          ) : section === 'profil' ? (
-            <ModofierProfClient />
-          ) : (section === 'historique' || isHistoriqueHash) ? (
-            <HistoriqueDevis />
-          ) : (
-            <>
-              {/* Welcome Section */}
-              <div className="mb-4">
-                <h1 className="h2 fw-bold mb-2">Bonjour, Alex !</h1>
-                <p className="text-muted">Voici un aperçu de votre activité récente.</p>
-              </div>
-
-              <div className="row g-4">
-                {/* Left Column */}
-                <div className="col-12 col-lg-8">
-                  {/* Mes Devis Section */}
-                  <div className="card border-0 shadow-sm mb-4">
-                    <div className="card-body">
-                      <h5 className="fw-bold mb-4">Mes devis</h5>
-                      <div className="table-responsive">
-                        <table className="table table-hover mb-0">
-                          <thead>
-                            <tr>
-                              <th className="border-0 pb-3">ID Devis</th>
-                              <th className="border-0 pb-3">Destination</th>
-                              <th className="border-0 pb-3">Statut</th>
-                              <th className="border-0 pb-3">Date</th>
-                              <th className="border-0 pb-3 text-end">Actions</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {devis.map((item) => (
-                              <tr key={item.id}>
-                                <td className="py-3">{item.id}</td>
-                                <td className="py-3">{item.destination}</td>
-                                <td className="py-3">
-                                  <span className="badge px-3 py-2" style={{ backgroundColor: item.statusColor, color: item.statusTextColor, fontWeight: '500' }}>
-                                    {item.statusLabel}
-                                  </span>
-                                </td>
-                                <td className="py-3 text-muted">{item.date}</td>
-                                <td className="py-3 text-end">
-                                  {item.status === 'en-attente' && (
-                                    <button className="btn btn-sm btn-outline-danger" onClick={() => cancelDevis(item.id)}>Annuler</button>
-                                  )}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
+        <div className="container-fluid px-2 px-md-4 py-3 py-md-4" style={{ backgroundColor: 'var(--bg)' }}>
+          {(() => {
+            if (isGotoDevis) {
+              return <NouveauDevis />;
+            }
+            switch(section) {
+              case 'envois':
+              case 'profil':
+              case 'historique':
+              case 'historique-devis':
+              case 'recherche':
+              case 'devis':
+                return (
+                  <div className="alert alert-info m-4">
+                    <h4>Fonctionnalité en cours de développement</h4>
+                    <p>Cette section sera bientôt disponible.</p>
                   </div>
-
-                  {/* Activity Chart */}
-                  <div className="card border-0 shadow-sm">
-                    <div className="card-body">
-                      <h5 className="fw-bold mb-4">Votre activité d'expédition</h5>
-                      <div style={{ height: '300px', position: 'relative' }}>
-                        <canvas id={chartId} />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Right Column */}
-                <div className="col-12 col-lg-4">
-                  {/* Envois Actifs */}
-                  <div className="card border-0 shadow-sm mb-4">
-                    <div className="card-body">
-                      <h5 className="fw-bold mb-4">Envois actifs</h5>
-                      <div className="rounded-3 mb-3 overflow-hidden" style={{ height: '200px' }}>
-                        <iframe
-                          title="Carte des envois"
-                          src="https://www.openstreetmap.org/export/embed.html?bbox=-23.0,10.0,10.0,25.0&layer=mapnik&marker=14.7167,-17.4677"
-                          style={{ border: 0, width: '100%', height: '100%' }}
-                          loading="lazy"
-                          referrerPolicy="no-referrer-when-downgrade"
-                        />
-                      </div>
-                      <div className="text-end">
-                        <a className="small text-decoration-none" href="https://www.openstreetmap.org/?mlat=14.7167&mlon=-17.4677#map=5/14.7167/-17.4677" target="_blank" rel="noreferrer">Ouvrir la carte</a>
-                      </div>
-                      <div className="d-flex flex-column gap-3">
-                        {envoysActifs.map((envoi, index) => (
-                          <div key={index} className="d-flex align-items-start gap-3">
-                            <div className="rounded-circle p-2 flex-shrink-0" style={{ backgroundColor: '#E3F2FD' }}>
-                              <Truck size={20} style={{ color: clientStyles.primary }} />
-                            </div>
-                            <div className="flex-grow-1">
-                              <div className="fw-semibold">Envoi {envoi.id} - {envoi.status}</div>
-                              <div className="text-muted small">Vers: {envoi.destination}</div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Recent Activity */}
-                  <div className="card border-0 shadow-sm">
-                    <div className="card-body">
-                      <h5 className="fw-bold mb-4">Activité récente</h5>
-                      <div className="d-flex flex-column gap-3">
-                        {activities.map((activity, index) => {
-                          const Icon = activity.icon;
-                          return (
-                            <div key={index} className="d-flex gap-3">
-                              <div className="rounded-circle p-2 flex-shrink-0" style={{ backgroundColor: activity.bgColor, width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <Icon size={20} style={{ color: activity.iconColor }} />
-                              </div>
-                              <div className="flex-grow-1">
-                                <div className="small">{activity.text}</div>
-                                <div className="text-muted" style={{ fontSize: '12px' }}>{activity.time}</div>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </>
-          )}
+                );
+              case 'dashboard':
+              default:
+                return renderDashboard();
+            }
+          })()}
         </div>
       </div>
-
     </div>
   );
 };
