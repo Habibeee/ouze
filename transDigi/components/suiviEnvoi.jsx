@@ -18,6 +18,7 @@ const TrackingApp = () => {
   const pathRef = useRef([]);
   const pathIndexRef = useRef(0);
   const moveTimerRef = useRef(null);
+  const isMapInitialized = useRef(false);
 
   const currentHistoryIndex = useMemo(() => {
     if (!selectedShipment?.history || selectedShipment.history.length === 0) return null;
@@ -369,28 +370,49 @@ const TrackingApp = () => {
   }, [currentPageShipments, selectedShipment]);
 
 
+  // Gestion de la carte Leaflet
   useEffect(() => {
-    // Initialize or update map when a shipment is selected
     const L = window.L;
     if (!selectedShipment || !L || !leafletReady) return;
 
     const path = interpolatePath(selectedShipment.originCoords, selectedShipment.destinationCoords, 40);
     pathRef.current = path;
-    // derive starting index from progress
     const startIdx = Math.floor((selectedShipment.progress / 100) * (path.length - 1));
     pathIndexRef.current = Math.min(Math.max(startIdx, 0), path.length - 1);
 
-    // Vérifier si la carte existe déjà
     const mapElement = document.getElementById('leafletMap');
-    if (mapElement && !mapElement._leaflet_id) {
-      // Initialiser la carte uniquement si elle n'existe pas déjà
-      mapRef.current = L.map('leafletMap').setView(path[pathIndexRef.current] || selectedShipment.originCoords || [14.7, -17.4], 5);
+    
+    // Nettoyer la carte existante si nécessaire
+    if (mapElement && mapElement._leaflet_id) {
+      const existingMap = L.DomUtil.get('leafletMap');
+      if (existingMap && existingMap._leaflet_id) {
+        existingMap._leaflet_id = null;
+      }
+      isMapInitialized.current = false;
+    }
+
+    // Initialiser la carte uniquement si elle n'est pas déjà initialisée
+    if (mapElement && !isMapInitialized.current) {
+      mapRef.current = L.map('leafletMap', {
+        preferCanvas: true,
+        zoomControl: false
+      }).setView(path[pathIndexRef.current] || selectedShipment.originCoords || [14.7, -17.4], 5);
+
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
+        attribution: '© OpenStreetMap contributors'
       }).addTo(mapRef.current);
-    } else if (mapRef.current) {
-      // Mettre à jour la vue si la carte existe déjà
-      mapRef.current.setView(path[pathIndexRef.current] || selectedShipment.originCoords || [14.7, -17.4], 5);
+
+      isMapInitialized.current = true;
+    }
+
+    // Mettre à jour la vue si la carte existe
+    if (mapRef.current) {
+      mapRef.current.setView(
+        path[pathIndexRef.current] || selectedShipment.originCoords || [14.7, -17.4],
+        5,
+        { animate: false }
+      );
     }
 
     // Mettre à jour le marqueur
@@ -398,10 +420,14 @@ const TrackingApp = () => {
       if (markerRef.current) {
         markerRef.current.remove();
       }
-      markerRef.current = L.marker(path[pathIndexRef.current] || selectedShipment.originCoords).addTo(mapRef.current);
+      if (path[pathIndexRef.current] || selectedShipment.originCoords) {
+        markerRef.current = L.marker(
+          path[pathIndexRef.current] || selectedShipment.originCoords
+        ).addTo(mapRef.current);
+      }
     }
 
-    // clear previous timer
+    // Nettoyer le timer d'animation
     if (moveTimerRef.current) {
       clearInterval(moveTimerRef.current);
       moveTimerRef.current = null;
@@ -413,9 +439,23 @@ const TrackingApp = () => {
         clearInterval(moveTimerRef.current);
         moveTimerRef.current = null;
       }
-      // Ne pas supprimer la carte ici, laissons React gérer le DOM
     };
   }, [selectedShipment, leafletReady]);
+
+  // Nettoyer la carte lors du démontage du composant
+  useEffect(() => {
+    return () => {
+      if (mapRef.current) {
+        try {
+          mapRef.current.remove();
+        } catch (e) {
+          // Ignorer les erreurs de suppression
+        }
+        mapRef.current = null;
+        isMapInitialized.current = false;
+      }
+    };
+  }, []);
 
   // Vue liste + panneau latéral (comportement original)
   return (
