@@ -1,17 +1,29 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Search, Package, MapPin, Calendar, ChevronDown } from 'lucide-react';
+import React, { useState, useEffect, useRef, useMemo, lazy, Suspense } from 'react';
+import { Search, Package, MapPin, Calendar, ChevronDown, Loader2 } from 'lucide-react';
 import { suiviEnvoiCss } from '../styles/suiviEnvoiStyle.jsx';
 import { listMesDevis } from '../services/apiClient.js';
 import { useI18n } from '../src/i18n.jsx';
+
+// Composant MapView chargé dynamiquement
+const MapView = lazy(() => import('./MapView.jsx'));
+
+// Composant de chargement pour la carte
+const MapLoading = () => (
+  <div className="d-flex align-items-center justify-content-center" style={{ height: '240px' }}>
+    <Loader2 className="animate-spin me-2" />
+    <span>Chargement de la carte...</span>
+  </div>
+);
 
 const TrackingApp = () => {
   const { t } = useI18n();
   const [activeTab, setActiveTab] = useState('en-cours');
   const [selectedShipment, setSelectedShipment] = useState(null);
-  const [leafletReady, setLeafletReady] = useState(!!(typeof window !== 'undefined' && window.L));
   const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState({ status: 'all', carrier: 'all', dateFrom: '', dateTo: '' });
   const [page, setPage] = useState(1);
+  const [center, setCenter] = useState([48.8566, 2.3522]);
+  const [markers, setMarkers] = useState([]);
   const pageSize = 5;
   const mapRef = useRef(null);
   const markerRef = useRef(null);
@@ -332,32 +344,8 @@ const TrackingApp = () => {
     setPage(1);
   }, [searchQuery, filters, activeTab]);
 
-  // Lazy-load Leaflet if not present
-  useEffect(() => {
-    if (leafletReady) return;
-    if (typeof window === 'undefined') return;
-    if (window.L) { setLeafletReady(true); return; }
-    // Inject CSS
-    const cssId = 'leaflet-css';
-    if (!document.getElementById(cssId)) {
-      const link = document.createElement('link');
-      link.id = cssId;
-      link.rel = 'stylesheet';
-      link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
-      document.head.appendChild(link);
-    }
-    // Inject Script
-    const jsId = 'leaflet-js';
-    if (!document.getElementById(jsId)) {
-      const script = document.createElement('script');
-      script.id = jsId;
-      script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
-      script.async = true;
-      script.onload = () => setLeafletReady(true);
-      script.onerror = () => setLeafletReady(false);
-      document.body.appendChild(script);
-    }
-  }, [leafletReady]);
+  // Plus besoin de charger Leaflet manuellement
+  // Le composant MapView gère son propre chargement
 
   // Auto-select a shipment by default quand aucune cible n'est fournie dans l'URL
   useEffect(() => {
@@ -368,40 +356,65 @@ const TrackingApp = () => {
     }
   }, [currentPageShipments, selectedShipment]);
 
-
   useEffect(() => {
-    // Initialize or update map when a shipment is selected
-    const L = window.L;
-    if (!selectedShipment || !L || !leafletReady) return;
+    if (!selectedShipment) return;
 
     const path = interpolatePath(selectedShipment.originCoords, selectedShipment.destinationCoords, 40);
     pathRef.current = path;
-    // derive starting index from progress
     const startIdx = Math.floor((selectedShipment.progress / 100) * (path.length - 1));
     pathIndexRef.current = Math.min(Math.max(startIdx, 0), path.length - 1);
 
-    if (!mapRef.current) {
-      mapRef.current = L.map('leafletMap').setView(path[pathIndexRef.current] || selectedShipment.originCoords || [14.7, -17.4], 5);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-      }).addTo(mapRef.current);
-    } else {
-      mapRef.current.setView(path[pathIndexRef.current] || selectedShipment.originCoords || [14.7, -17.4], 5);
+    // Mise à jour de la position du marqueur
+    const currentPosition = path[pathIndexRef.current] || selectedShipment.originCoords || [14.7, -17.4];
+    
+    // Mettre à jour les marqueurs avec la position actuelle et les points d'origine/destination
+    const newMarkers = [{
+      id: 'current-location',
+      position: { lat: currentPosition[0], lng: currentPosition[1] },
+      popup: {
+        title: 'Position actuelle',
+        content: `Progression: ${selectedShipment.progress}%`
+      }
+    }];
+
+    // Ajouter le point d'origine s'il est disponible
+    if (selectedShipment.originCoords) {
+      newMarkers.push({
+        id: 'origin',
+        position: { 
+          lat: selectedShipment.originCoords[0], 
+          lng: selectedShipment.originCoords[1] 
+        },
+        popup: {
+          title: 'Origine',
+          content: selectedShipment.origin || 'Point de départ'
+        }
+      });
     }
 
-    if (markerRef.current) {
-      markerRef.current.remove();
-      markerRef.current = null;
+    // Ajouter le point de destination s'il est disponible
+    if (selectedShipment.destinationCoords) {
+      newMarkers.push({
+        id: 'destination',
+        position: { 
+          lat: selectedShipment.destinationCoords[0], 
+          lng: selectedShipment.destinationCoords[1] 
+        },
+        popup: {
+          title: 'Destination',
+          content: selectedShipment.destination || 'Point d\'arrivée'
+        }
+      });
     }
-    markerRef.current = L.marker(path[pathIndexRef.current] || selectedShipment.originCoords).addTo(mapRef.current);
 
-    // clear previous timer
+    setMarkers(newMarkers);
+    setCenter(currentPosition);
+
+    // Nettoyer le timer précédent
     if (moveTimerRef.current) {
       clearInterval(moveTimerRef.current);
       moveTimerRef.current = null;
     }
-    // Désactivation par défaut de l'animation simulée du marqueur
-    // Si un tracking temps réel est disponible, on le branchera ici.
 
     return () => {
       if (moveTimerRef.current) {
@@ -561,7 +574,16 @@ const TrackingApp = () => {
                 </div>
 
                 {/* Map */}
-                <div id="leafletMap" className="mb-4" style={{ height: '240px', borderRadius: '8px', overflow: 'hidden' }} />
+                <div className="mb-4" style={{ height: '240px', borderRadius: '8px', overflow: 'hidden' }}>
+                  <Suspense fallback={<MapLoading />}>
+                    <MapView
+                      center={center}
+                      zoom={7}
+                      markers={markers}
+                      style={{ height: '100%', width: '100%' }}
+                    />
+                  </Suspense>
+                </div>
 
                 {/* History */}
                 <div className="mb-4">
