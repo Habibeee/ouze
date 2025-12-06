@@ -12,26 +12,8 @@ import { toast } from 'react-toastify';
 import '../src/styles/leaflet.css';
 import SideBare from './sideBare.jsx';
 
-// Composants Leaflet chargés dynamiquement
-const MapContainer = lazy(async () => {
-  const mod = await import('react-leaflet');
-  return { default: mod.MapContainer };
-});
-
-const TileLayer = lazy(async () => {
-  const mod = await import('react-leaflet');
-  return { default: mod.TileLayer };
-});
-
-const Marker = lazy(async () => {
-  const mod = await import('react-leaflet');
-  return { default: mod.Marker };
-});
-
-const Popup = lazy(async () => {
-  const mod = await import('react-leaflet');
-  return { default: mod.Popup };
-});
+// Import direct des composants Leaflet
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 
 // Composant de chargement
 const MapLoading = () => (
@@ -150,7 +132,16 @@ const ClientDashboard = () => {
     fetchExpeditions();
     // Mettre à jour les expéditions toutes les 5 minutes
     const interval = setInterval(fetchExpeditions, 5 * 60 * 1000);
-    return () => clearInterval(interval);
+    
+    // Nettoyage lors du démontage du composant
+    return () => {
+      clearInterval(interval);
+      // Nettoyage de la carte si elle existe
+      if (mapRef.current) {
+        mapRef.current.remove();
+        mapRef.current = null;
+      }
+    };
   }, []);
 
   // Rendu de la section des expéditions avec la carte
@@ -217,10 +208,30 @@ const ClientDashboard = () => {
           <Suspense fallback={<MapLoading />}>
             <div style={{ height: '100%', width: '100%' }}>
               <MapContainer 
+                key="map-container"
                 center={[14.4974, -14.4524]} 
                 zoom={7} 
                 style={{ height: '100%', width: '100%' }}
-                ref={mapRef}
+                whenCreated={(map) => {
+                  // Nettoyage de la carte précédente si elle existe
+                  if (mapRef.current) {
+                    mapRef.current.remove();
+                  }
+                  // Stocke la référence de la nouvelle carte
+                  mapRef.current = map;
+                }}
+                preferCanvas={true}
+                zoomControl={true}
+                attributionControl={true}
+                doubleClickZoom={true}
+                closePopupOnClick={true}
+                dragging={true}
+                zoomSnap={0.5}
+                zoomDelta={0.5}
+                trackResize={true}
+                touchZoom={true}
+                scrollWheelZoom={true}
+                tap={true}
               >
                 <TileLayer
                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
