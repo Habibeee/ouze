@@ -90,6 +90,17 @@ const TrackingApp = () => {
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState('');
 
+  // Fonction utilitaire pour nettoyer la carte
+  const cleanupMap = (mapInstance) => {
+    if (!mapInstance) return;
+    try {
+      mapInstance.off();
+      mapInstance.remove();
+    } catch (e) {
+      console.warn('Erreur lors du nettoyage de la carte:', e);
+    }
+  };
+
   // Simple geocoding via Nominatim with localStorage cache (7 jours)
   const geocodePlace = async (place) => {
     try {
@@ -373,67 +384,68 @@ const TrackingApp = () => {
   // Gestion de la carte Leaflet
   useEffect(() => {
     const L = window.L;
-    if (!selectedShipment || !L || !leafletReady) return;
+    if (!L || !selectedShipment || !leafletReady) return;
 
     const path = interpolatePath(selectedShipment.originCoords, selectedShipment.destinationCoords, 40);
     pathRef.current = path;
     const startIdx = Math.floor((selectedShipment.progress / 100) * (path.length - 1));
     pathIndexRef.current = Math.min(Math.max(startIdx, 0), path.length - 1);
 
-    const mapElement = document.getElementById('leafletMap');
-    
-    // Nettoyer la carte existante si nécessaire
-    if (mapElement && mapElement._leaflet_id) {
-      const existingMap = L.DomUtil.get('leafletMap');
-      if (existingMap && existingMap._leaflet_id) {
-        existingMap._leaflet_id = null;
-      }
-      isMapInitialized.current = false;
+    // Nettoyer la carte existante si elle existe
+    if (mapRef.current) {
+      cleanupMap(mapRef.current);
+      mapRef.current = null;
     }
 
-    // Initialiser la carte uniquement si elle n'est pas déjà initialisée
-    if (mapElement && !isMapInitialized.current) {
-      mapRef.current = L.map('leafletMap', {
+    // S'assurer que le conteneur est prêt
+    const mapContainer = document.getElementById('leafletMap');
+    if (!mapContainer) return;
+
+    // Supprimer toute instance Leaflet existante
+    if (mapContainer._leaflet_id) {
+      const existingMap = L.DomUtil.get('leafletMap');
+      if (existingMap) {
+        cleanupMap(existingMap);
+      }
+    }
+
+    // Vider le conteneur et lui donner un fond
+    mapContainer.innerHTML = '';
+    mapContainer.style.background = '#f8f9fa';
+
+    // Créer une nouvelle instance de carte
+    try {
+      const newMap = L.map('leafletMap', {
         preferCanvas: true,
         zoomControl: false
-      }).setView(path[pathIndexRef.current] || selectedShipment.originCoords || [14.7, -17.4], 5);
+      }).setView(
+        path[pathIndexRef.current] || selectedShipment.originCoords || [14.7, -17.4],
+        5
+      );
 
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
         attribution: '© OpenStreetMap contributors'
-      }).addTo(mapRef.current);
+      }).addTo(newMap);
 
-      isMapInitialized.current = true;
-    }
+      mapRef.current = newMap;
 
-    // Mettre à jour la vue si la carte existe
-    if (mapRef.current) {
-      mapRef.current.setView(
-        path[pathIndexRef.current] || selectedShipment.originCoords || [14.7, -17.4],
-        5,
-        { animate: false }
-      );
-    }
-
-    // Mettre à jour le marqueur
-    if (mapRef.current) {
+      // Ajouter le marqueur
       if (markerRef.current) {
         markerRef.current.remove();
       }
       if (path[pathIndexRef.current] || selectedShipment.originCoords) {
         markerRef.current = L.marker(
           path[pathIndexRef.current] || selectedShipment.originCoords
-        ).addTo(mapRef.current);
+        ).addTo(newMap);
       }
+
+    } catch (error) {
+      console.error('Erreur lors de l\'initialisation de la carte:', error);
+      return;
     }
 
-    // Nettoyer le timer d'animation
-    if (moveTimerRef.current) {
-      clearInterval(moveTimerRef.current);
-      moveTimerRef.current = null;
-    }
-
-    // Nettoyage lors du démontage du composant
+    // Nettoyage
     return () => {
       if (moveTimerRef.current) {
         clearInterval(moveTimerRef.current);
@@ -442,17 +454,12 @@ const TrackingApp = () => {
     };
   }, [selectedShipment, leafletReady]);
 
-  // Nettoyer la carte lors du démontage du composant
+  // Nettoyage lors du démontage du composant
   useEffect(() => {
     return () => {
       if (mapRef.current) {
-        try {
-          mapRef.current.remove();
-        } catch (e) {
-          // Ignorer les erreurs de suppression
-        }
+        cleanupMap(mapRef.current);
         mapRef.current = null;
-        isMapInitialized.current = false;
       }
     };
   }, []);
@@ -607,7 +614,17 @@ const TrackingApp = () => {
                 </div>
 
                 {/* Map */}
-                <div id="leafletMap" className="mb-4" style={{ height: '240px', borderRadius: '8px', overflow: 'hidden' }} />
+                <div 
+                  id="leafletMap" 
+                  key={`map-${selectedShipment?.id || 'no-shipment'}`}
+                  className="mb-4" 
+                  style={{ 
+                    height: '240px', 
+                    borderRadius: '8px', 
+                    overflow: 'hidden',
+                    backgroundColor: '#f8f9fa'
+                  }} 
+                />
 
                 {/* History */}
                 <div className="mb-4">
