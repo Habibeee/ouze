@@ -15,42 +15,40 @@ const ChangeView = ({ center, zoom }) => {
 };
 
 const MapComponent = ({ 
-  position = [51.505, -0.09], 
-  zoom = 13, 
+  position = [14.6928, -17.4467], 
+  zoom = 7, 
   style = { height: '400px', width: '100%' } 
 }) => {
-  // Configuration des icônes Leaflet
+  // Configuration propre des icônes UNE SEULE FOIS
   useEffect(() => {
-    // Supprimer toute configuration existante
-    delete L.Icon.Default.prototype._getIconUrl;
-    
-    // Créer un nouvel icône personnalisé
     const DefaultIcon = L.icon({
-      iconRetinaUrl: iconRetinaUrl,
-      iconUrl: iconUrl,
-      shadowUrl: shadowUrl,
+      iconRetinaUrl,
+      iconUrl,
+      shadowUrl,
       iconSize: [25, 41],
       iconAnchor: [12, 41],
       popupAnchor: [1, -34],
       shadowSize: [41, 41]
     });
-    
-    // Définir l'icône par défaut
+
     L.Marker.prototype.options.icon = DefaultIcon;
   }, []);
   return (
     <div style={{ ...style, borderRadius: '8px', overflow: 'hidden' }}>
       <MapContainer
+        key={`${position[0]}-${position[1]}`}   
         center={position}
         zoom={zoom}
-        scrollWheelZoom={true}
+        scrollWheelZoom
         style={{ height: '100%', width: '100%' }}
       >
         <ChangeView center={position} zoom={zoom} />
+
         <TileLayer
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          attribution='&copy; OpenStreetMap contributors'
         />
+
         <Marker position={position}>
           <Popup>Votre position</Popup>
         </Marker>
