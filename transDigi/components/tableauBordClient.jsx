@@ -12,26 +12,8 @@ import { toast } from 'react-toastify';
 import '../src/styles/leaflet.css';
 import SideBare from './sideBare.jsx';
 
-// Composants Leaflet chargés dynamiquement
-const MapContainer = lazy(async () => {
-  const mod = await import('react-leaflet');
-  return { default: mod.MapContainer };
-});
-
-const TileLayer = lazy(async () => {
-  const mod = await import('react-leaflet');
-  return { default: mod.TileLayer };
-});
-
-const Marker = lazy(async () => {
-  const mod = await import('react-leaflet');
-  return { default: mod.Marker };
-});
-
-const Popup = lazy(async () => {
-  const mod = await import('react-leaflet');
-  return { default: mod.Popup };
-});
+// Importer le composant MapView partagé
+const MapView = lazy(() => import('../src/components/MapView'));
 
 // Composant de chargement
 const MapLoading = () => (
@@ -212,73 +194,47 @@ const ClientDashboard = () => {
           Aucune expédition en cours pour le moment
         </div>
       ) : mapView ? (
-        // Vue Carte (UN SEUL MapContainer)
+        // Vue Carte avec MapView partagé
         <div className="position-relative" style={{ height: '500px' }}>
           <Suspense fallback={<MapLoading />}>
-            <div style={{ height: '100%', width: '100%' }}>
-              <MapContainer 
-                center={[14.4974, -14.4524]} 
-                zoom={7} 
-                style={{ height: '100%', width: '100%' }}
-                ref={mapRef}
-              >
-                <TileLayer
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                />
-                {expeditions.map((expedition) => (
-                  <Marker 
-                    key={expedition.id} 
-                    position={[expedition.position.lat, expedition.position.lng]}
-                    eventHandlers={{
-                      click: () => setSelectedExpedition(expedition.id === selectedExpedition ? null : expedition.id)
-                    }}
-                  >
-                    <Popup>
-                      <div className="expedition-info-window">
-                        <h6 className="mb-1 fw-bold">{expedition.reference}</h6>
-                        <p className="mb-1">
-                          <MapPin size={14} className="me-1" />
-                          {expedition.destination}
-                        </p>
-                        <p className="mb-1">
-                          <Clock size={14} className="me-1" />
-                          Livraison estimée: {expedition.date_estimee}
-                        </p>
-                        <p className="mb-1">
-                          <strong>Client:</strong> {expedition.client}
-                        </p>
-                        <p className="mb-1">
-                          <strong>Type:</strong> {expedition.type} ({expedition.poids})
-                        </p>
-                        <span className={`badge bg-${getExpeditionStatusColor(expedition.statut)}`}>
-                          {formatExpeditionStatus(expedition.statut)}
-                        </span>
-                        <p className="text-muted small mt-2 mb-0">
-                          Dernière mise à jour: {expedition.derniere_mise_a_jour}
-                        </p>
-                      </div>
-                    </Popup>
-                  </Marker>
-                ))}
-              </MapContainer>
-            </div>
+            <MapView
+              center={[14.4974, -14.4524]}
+              zoom={7}
+              markers={expeditions.map(expedition => ({
+                id: expedition.id,
+                position: expedition.position,
+                popup: {
+                  title: expedition.reference,
+                  content: (
+                    <div>
+                      <p className="mb-1">
+                        <MapPin size={14} className="me-1" />
+                        {expedition.destination}
+                      </p>
+                      <p className="mb-1">
+                        <Clock size={14} className="me-1" />
+                        Livraison estimée: {expedition.date_estimee}
+                      </p>
+                      <p className="mb-1">
+                        <strong>Client:</strong> {expedition.client}
+                      </p>
+                      <p className="mb-1">
+                        <strong>Type:</strong> {expedition.type} ({expedition.poids})
+                      </p>
+                      <span className={`badge bg-${getExpeditionStatusColor(expedition.statut)}`}>
+                        {formatExpeditionStatus(expedition.statut)}
+                      </span>
+                      <p className="text-muted small mt-2 mb-0">
+                        Dernière mise à jour: {expedition.derniere_mise_a_jour}
+                      </p>
+                    </div>
+                  )
+                }
+              }))}
+              onMarkerClick={(id) => setSelectedExpedition(id === selectedExpedition ? null : id)}
+              className="h-100 w-100"
+            />
           </Suspense>
-
-          {/* Styles pour la carte */}
-          <style jsx global>{`
-            .leaflet-container {
-              width: 100%;
-              height: 100%;
-              z-index: 1;
-            }
-            .expedition-info-window {
-              min-width: 200px;
-            }
-            .expedition-info-window h6 {
-              color: #0d6efd;
-            }
-          `}</style>
           
           {/* Légende de la carte */}
           <div className="position-absolute bottom-0 end-0 m-3 p-2 bg-white rounded shadow-sm" style={{ zIndex: 1000 }}>
