@@ -1,63 +1,60 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-import { resolve } from 'path';
+import { fileURLToPath } from 'url';
+import path from 'path';
+
+const __dirname = fileURLToPath(new URL('.', import.meta.url));
 
 export default defineConfig({
   base: '/',
   plugins: [react()],
   resolve: {
     alias: {
-      'leaflet': 'leaflet',
-      'react-leaflet': 'react-leaflet'
+      // Utiliser la version ESM de Leaflet
+      'leaflet': path.resolve(__dirname, 'node_modules/leaflet/dist/leaflet-src.esm.js')
     }
   },
   css: {
     preprocessorOptions: {
       scss: {
-        additionalData: `@import "./src/styles/global.scss";`
+        additionalData: `@import "./src/styles/global.scss";` 
       }
     }
   },
   server: {
     port: 3000,
     open: true,
-    host: '0.0.0.0'
+    host: '0.0.0.0',
+    fs: {
+      // Permettre de servir des fichiers depuis node_modules
+      allow: ['..']
+    }
   },
   preview: {
-    port: 10000, // Utilisation du même port que dans le script start
+    port: 10000,
     host: '0.0.0.0',
     allowedHosts: ['trans-digi-front-end.onrender.com']
   },
   optimizeDeps: {
-    exclude: ['leaflet']
+    // Désactiver l'optimisation pour éviter les problèmes de résolution
+    exclude: ['leaflet', 'react-leaflet']
   },
   define: {
     'process.env': {}
   },
   build: {
     rollupOptions: {
-      // Ne pas externaliser les dépendances que nous voulons inclure dans les chunks
-      external: [],
       output: {
         manualChunks: {
-          // Découpage des chunks pour optimiser le chargement
           vendor: ['react', 'react-dom', 'react-router-dom'],
-          // Ne pas inclure leaflet dans manualChunks car il est géré différemment
-        },
-        // Configuration pour les dépendances externes
-        globals: {
-          'leaflet': 'L',
-          'react-leaflet': 'ReactLeaflet'
+          bootstrap: ['bootstrap', 'react-bootstrap']
+          // Ne pas inclure leaflet dans manualChunks
         }
       }
     },
     commonjsOptions: {
-      // Forcer la transformation des modules CommonJS en ES modules
-      transformMixedEsModules: true,
-      // Exclure leaflet de la transformation CommonJS
-      exclude: ['node_modules/leaflet/**']
+      transformMixedEsModules: true
     },
-    // Augmente la limite d'avertissement pour la taille des chunks
     chunkSizeWarningLimit: 1000
   }
 });

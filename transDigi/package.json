@@ -4,6 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "copy-leaflet-assets": "node scripts/copy-leaflet-assets.js",
+    "predev": "npm run copy-leaflet-assets",
+    "prebuild": "npm run copy-leaflet-assets",
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",

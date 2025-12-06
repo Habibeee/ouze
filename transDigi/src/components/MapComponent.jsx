@@ -1,80 +1,61 @@
-import React, { useEffect, useRef } from 'react';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
+import React, { useEffect } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import * as L from 'leaflet';
 
-// Correction pour les icônes manquantes avec imports statiques
-import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
-import markerIcon from 'leaflet/dist/images/marker-icon.png';
-import markerShadow from 'leaflet/dist/images/marker-shadow.png';
+// Chemins vers les icônes dans le dossier public
+const iconUrl = '/leaflet-images/marker-icon.png';
+const iconRetinaUrl = '/leaflet-images/marker-icon-2x.png';
+const shadowUrl = '/leaflet-images/marker-shadow.png';
 
-delete L.Icon.Default.prototype._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: markerIcon2x,
-  iconUrl: markerIcon,
-  shadowUrl: markerShadow,
-});
+// Composant pour gérer la position de la carte
+const ChangeView = ({ center, zoom }) => {
+  const map = useMap();
+  map.setView(center, zoom);
+  return null;
+};
 
 const MapComponent = ({ 
   position = [51.505, -0.09], 
   zoom = 13, 
   style = { height: '400px', width: '100%' } 
 }) => {
-  const mapRef = useRef(null);
-  const mapInstance = useRef(null);
-  const markerRef = useRef(null);
-
+  // Configuration des icônes Leaflet
   useEffect(() => {
-    // Éviter la double initialisation
-    if (mapInstance.current) return;
-
-    if (mapRef.current) {
-      // Création de la carte
-      mapInstance.current = L.map(mapRef.current, {
-        center: position,
-        zoom: zoom,
-        scrollWheelZoom: true
-      });
-
-      // Ajout de la couche de tuiles
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-      }).addTo(mapInstance.current);
-
-      // Ajout du marqueur
-      markerRef.current = L.marker(position)
-        .addTo(mapInstance.current)
-        .bindPopup('Votre position')
-        .openPopup();
-    }
-
-    // Nettoyage
-    return () => {
-      if (mapInstance.current) {
-        mapInstance.current.remove();
-        mapInstance.current = null;
-      }
-    };
-  }, []); // Dépendances vides pour éviter la réinitialisation
-
-  // Mettre à jour la position si elle change
-  useEffect(() => {
-    if (mapInstance.current && markerRef.current) {
-      mapInstance.current.setView(position, zoom);
-      markerRef.current.setLatLng(position);
-    }
-  }, [position, zoom]);
-
+    // Supprimer toute configuration existante
+    delete L.Icon.Default.prototype._getIconUrl;
+    
+    // Créer un nouvel icône personnalisé
+    const DefaultIcon = L.icon({
+      iconRetinaUrl: iconRetinaUrl,
+      iconUrl: iconUrl,
+      shadowUrl: shadowUrl,
+      iconSize: [25, 41],
+      iconAnchor: [12, 41],
+      popupAnchor: [1, -34],
+      shadowSize: [41, 41]
+    });
+    
+    // Définir l'icône par défaut
+    L.Marker.prototype.options.icon = DefaultIcon;
+  }, []);
   return (
-    <div 
-      ref={mapRef} 
-      style={{ 
-        ...style,
-        minHeight: '400px',
-        backgroundColor: '#f5f5f5',
-        borderRadius: '8px',
-        overflow: 'hidden'
-      }} 
-    />
+    <div style={{ ...style, borderRadius: '8px', overflow: 'hidden' }}>
+      <MapContainer
+        center={position}
+        zoom={zoom}
+        scrollWheelZoom={true}
+        style={{ height: '100%', width: '100%' }}
+      >
+        <ChangeView center={position} zoom={zoom} />
+        <TileLayer
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        />
+        <Marker position={position}>
+          <Popup>Votre position</Popup>
+        </Marker>
+      </MapContainer>
+    </div>
   );
 };
 
