@@ -10,8 +10,7 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
-      // Utiliser la version ESM de Leaflet
-      'leaflet': path.resolve(__dirname, 'node_modules/leaflet/dist/leaflet-src.esm.js')
+      // Les alias sont supprimés pour éviter les problèmes de résolution
     }
   },
   css: {
