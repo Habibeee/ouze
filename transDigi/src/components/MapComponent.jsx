@@ -2,12 +2,16 @@ import React, { useEffect, useRef } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
-// Correction pour les icônes manquantes
+// Correction pour les icônes manquantes avec imports statiques
+import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
+import markerIcon from 'leaflet/dist/images/marker-icon.png';
+import markerShadow from 'leaflet/dist/images/marker-shadow.png';
+
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
-  iconRetinaUrl: require('leaflet/dist/images/marker-icon-2x.png').default,
-  iconUrl: require('leaflet/dist/images/marker-icon.png').default,
-  shadowUrl: require('leaflet/dist/images/marker-shadow.png').default,
+  iconRetinaUrl: markerIcon2x,
+  iconUrl: markerIcon,
+  shadowUrl: markerShadow,
 });
 
 const MapComponent = ({ 
@@ -20,12 +24,15 @@ const MapComponent = ({
   const markerRef = useRef(null);
 
   useEffect(() => {
-    if (!mapInstance.current && mapRef.current) {
+    // Éviter la double initialisation
+    if (mapInstance.current) return;
+
+    if (mapRef.current) {
       // Création de la carte
       mapInstance.current = L.map(mapRef.current, {
         center: position,
         zoom: zoom,
-        scrollWheelZoom: false
+        scrollWheelZoom: true
       });
 
       // Ajout de la couche de tuiles
@@ -47,6 +54,14 @@ const MapComponent = ({
         mapInstance.current = null;
       }
     };
+  }, []); // Dépendances vides pour éviter la réinitialisation
+
+  // Mettre à jour la position si elle change
+  useEffect(() => {
+    if (mapInstance.current && markerRef.current) {
+      mapInstance.current.setView(position, zoom);
+      markerRef.current.setLatLng(position);
+    }
   }, [position, zoom]);
 
   return (

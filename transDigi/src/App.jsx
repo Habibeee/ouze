@@ -1,4 +1,4 @@
- import React, { useEffect, useState, useLayoutEffect } from 'react';
+import React, { useEffect, useState, useLayoutEffect } from 'react';
 import './App.css'
 import Header from '../layout/header.jsx';
 import Footer from '../layout/footer.jsx';
@@ -34,6 +34,7 @@ import ChangePassword from '../components/changePassword.jsx';
 import AdminProfile from '../components/adminProfile.jsx';
 import OAuthCallback from '../components/oauthCallback.jsx';
 import { ToastProvider } from '../components/ui/ToastProvider.jsx';
+import { I18nProvider } from './i18n.jsx';
 import { clientCss } from '../styles/tableauBordClientStyle.jsx';
 import BackToTop from '../components/BackToTop.jsx';
 import CartePage from './pages/CartePage.jsx';
@@ -47,11 +48,10 @@ function App() {
     return 'light';
   });
 
-  // Global sidebar open state for client-like layouts (must be top-level for hooks order)
+  // Global sidebar open state for client-like layouts
   const [sidebarOpen, setSidebarOpen] = useState(true);
   useLayoutEffect(() => {
     try {
-      // Keep CSS var in sync if some styles read it; content margin uses state directly
       const val = sidebarOpen ? '240px' : '56px';
       document.documentElement.style.setProperty('--sidebar-width', val);
     } catch {}
@@ -109,7 +109,6 @@ function App() {
     ].includes(baseRoute);
     const isAuthPages = ['#/connexion','#/signup','#/client','#/transitaire','#/oauth-callback'].includes(baseRoute) || route.startsWith('#/reinitialiser/') || route.startsWith('#/verifier/');
 
-    // Si l'utilisateur clique sur "Se connecter", on autorise l'accès en nettoyant l'état auth
     if (route === '#/connexion') {
       try {
         localStorage.removeItem('token');
@@ -122,7 +121,6 @@ function App() {
       window.location.hash = '#/connexion';
       return;
     }
-    // Ne quitter la page de connexion que si on connaît le type (token+userType)
     if (token && hasUserType && (baseRoute === '#/connexion' || baseRoute === '#/signup')) {
       if (userType.includes('admin')) window.location.hash = '#/dashboard-admin';
       else if (userType.startsWith('trans')) window.location.hash = '#/dashboard-transitaire';
@@ -135,7 +133,6 @@ function App() {
     localStorage.setItem('theme', theme);
     try {
       document.body.classList.toggle('theme-dark', theme === 'dark');
-      // Flag de page de connexion pour ajuster le layout (ex: footer en mobile)
       const baseRoute = (window.location.hash || '#/').split('?')[0];
       const isLogin = baseRoute === '#/connexion';
       document.body.classList.toggle('login-page', isLogin);
@@ -178,7 +175,6 @@ function App() {
   })();
 
   const renderRoute = () => {
-    // Routes avec segments dynamiques
     if (route.startsWith('#/verifier/')) return <VerifyEmail />;
     if (route.startsWith('#/reinitialiser/')) return <ResetPassword />;
     if (baseRoute === '#/changer-mot-de-passe') return <ChangePassword />;
@@ -247,71 +243,74 @@ function App() {
   };
 
   if (isClientRoute) {
-    // Éviter la duplication : les pages client qui passent par ClientDashboard gèrent déjà leur propre sidebar.
     const hasGlobalSidebar = baseRoute !== '#/client' && baseRoute !== '#/transitaire' && baseRoute !== '#/dashboard-client' && baseRoute !== '#/detail-devis-client'
       && baseRoute !== '#/recherche-transitaire' && baseRoute !== '#/nouveau-devis' && baseRoute !== '#/nouveau-devis-admin'
       && baseRoute !== '#/historique' && baseRoute !== '#/envois' && baseRoute !== '#/fichiers-recus' && baseRoute !== '#/profil-client';
     return (
+      <I18nProvider>
+        <ToastProvider>
+          <div className="d-flex" style={{ minHeight: '100vh' }}>
+            <style>{themeCss}</style>
+            <style>{clientCss}</style>
+            {hasGlobalSidebar && (
+              <SideBare
+                topOffset={96}
+                activeId={clientActiveId}
+                defaultOpen={true}
+                closeOnNavigate={false}
+                open={sidebarOpen}
+                onOpenChange={(o)=>setSidebarOpen(!!o)}
+                items={[
+                  { id: 'dashboard', label: 'Tableau de bord', icon: LayoutGrid },
+                  { id: 'recherche', label: 'Trouver un transitaire', icon: Search },
+                  { id: 'devis', label: 'Nouveau devis', icon: FileText },
+                  { id: 'historique', label: 'Historique', icon: Clock },
+                  { id: 'envois', label: 'Suivi des envois', icon: Truck },
+                  { id: 'carte', label: 'Carte des transitaires', icon: MapPin },
+                  { id: 'profile', label: 'Mon profil', icon: User },
+                ]}
+                onNavigate={(id) => {
+                  switch(id){
+                    case 'dashboard': window.location.hash = '#/dashboard-client'; break;
+                    case 'recherche': window.location.hash = '#/recherche-transitaire'; break;
+                    case 'devis': window.location.hash = '#/nouveau-devis'; break;
+                    case 'historique': window.location.hash = '#/historique'; break;
+                    case 'envois': window.location.hash = '#/envois'; break;
+                    case 'carte': window.location.hash = '#/carte'; break;
+                    case 'profile': window.location.hash = '#/profil-client'; break;
+                    default: break;
+                  }
+                }}
+              />
+            )}
+            <div className="flex-grow-1" style={{ marginLeft: hasGlobalSidebar ? (isLgUp ? (sidebarOpen ? '240px' : '56px') : '0') : '0', transition: 'margin-left .25s ease' }}>
+              <Header showSidebarToggle={false} hideNavbarToggler={false} onToggleSidebar={() => setSidebarOpen(o=>!o)} />
+              <main className="flex-fill">
+                {renderRoute()}
+              </main>
+              <BackToTop />
+              <Footer />
+            </div>
+          </div>
+        </ToastProvider>
+      </I18nProvider>
+    );
+  }
+
+  return (
+    <I18nProvider>
       <ToastProvider>
-      <div className="d-flex" style={{ minHeight: '100vh' }}>
-        <style>{themeCss}</style>
-        <style>{clientCss}</style>
-        {hasGlobalSidebar && (
-          <SideBare
-            topOffset={96}
-            activeId={clientActiveId}
-            defaultOpen={true}
-            closeOnNavigate={false}
-            open={sidebarOpen}
-            onOpenChange={(o)=>setSidebarOpen(!!o)}
-            items={[
-              { id: 'dashboard', label: 'Tableau de bord', icon: LayoutGrid },
-              { id: 'recherche', label: 'Trouver un transitaire', icon: Search },
-              { id: 'devis', label: 'Nouveau devis', icon: FileText },
-              { id: 'historique', label: 'Historique', icon: Clock },
-              { id: 'envois', label: 'Suivi des envois', icon: Truck },
-              { id: 'carte', label: 'Carte des transitaires', icon: MapPin },
-              { id: 'profile', label: 'Mon profil', icon: User },
-            ]}
-            onNavigate={(id) => {
-              switch(id){
-                case 'dashboard': window.location.hash = '#/dashboard-client'; break;
-                case 'recherche': window.location.hash = '#/recherche-transitaire'; break;
-                case 'devis': window.location.hash = '#/nouveau-devis'; break;
-                case 'historique': window.location.hash = '#/historique'; break;
-                case 'envois': window.location.hash = '#/envois'; break;
-                case 'carte': window.location.hash = '#/carte'; break;
-                case 'profile': window.location.hash = '#/profil-client'; break;
-                default: break;
-              }
-            }}
-          />
-        )}
-        <div className="flex-grow-1" style={{ marginLeft: hasGlobalSidebar ? (isLgUp ? (sidebarOpen ? '240px' : '56px') : '0') : '0', transition: 'margin-left .25s ease' }}>
-          <Header showSidebarToggle={false} hideNavbarToggler={false} onToggleSidebar={() => setSidebarOpen(o=>!o)} />
+        <div className="d-flex flex-column min-vh-100">
+          <style>{themeCss}</style>
+          <Header hideNavbarToggler={false} />
           <main className="flex-fill">
             {renderRoute()}
           </main>
           <BackToTop />
           <Footer />
         </div>
-      </div>
       </ToastProvider>
-    );
-  }
-
-  return (
-    <ToastProvider>
-    <div className="d-flex flex-column min-vh-100">
-      <style>{themeCss}</style>
-      <Header hideNavbarToggler={false} />
-      <main className="flex-fill">
-        {renderRoute()}
-      </main>
-      <BackToTop />
-      <Footer />
-    </div>
-    </ToastProvider>
+    </I18nProvider>
   )
 }
 

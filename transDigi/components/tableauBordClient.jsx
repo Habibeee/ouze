@@ -161,14 +161,14 @@ const ClientDashboard = () => {
         <div className="d-flex">
           <div className="btn-group me-2" role="group">
             <button 
-              className={`btn btn-sm ${mapView ? 'btn-outline-primary' : 'btn-outline-secondary'}`}
+              className={`btn btn-sm ${mapView ? 'btn-primary' : 'btn-outline-secondary'}`}
               onClick={() => setMapView(true)}
               title="Vue carte"
             >
               <MapIcon size={16} />
             </button>
             <button 
-              className={`btn btn-sm ${!mapView ? 'btn-outline-primary' : 'btn-outline-secondary'}`}
+              className={`btn btn-sm ${!mapView ? 'btn-primary' : 'btn-outline-secondary'}`}
               onClick={() => setMapView(false)}
               title="Vue liste"
             >
@@ -212,7 +212,7 @@ const ClientDashboard = () => {
           Aucune expédition en cours pour le moment
         </div>
       ) : mapView ? (
-        // Vue Carte
+        // Vue Carte (UN SEUL MapContainer)
         <div className="position-relative" style={{ height: '500px' }}>
           <Suspense fallback={<MapLoading />}>
             <div style={{ height: '100%', width: '100%' }}>
@@ -220,7 +220,7 @@ const ClientDashboard = () => {
                 center={[14.4974, -14.4524]} 
                 zoom={7} 
                 style={{ height: '100%', width: '100%' }}
-                whenCreated={(map) => mapRef.current = map}
+                ref={mapRef}
               >
                 <TileLayer
                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -231,12 +231,9 @@ const ClientDashboard = () => {
                     key={expedition.id} 
                     position={[expedition.position.lat, expedition.position.lng]}
                     eventHandlers={{
-                      click: () => setSelectedExpedition(expedition)
+                      click: () => setSelectedExpedition(expedition.id === selectedExpedition ? null : expedition.id)
                     }}
                   >
-                    <div className={`expedition-marker-icon ${expedition.statut}`}>
-                      {expedition.reference.substring(expedition.reference.length - 3)}
-                    </div>
                     <Popup>
                       <div className="expedition-info-window">
                         <h6 className="mb-1 fw-bold">{expedition.reference}</h6>
@@ -246,11 +243,20 @@ const ClientDashboard = () => {
                         </p>
                         <p className="mb-1">
                           <Clock size={14} className="me-1" />
-                          {expedition.date_estimee}
+                          Livraison estimée: {expedition.date_estimee}
+                        </p>
+                        <p className="mb-1">
+                          <strong>Client:</strong> {expedition.client}
+                        </p>
+                        <p className="mb-1">
+                          <strong>Type:</strong> {expedition.type} ({expedition.poids})
                         </p>
                         <span className={`badge bg-${getExpeditionStatusColor(expedition.statut)}`}>
                           {formatExpeditionStatus(expedition.statut)}
                         </span>
+                        <p className="text-muted small mt-2 mb-0">
+                          Dernière mise à jour: {expedition.derniere_mise_a_jour}
+                        </p>
                       </div>
                     </Popup>
                   </Marker>
@@ -258,139 +264,40 @@ const ClientDashboard = () => {
               </MapContainer>
             </div>
           </Suspense>
+
+          {/* Styles pour la carte */}
           <style jsx global>{`
             .leaflet-container {
               width: 100%;
               height: 100%;
               z-index: 1;
             }
-            .leaflet-popup-content-wrapper {
-              border-radius: 4px;
-            }
-            .expedition-marker {
-              background: none;
-              border: none;
-            }
-            .expedition-marker-icon {
-              width: 30px;
-              height: 30px;
-              border-radius: 50% 50% 50% 0;
-              background: #0d6efd;
-              position: relative;
-              transform: rotate(-45deg);
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              color: white;
-              font-size: 12px;
-              font-weight: bold;
-            }
-            .expedition-marker-icon.en_cours { background: #0d6efd; }
-            .expedition-marker-icon.en_retard { background: #dc3545; }
-            .expedition-marker-icon.en_transit { background: #ffc107; color: #000; }
-            .expedition-marker-icon.livre { background: #198754; }
-            
             .expedition-info-window {
               min-width: 200px;
             }
-            .expedition-info-window h5 {
-              font-size: 1rem;
-              margin-bottom: 0.5rem;
+            .expedition-info-window h6 {
               color: #0d6efd;
             }
-            .expedition-info-window p {
-              margin-bottom: 0.25rem;
-              font-size: 0.85rem;
-            }
-            .expedition-status {
-              display: inline-block;
-              padding: 0.2rem 0.5rem;
-              border-radius: 20px;
-              font-size: 0.75rem;
-              font-weight: 600;
-              text-transform: uppercase;
-              letter-spacing: 0.5px;
-            }
-            .status-en_cours { background-color: #cfe2ff; color: #084298; }
-            .status-en_retard { background-color: #f8d7da; color: #842029; }
-            .status-en_transit { background-color: #fff3cd; color: #664d03; }
-            .status-livre { background-color: #d1e7dd; color: #0f5132; }
-            
-            .expedition-list-item {
-              cursor: pointer;
-              transition: all 0.2s;
-            }
-            .expedition-list-item:hover {
-              background-color: #f8f9fa;
-            }
-            .expedition-list-item.active {
-              background-color: #e7f1ff;
-              border-left: 3px solid #0d6efd;
-            }
           `}</style>
-          
-          <MapContainer 
-            center={[14.4974, -14.4524]} // Centre du Sénégal
-            zoom={7} 
-            style={{ height: '100%', width: '100%' }}
-            whenCreated={mapInstance => { mapRef.current = mapInstance }}
-          >
-            <TileLayer
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            />
-            
-            {expeditions.map((expedition) => (
-              <Marker 
-                key={expedition.id} 
-                position={[expedition.position.lat, expedition.position.lng]}
-                eventHandlers={{
-                  click: () => setSelectedExpedition(expedition.id === selectedExpedition ? null : expedition.id)
-                }}
-              >
-                <div className={`expedition-marker-icon ${expedition.statut}`}>
-                  {expedition.reference.split('-').pop()}
-                </div>
-                <Popup>
-                  <div className="expedition-info-window">
-                    <h5>{expedition.reference}</h5>
-                    <p><strong>Destination:</strong> {expedition.destination}</p>
-                    <p><strong>Client:</strong> {expedition.client}</p>
-                    <p><strong>Type:</strong> {expedition.type}</p>
-                    <p><strong>Poids:</strong> {expedition.poids}</p>
-                    <p>
-                      <strong>Statut:</strong>{' '}
-                      <span className={`expedition-status status-${expedition.statut}`}>
-                        {formatExpeditionStatus(expedition.statut)}
-                      </span>
-                    </p>
-                    <p className="text-muted small mt-2">
-                      Dernière mise à jour: {expedition.derniere_mise_a_jour}
-                    </p>
-                  </div>
-                </Popup>
-              </Marker>
-            ))}
-          </MapContainer>
           
           {/* Légende de la carte */}
           <div className="position-absolute bottom-0 end-0 m-3 p-2 bg-white rounded shadow-sm" style={{ zIndex: 1000 }}>
             <div className="d-flex flex-column">
               <small className="mb-1 fw-bold">Légende:</small>
               <div className="d-flex align-items-center mb-1">
-                <div className="expedition-marker-icon en_cours me-2"></div>
+                <span className="badge bg-primary me-2" style={{width: '20px', height: '10px'}}></span>
                 <small>En cours</small>
               </div>
               <div className="d-flex align-items-center mb-1">
-                <div className="expedition-marker-icon en_retard me-2"></div>
+                <span className="badge bg-danger me-2" style={{width: '20px', height: '10px'}}></span>
                 <small>En retard</small>
               </div>
               <div className="d-flex align-items-center mb-1">
-                <div className="expedition-marker-icon en_transit me-2"></div>
+                <span className="badge bg-info me-2" style={{width: '20px', height: '10px'}}></span>
                 <small>En transit</small>
               </div>
               <div className="d-flex align-items-center">
-                <div className="expedition-marker-icon livre me-2"></div>
+                <span className="badge bg-success me-2" style={{width: '20px', height: '10px'}}></span>
                 <small>Livré</small>
               </div>
             </div>
@@ -416,20 +323,14 @@ const ClientDashboard = () => {
               {expeditions.map((expedition) => (
                 <tr 
                   key={expedition.id} 
-                  className={`expedition-list-item ${selectedExpedition === expedition.id ? 'active' : ''}`}
+                  className={`expedition-list-item ${selectedExpedition === expedition.id ? 'table-active' : ''}`}
                   onClick={() => {
                     setSelectedExpedition(expedition.id);
-                    if (mapRef.current) {
-                      mapRef.current.flyTo(
-                        [expedition.position.lat, expedition.position.lng], 
-                        12, 
-                        { duration: 1 }
-                      );
-                    }
                     if (window.innerWidth <= 768) {
                       setMapView(true);
                     }
                   }}
+                  style={{ cursor: 'pointer' }}
                 >
                   <td className="fw-medium">{expedition.reference}</td>
                   <td>{expedition.destination}</td>
@@ -437,17 +338,16 @@ const ClientDashboard = () => {
                   <td>{expedition.type}</td>
                   <td>{expedition.poids}</td>
                   <td>
-                    <span className={`expedition-status status-${expedition.statut}`}>
+                    <span className={`badge bg-${getExpeditionStatusColor(expedition.statut)}`}>
                       {formatExpeditionStatus(expedition.statut)}
                     </span>
                   </td>
-                  <td>{expedition.derniere_mise_a_jour}</td>
+                  <td><small>{expedition.derniere_mise_a_jour}</small></td>
                   <td className="text-end">
                     <button 
                       className="btn btn-sm btn-outline-primary"
                       onClick={(e) => {
                         e.stopPropagation();
-                        // Action pour voir les détails
                         console.log('Voir détails:', expedition.id);
                       }}
                     >
