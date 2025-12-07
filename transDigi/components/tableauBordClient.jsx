@@ -6,11 +6,11 @@ import {
   Download, Printer, Share2, Filter,
   ChevronDown, ChevronUp, MoreVertical,
   Settings, LayoutGrid, MessageSquare, AlertCircle,
-  RefreshCw, Map as MapIcon, List, Loader2
+  RefreshCw, Map as MapIcon, List, Loader2, LogOut
 } from 'lucide-react';
+import SideBare from './sideBare';
 import { toast } from 'react-toastify';
 import '../src/styles/leaflet.css';
-import SideBare from './sideBare.jsx';
 
 // Import direct des composants Leaflet
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
@@ -80,6 +80,7 @@ const ClientDashboard = () => {
   const [notifLoading, setNotifLoading] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState('dashboard');
 
   // Fonction pour récupérer les expéditions
   const fetchExpeditions = async () => {
@@ -389,20 +390,171 @@ const ClientDashboard = () => {
 
   // ... (conservez le reste de votre code existant)
 
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 992) {
+        setSidebarOpen(false);
+      } else {
+        setSidebarOpen(true);
+      }
+    };
+
+    // Ajouter l'écouteur d'événement
+    window.addEventListener('resize', handleResize);
+    
+    // Appeler la fonction une fois au chargement
+    handleResize();
+
+    // Nettoyer l'écouteur d'événement lors du démontage
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   return (
     <div className="d-flex min-vh-100" style={{ backgroundColor: '#f8f9fa', position: 'relative' }}>
-      <style>{`
-        .sidebar-open {
-          overflow: hidden;
+      <style jsx global>{`
+        body {
+          overflow-x: hidden;
         }
-        .sidebar-collapsed .sidebar {
-          width: 56px;
+        .main-content {
+          margin-left: 240px;
+          transition: margin 0.3s;
+          width: calc(100% - 240px);
+        }
+        .main-content.sidebar-collapsed {
+          margin-left: 56px;
+          width: calc(100% - 56px);
+        }
+        @media (max-width: 991.98px) {
+          .main-content {
+            margin-left: 0 !important;
+            width: 100% !important;
+          }
         }
       `}</style>
       
-      {/* ... reste de votre rendu existant ... */}
+      {/* Menu latéral existant */}
+      <SideBare 
+        activeId={activeSection}
+        onNavigate={setActiveSection}
+        open={sidebarOpen}
+        onOpenChange={setSidebarOpen}
+        collapsible={true}
+        className="position-fixed"
+        topOffset={0}
+        style={{ zIndex: 1050 }}
+      />
       
-      {renderDashboard()}
+      {/* Contenu principal */}
+      <div className={`main-content ${!sidebarOpen ? 'sidebar-collapsed' : ''}`}>
+        {/* Barre de navigation supérieure */}
+        <nav className="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+          <div className="container-fluid">
+            <button 
+              className="btn btn-link text-dark d-lg-none me-2"
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+            >
+              <Menu size={24} />
+            </button>
+            
+            <div className="d-flex align-items-center ms-auto">
+              <div className="position-relative me-3">
+                <button 
+                  className="btn btn-light position-relative"
+                  onClick={() => setNotifOpen(!notifOpen)}
+                >
+                  <Bell size={20} />
+                  {unreadCount > 0 && (
+                    <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                      {unreadCount}
+                    </span>
+                  )}
+                </button>
+                
+                {notifOpen && (
+                  <div 
+                    className="dropdown-menu dropdown-menu-end show"
+                    style={{ minWidth: '300px', maxHeight: '400px', overflowY: 'auto' }}
+                  >
+                    <div className="d-flex justify-content-between align-items-center p-2 border-bottom">
+                      <h6 className="mb-0">Notifications</h6>
+                      <button 
+                        className="btn btn-sm btn-link"
+                        onClick={() => setNotifOpen(false)}
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
+                    {notifs.length > 0 ? (
+                      notifs.map(notif => (
+                        <div key={notif.id} className="dropdown-item">
+                          <div className="d-flex">
+                            <div className="me-2">
+                              {notif.type === 'success' ? (
+                                <CheckCircle className="text-success" />
+                              ) : notif.type === 'error' ? (
+                                <XCircle className="text-danger" />
+                              ) : (
+                                <Bell className="text-primary" />
+                              )}
+                            </div>
+                            <div>
+                              <div className="small">{notif.message}</div>
+                              <div className="text-muted small">{notif.time}</div>
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="p-3 text-center text-muted">
+                        Aucune notification
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+              
+              <div className="dropdown">
+                <button 
+                  className="btn btn-light d-flex align-items-center"
+                  onClick={() => setProfileMenuOpen(!profileMenuOpen)}
+                >
+                  <div className="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" 
+                    style={{ width: '32px', height: '32px' }}>
+                    {userName.charAt(0).toUpperCase()}
+                  </div>
+                  <span className="ms-2 d-none d-md-inline">{userName}</span>
+                  <ChevronDown size={16} className="ms-1" />
+                </button>
+                
+                {profileMenuOpen && (
+                  <div className="dropdown-menu dropdown-menu-end show">
+                    <button className="dropdown-item" onClick={() => setActiveSection('profil')}>
+                      <User size={16} className="me-2" />
+                      Mon profil
+                    </button>
+                    <button className="dropdown-item">
+                      <Settings size={16} className="me-2" />
+                      Paramètres
+                    </button>
+                    <div className="dropdown-divider"></div>
+                    <button className="dropdown-item text-danger">
+                      <LogOut size={16} className="me-2" />
+                      Déconnexion
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </nav>
+        
+        {/* Contenu de la section active */}
+        <div className="container-fluid p-4">
+          {activeSection === 'dashboard' && renderDashboard()}
+          {activeSection === 'envois' && renderExpeditionsSection()}
+          {/* Ajoutez d'autres sections ici au besoin */}
+        </div>
+      </div>
     </div>
   );
 };
