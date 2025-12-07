@@ -8,14 +8,14 @@ const menuItems = [
     label: 'Tableau de bord', 
     icon: LayoutGrid,
     component: 'tableauBordClient.jsx',
-    path: '#/tableau-bord'
+    path: '#/dashboard-client'
   },
   { 
     id: 'recherche', 
     label: 'Trouver un transitaire', 
     icon: Search,
-    component: 'profileTransitaire.jsx',
-    path: '#/trouver-transitaire'
+    component: 'rechercheTransitaire.jsx',
+    path: '#/recherche-transitaire'
   },
   { 
     id: 'devis', 
@@ -43,14 +43,14 @@ const menuItems = [
     label: 'Suivi des envois', 
     icon: Truck,
     component: 'suiviEnvoi.jsx',
-    path: '#/suivi-envois'
+    path: '#/envois'
   },
   { 
     id: 'profil', 
     label: 'Mon profil', 
     icon: User,
     component: 'monProfil.jsx',
-    path: '#/mon-profil'
+    path: '#/profil-client'
   }
 ];
 
