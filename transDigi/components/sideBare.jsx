@@ -77,8 +77,16 @@ export default function SideBare({ activeId = 'dashboard', onNavigate, onOpenCha
   };
   const toggleOpen = () => setOpenState(!open);
 
-  const handleNavigate = (id) => {
-    if (onNavigate) onNavigate(id);
+  const handleNavigate = (item) => {
+    // Si onNavigate est fourni, on l'appelle avec l'ID
+    if (onNavigate) onNavigate(item.id);
+    
+    // Navigation via window.location pour forcer le rechargement de la page si nécessaire
+    if (item.path) {
+      window.location.href = item.path;
+    }
+    
+    // Fermer le menu si nécessaire
     if (closeOnNavigate) {
       setOpenState(false);
     }
@@ -142,7 +150,7 @@ export default function SideBare({ activeId = 'dashboard', onNavigate, onOpenCha
                         ...sideBareStyles.menuBtnBase,
                         ...(!open && collapsible ? { justifyContent: 'center' } : {})
                       }}
-                      onClick={() => handleNavigate(item.id)}
+                      onClick={() => handleNavigate(item)}
                       title={!open && collapsible ? item.label : ''}
                     >
                       <Icon size={20} />
@@ -156,7 +164,7 @@ export default function SideBare({ activeId = 'dashboard', onNavigate, onOpenCha
                   key={item.id}
                   className={`btn w-100 text-start d-flex align-items-center gap-3 mb-2 sidebare-btn ${isActive ? 'text-white' : 'text-dark'}`}
                   style={{ ...(isActive ? sideBareStyles.activeMenuBtn : sideBareStyles.inactiveMenuBtn), ...sideBareStyles.menuBtnBase }}
-                  onClick={() => handleNavigate(item.id)}
+                  onClick={() => handleNavigate(item)}
                 >
                   <Icon size={20} />
                   {(!collapsible || open) && <span className="sidebare-label">{item.label}</span>}
