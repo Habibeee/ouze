@@ -96,22 +96,34 @@ export default function SideBare({ activeId = 'dashboard', onNavigate, onOpenCha
   return (
     <>
       <style>{sideBareCss}</style>
-      {/* Floating toggle removed to avoid duplicate icons */}
+      
+      {/* Overlay pour mobile */}
+      {!isLgUp && open && !disableMobileOverlay && (
+        <div
+          onClick={toggleOpen}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            zIndex: 29,
+            backdropFilter: 'blur(2px)',
+            transition: 'opacity 0.3s ease',
+            animation: 'fadeIn 0.3s ease'
+          }}
+          aria-label="Fermer l'overlay"
+        />
+      )}
 
       <div
         className={`sidebare-shadow ${className}`}
         style={{
           ...sideBareStyles.sidebar,
-          backgroundColor: 'var(--card)',
-          color: 'var(--text)',
           width: isLgUp ? (collapsible ? (open ? '240px' : '56px') : '240px') : '240px',
-          top: topOffset,
-          height: `calc(100vh - ${topOffset}px)`,
-          zIndex: 1050,
           transform: isLgUp ? 'none' : (open ? 'translateX(0)' : 'translateX(-100%)'),
-          transition: 'transform 0.3s ease, width 0.3s ease',
-          overflowX: 'hidden',
-          overflowY: 'auto'
+          ...(isLgUp && collapsible && !open ? { width: '56px' } : {})
         }}
       >
           <div className="p-3">

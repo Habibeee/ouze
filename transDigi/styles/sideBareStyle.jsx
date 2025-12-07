@@ -1,9 +1,41 @@
 export const sideBareStyles = {
-  sidebar: { width: '240px', position: 'fixed', top: 0, left: 0, height: '100vh', overflowY: 'auto', zIndex: 1000, backgroundColor: 'var(--card)', color: 'var(--text)' },
+  sidebar: { 
+    width: '240px', 
+    position: 'fixed', 
+    top: '64px', // Hauteur du header
+    left: 0, 
+    bottom: 0, // S'étend jusqu'en bas
+    overflowY: 'auto', 
+    zIndex: 30, // Z-index inférieur à celui du header (40) et du footer (50)
+    backgroundColor: 'var(--card)', 
+    color: 'var(--text)',
+    transition: 'transform 0.3s ease, width 0.3s ease',
+    boxShadow: '2px 0 10px rgba(0, 0, 0, 0.1)'
+  },
   primary: '#28A745',
-  menuBtnBase: { border: 'none', padding: '12px 16px', borderRadius: '8px' },
-  activeMenuBtn: { backgroundColor: '#0EA5E9', color: '#ffffff' },
-  inactiveMenuBtn: { backgroundColor: 'transparent', color: 'var(--text)' }
+  menuBtnBase: { 
+    border: 'none', 
+    padding: '12px 16px', 
+    borderRadius: '8px',
+    width: '100%',
+    textAlign: 'left',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    cursor: 'pointer',
+    transition: 'all 0.2s ease'
+  },
+  activeMenuBtn: { 
+    backgroundColor: '#0EA5E9', 
+    color: '#ffffff' 
+  },
+  inactiveMenuBtn: { 
+    backgroundColor: 'transparent', 
+    color: 'var(--text)',
+    '&:hover': {
+      backgroundColor: 'rgba(0, 0, 0, 0.05)'
+    }
+  }
 };
 
 export const sideBareCss = `

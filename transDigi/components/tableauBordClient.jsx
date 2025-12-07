@@ -1,37 +1,65 @@
-import React, { useState, useEffect, useRef, Suspense, lazy } from 'react';
+import React, { useState, useEffect, useRef, Suspense } from 'react';
 import { 
-  Bell, User, Search, Menu, X, 
-  FileText, Truck, MapPin, Clock, 
-  CheckCircle, XCircle, Archive, ChevronRight,
-  Download, Printer, Share2, Filter,
-  ChevronDown, ChevronUp, MoreVertical,
-  Settings, LayoutGrid, MessageSquare, AlertCircle,
-  RefreshCw, Map as MapIcon, List, Loader2, LogOut
+  Bell, User, Menu, X, 
+  MapPin, Clock, 
+  CheckCircle, XCircle, AlertCircle,
+  RefreshCw, List, Loader2, LogOut,
+  ChevronDown, Settings
 } from 'lucide-react';
-import SideBare from './sideBare';
-import { toast } from 'react-toastify';
-import '../src/styles/leaflet.css';
 
-// Import direct des composants Leaflet
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-
-// Composant de chargement
+// Composant de chargement pour la carte
 const MapLoading = () => (
-  <div className="flex items-center justify-center h-64 bg-gray-100 rounded-lg">
-    <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
-    <span className="ml-2 text-gray-600">Chargement de la carte...</span>
+  <div className="d-flex align-items-center justify-content-center bg-light rounded" style={{ height: '500px' }}>
+    <Loader2 className="spinner-border text-primary" />
+    <span className="ms-2 text-muted">Chargement de la carte...</span>
   </div>
+);
+
+// Composant SideBare simplifié
+const SideBare = ({ activeId, onNavigate, open, onOpenChange }) => (
+  <div className={`sidebar ${open ? 'open' : 'closed'}`} style={{
+    position: 'fixed',
+    top: '64px',
+    left: 0,
+    width: open ? '240px' : '56px',
+    height: 'calc(100vh - 64px)',
+    backgroundColor: '#fff',
+    borderRight: '1px solid #e9ecef',
+    transition: 'width 0.3s ease',
+    zIndex: 30,
+    overflowY: 'auto'
+  }}>
+    <div className="p-3">
+      <button 
+        className={`btn w-100 mb-3 ${activeId === 'dashboard' ? 'btn-primary' : 'btn-outline-primary'}`}
+        onClick={() => onNavigate('dashboard')}
+      >
+        {open ? '📊 Tableau de bord' : '📊'}
+      </button>
+      <button 
+        className={`btn w-100 ${activeId === 'envois' ? 'btn-primary' : 'btn-outline-primary'}`}
+        onClick={() => onNavigate('envois')}
+      >
+        {open ? '📦 Expéditions' : '📦'}
+      </button>
+    </div>
+  </div>
+);
+
+// Icône de carte personnalisée
+const MapIconCustom = ({ size = 16 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"></polygon>
+    <line x1="9" y1="3" x2="9" y2="18"></line>
+    <line x1="15" y1="6" x2="15" y2="21"></line>
+  </svg>
 );
 
 const ClientDashboard = () => {
   // États principaux
-  const [section, setSection] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [isLgUp, setIsLgUp] = useState(typeof window !== 'undefined' ? window.innerWidth >= 992 : true);
-  const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' ? window.innerWidth <= 768 : false);
-  const [mapView, setMapView] = useState(true); // true pour la carte, false pour la liste
+  const [mapView, setMapView] = useState(false); // Démarrer en vue liste
   const [selectedExpedition, setSelectedExpedition] = useState(null);
-  const mapRef = useRef(null);
   
   // États pour les expéditions
   const [expeditions, setExpeditions] = useState([
@@ -60,41 +88,40 @@ const ClientDashboard = () => {
       client: 'Client 2',
       type: 'Document',
       poids: '0.5 kg'
+    },
+    {
+      id: 3,
+      reference: 'EXP-2023-003',
+      destination: 'Saint-Louis, Sénégal',
+      date_estimee: '20/12/2023',
+      statut: 'en_transit',
+      derniere_mise_a_jour: new Date().toLocaleString('fr-FR'),
+      position: { lat: 16.0179, lng: -16.5119 },
+      adresse: 'Place Faidherbe',
+      client: 'Client 3',
+      type: 'Colis express',
+      poids: '1.2 kg'
     }
   ]);
   const [expeditionsLoading, setExpeditionsLoading] = useState(false);
   const [expeditionsError, setExpeditionsError] = useState(null);
 
-  // Autres états existants...
-  const [devis, setDevis] = useState([]);
-  const [devisLoading, setDevisLoading] = useState(false);
-  const [devisError, setDevisError] = useState(null);
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
-  const [confirmCancelId, setConfirmCancelId] = useState(null);
-  const [isArchiving, setIsArchiving] = useState(false);
-  const [recentActivities, setRecentActivities] = useState([]);
-  const [userName, setUserName] = useState('Utilisateur');
+  // États pour les notifications et profil
   const [notifOpen, setNotifOpen] = useState(false);
-  const [notifs, setNotifs] = useState([]);
-  const [notifLoading, setNotifLoading] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(0);
+  const [notifs, setNotifs] = useState([
+    { id: 1, type: 'info', message: 'Nouvelle expédition créée', time: 'Il y a 5 min' },
+    { id: 2, type: 'success', message: 'Livraison effectuée', time: 'Il y a 1h' }
+  ]);
+  const [unreadCount, setUnreadCount] = useState(2);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState('dashboard');
+  const [userName, setUserName] = useState('Utilisateur');
 
   // Fonction pour récupérer les expéditions
   const fetchExpeditions = async () => {
     setExpeditionsLoading(true);
     try {
-      // Simulation de chargement
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Pour un déploiement réel, utilisez :
-      // const response = await fetch('/api/expeditions/en-cours');
-      // if (!response.ok) throw new Error('Erreur lors de la récupération des expéditions');
-      // const data = await response.json();
-      // setExpeditions(data);
-      
       setExpeditionsError(null);
     } catch (error) {
       console.error('Erreur:', error);
@@ -115,7 +142,6 @@ const ClientDashboard = () => {
     return statusMap[status] || status;
   };
 
-  // Autres fonctions existantes...
   const getExpeditionStatusColor = (status) => {
     switch (status) {
       case 'en_cours': return 'primary';
@@ -126,29 +152,26 @@ const ClientDashboard = () => {
     }
   };
 
-  // ... (conservez les autres fonctions existantes)
-
-  // Effet pour charger les expéditions au montage
+  // Gestion du redimensionnement de la fenêtre
   useEffect(() => {
-    fetchExpeditions();
-    // Mettre à jour les expéditions toutes les 5 minutes
-    const interval = setInterval(fetchExpeditions, 5 * 60 * 1000);
-    
-    // Nettoyage lors du démontage du composant
-    return () => {
-      clearInterval(interval);
-      // Nettoyage de la carte si elle existe
-      if (mapRef.current) {
-        mapRef.current.remove();
-        mapRef.current = null;
+    const handleResize = () => {
+      if (window.innerWidth < 992) {
+        setSidebarOpen(false);
+      } else {
+        setSidebarOpen(true);
       }
     };
+
+    window.addEventListener('resize', handleResize);
+    handleResize();
+    
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Rendu de la section des expéditions avec la carte
+  // Rendu de la section des expéditions
   const renderExpeditionsSection = () => (
-    <div className="card mb-4">
-      <div className="card-header bg-white d-flex justify-content-between align-items-center">
+    <div className="card mb-4 shadow-sm">
+      <div className="card-header bg-white d-flex justify-content-between align-items-center py-3">
         <h5 className="mb-0">Suivi des expéditions en temps réel</h5>
         <div className="d-flex">
           <div className="btn-group me-2" role="group">
@@ -157,7 +180,7 @@ const ClientDashboard = () => {
               onClick={() => setMapView(true)}
               title="Vue carte"
             >
-              <MapIcon size={16} />
+              <MapIconCustom size={16} />
             </button>
             <button 
               className={`btn btn-sm ${!mapView ? 'btn-primary' : 'btn-outline-secondary'}`}
@@ -182,272 +205,211 @@ const ClientDashboard = () => {
         </div>
       </div>
       
-      {expeditionsLoading ? (
-        <div className="text-center p-4">
-          <div className="spinner-border text-primary" role="status">
-            <span className="visually-hidden">Chargement des expéditions...</span>
-          </div>
-        </div>
-      ) : expeditionsError ? (
-        <div className="alert alert-warning m-3">
-          <AlertCircle className="me-2" />
-          {expeditionsError}
-          <button 
-            className="btn btn-sm btn-link p-0 ms-2" 
-            onClick={fetchExpeditions}
-          >
-            Réessayer
-          </button>
-        </div>
-      ) : expeditions.length === 0 ? (
-        <div className="text-muted p-4 text-center">
-          Aucune expédition en cours pour le moment
-        </div>
-      ) : mapView ? (
-        // Vue Carte (UN SEUL MapContainer)
-        <div className="position-relative" style={{ height: '500px' }}>
-          <Suspense fallback={<MapLoading />}>
-            <div style={{ height: '100%', width: '100%' }}>
-              <MapContainer 
-                key="map-container"
-                center={[14.4974, -14.4524]} 
-                zoom={7} 
-                style={{ height: '100%', width: '100%' }}
-                whenCreated={(map) => {
-                  // Nettoyage de la carte précédente si elle existe
-                  if (mapRef.current) {
-                    mapRef.current.remove();
-                  }
-                  // Stocke la référence de la nouvelle carte
-                  mapRef.current = map;
-                }}
-                preferCanvas={true}
-                zoomControl={true}
-                attributionControl={true}
-                doubleClickZoom={true}
-                closePopupOnClick={true}
-                dragging={true}
-                zoomSnap={0.5}
-                zoomDelta={0.5}
-                trackResize={true}
-                touchZoom={true}
-                scrollWheelZoom={true}
-                tap={true}
-              >
-                <TileLayer
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                />
-                {expeditions.map((expedition) => (
-                  <Marker 
-                    key={expedition.id} 
-                    position={[expedition.position.lat, expedition.position.lng]}
-                    eventHandlers={{
-                      click: () => setSelectedExpedition(expedition.id === selectedExpedition ? null : expedition.id)
-                    }}
-                  >
-                    <Popup>
-                      <div className="expedition-info-window">
-                        <h6 className="mb-1 fw-bold">{expedition.reference}</h6>
-                        <p className="mb-1">
-                          <MapPin size={14} className="me-1" />
-                          {expedition.destination}
-                        </p>
-                        <p className="mb-1">
-                          <Clock size={14} className="me-1" />
-                          Livraison estimée: {expedition.date_estimee}
-                        </p>
-                        <p className="mb-1">
-                          <strong>Client:</strong> {expedition.client}
-                        </p>
-                        <p className="mb-1">
-                          <strong>Type:</strong> {expedition.type} ({expedition.poids})
-                        </p>
-                        <span className={`badge bg-${getExpeditionStatusColor(expedition.statut)}`}>
-                          {formatExpeditionStatus(expedition.statut)}
-                        </span>
-                        <p className="text-muted small mt-2 mb-0">
-                          Dernière mise à jour: {expedition.derniere_mise_a_jour}
-                        </p>
-                      </div>
-                    </Popup>
-                  </Marker>
-                ))}
-              </MapContainer>
-            </div>
-          </Suspense>
-
-          {/* Styles pour la carte */}
-          <style jsx global>{`
-            .leaflet-container {
-              width: 100%;
-              height: 100%;
-              z-index: 1;
-            }
-            .expedition-info-window {
-              min-width: 200px;
-            }
-            .expedition-info-window h6 {
-              color: #0d6efd;
-            }
-          `}</style>
-          
-          {/* Légende de la carte */}
-          <div className="position-absolute bottom-0 end-0 m-3 p-2 bg-white rounded shadow-sm" style={{ zIndex: 1000 }}>
-            <div className="d-flex flex-column">
-              <small className="mb-1 fw-bold">Légende:</small>
-              <div className="d-flex align-items-center mb-1">
-                <span className="badge bg-primary me-2" style={{width: '20px', height: '10px'}}></span>
-                <small>En cours</small>
-              </div>
-              <div className="d-flex align-items-center mb-1">
-                <span className="badge bg-danger me-2" style={{width: '20px', height: '10px'}}></span>
-                <small>En retard</small>
-              </div>
-              <div className="d-flex align-items-center mb-1">
-                <span className="badge bg-info me-2" style={{width: '20px', height: '10px'}}></span>
-                <small>En transit</small>
-              </div>
-              <div className="d-flex align-items-center">
-                <span className="badge bg-success me-2" style={{width: '20px', height: '10px'}}></span>
-                <small>Livré</small>
-              </div>
+      <div className="card-body">
+        {expeditionsLoading ? (
+          <div className="text-center p-4">
+            <div className="spinner-border text-primary" role="status">
+              <span className="visually-hidden">Chargement des expéditions...</span>
             </div>
           </div>
-        </div>
-      ) : (
-        // Vue Liste
-        <div className="table-responsive">
-          <table className="table table-hover mb-0">
-            <thead className="table-light">
-              <tr>
-                <th>Référence</th>
-                <th>Destination</th>
-                <th>Client</th>
-                <th>Type</th>
-                <th>Poids</th>
-                <th>Statut</th>
-                <th>Dernière mise à jour</th>
-                <th className="text-end">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {expeditions.map((expedition) => (
-                <tr 
-                  key={expedition.id} 
-                  className={`expedition-list-item ${selectedExpedition === expedition.id ? 'table-active' : ''}`}
-                  onClick={() => {
-                    setSelectedExpedition(expedition.id);
-                    if (window.innerWidth <= 768) {
-                      setMapView(true);
-                    }
-                  }}
-                  style={{ cursor: 'pointer' }}
-                >
-                  <td className="fw-medium">{expedition.reference}</td>
-                  <td>{expedition.destination}</td>
-                  <td>{expedition.client}</td>
-                  <td>{expedition.type}</td>
-                  <td>{expedition.poids}</td>
-                  <td>
-                    <span className={`badge bg-${getExpeditionStatusColor(expedition.statut)}`}>
-                      {formatExpeditionStatus(expedition.statut)}
-                    </span>
-                  </td>
-                  <td><small>{expedition.derniere_mise_a_jour}</small></td>
-                  <td className="text-end">
-                    <button 
-                      className="btn btn-sm btn-outline-primary"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        console.log('Voir détails:', expedition.id);
-                      }}
-                    >
-                      Détails
-                    </button>
-                  </td>
+        ) : expeditionsError ? (
+          <div className="alert alert-warning">
+            <AlertCircle size={16} className="me-2" />
+            {expeditionsError}
+            <button 
+              className="btn btn-sm btn-link p-0 ms-2" 
+              onClick={fetchExpeditions}
+            >
+              Réessayer
+            </button>
+          </div>
+        ) : expeditions.length === 0 ? (
+          <div className="text-muted p-4 text-center">
+            Aucune expédition en cours pour le moment
+          </div>
+        ) : mapView ? (
+          <div className="alert alert-info">
+            <AlertCircle size={16} className="me-2" />
+            La carte interactive nécessite la bibliothèque Leaflet. En mode démo, utilisez la vue liste.
+          </div>
+        ) : (
+          <div className="table-responsive">
+            <table className="table table-hover mb-0">
+              <thead className="table-light">
+                <tr>
+                  <th>Référence</th>
+                  <th>Destination</th>
+                  <th>Client</th>
+                  <th>Type</th>
+                  <th>Poids</th>
+                  <th>Statut</th>
+                  <th>Date estimée</th>
+                  <th className="text-end">Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+              </thead>
+              <tbody>
+                {expeditions.map((expedition) => (
+                  <tr 
+                    key={expedition.id} 
+                    className={selectedExpedition === expedition.id ? 'table-active' : ''}
+                    onClick={() => setSelectedExpedition(expedition.id)}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <td className="fw-medium">{expedition.reference}</td>
+                    <td>
+                      <MapPin size={14} className="me-1 text-muted" />
+                      {expedition.destination}
+                    </td>
+                    <td>{expedition.client}</td>
+                    <td>{expedition.type}</td>
+                    <td>{expedition.poids}</td>
+                    <td>
+                      <span className={`badge bg-${getExpeditionStatusColor(expedition.statut)}`}>
+                        {formatExpeditionStatus(expedition.statut)}
+                      </span>
+                    </td>
+                    <td>
+                      <Clock size={14} className="me-1 text-muted" />
+                      <small>{expedition.date_estimee}</small>
+                    </td>
+                    <td className="text-end">
+                      <button 
+                        className="btn btn-sm btn-outline-primary"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          alert(`Détails de l'expédition ${expedition.reference}`);
+                        }}
+                      >
+                        Détails
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            
+            {selectedExpedition && (
+              <div className="mt-3 p-3 bg-light rounded">
+                <h6 className="mb-2">Détails de l'expédition sélectionnée</h6>
+                {expeditions.filter(e => e.id === selectedExpedition).map(exp => (
+                  <div key={exp.id}>
+                    <p className="mb-1"><strong>Référence:</strong> {exp.reference}</p>
+                    <p className="mb-1"><strong>Adresse complète:</strong> {exp.adresse}</p>
+                    <p className="mb-1"><strong>Dernière mise à jour:</strong> {exp.derniere_mise_a_jour}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 
-  // ... (conservez le reste de votre code existant)
-
-  // Dans le rendu du tableau de bord, remplacez l'ancienne section des expéditions par :
   const renderDashboard = () => (
-    <div className="container-fluid p-4">
-      {/* ... autres parties du tableau de bord ... */}
+    <div>
+      <h2 className="mb-4">Tableau de bord</h2>
+      
+      {/* Statistiques rapides */}
+      <div className="row mb-4">
+        <div className="col-md-3 mb-3">
+          <div className="card shadow-sm">
+            <div className="card-body">
+              <h6 className="text-muted mb-2">Expéditions en cours</h6>
+              <h3 className="mb-0">{expeditions.filter(e => e.statut === 'en_cours').length}</h3>
+            </div>
+          </div>
+        </div>
+        <div className="col-md-3 mb-3">
+          <div className="card shadow-sm">
+            <div className="card-body">
+              <h6 className="text-muted mb-2">En transit</h6>
+              <h3 className="mb-0">{expeditions.filter(e => e.statut === 'en_transit').length}</h3>
+            </div>
+          </div>
+        </div>
+        <div className="col-md-3 mb-3">
+          <div className="card shadow-sm">
+            <div className="card-body">
+              <h6 className="text-muted mb-2">En retard</h6>
+              <h3 className="mb-0 text-danger">{expeditions.filter(e => e.statut === 'en_retard').length}</h3>
+            </div>
+          </div>
+        </div>
+        <div className="col-md-3 mb-3">
+          <div className="card shadow-sm">
+            <div className="card-body">
+              <h6 className="text-muted mb-2">Total</h6>
+              <h3 className="mb-0">{expeditions.length}</h3>
+            </div>
+          </div>
+        </div>
+      </div>
       
       {renderExpeditionsSection()}
-      
-      {/* ... reste du contenu du tableau de bord ... */}
     </div>
   );
 
-  // ... (conservez le reste de votre code existant)
-
-  useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth < 992) {
-        setSidebarOpen(false);
-      } else {
-        setSidebarOpen(true);
-      }
-    };
-
-    // Ajouter l'écouteur d'événement
-    window.addEventListener('resize', handleResize);
+  const globalStyles = `
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #f8f9fa;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    }
     
-    // Appeler la fonction une fois au chargement
-    handleResize();
-
-    // Nettoyer l'écouteur d'événement lors du démontage
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
+    .main-container {
+      min-height: 100vh;
+      padding-top: 64px;
+    }
+    
+    .main-content {
+      margin-left: 240px;
+      transition: margin-left 0.3s ease;
+      padding: 1.5rem;
+      min-height: calc(100vh - 64px);
+    }
+    
+    .main-content.sidebar-collapsed {
+      margin-left: 56px;
+    }
+    
+    @media (max-width: 991.98px) {
+      .main-content {
+        margin-left: 0 !important;
+      }
+      
+      .sidebar {
+        transform: translateX(-100%);
+      }
+      
+      .sidebar.open {
+        transform: translateX(0);
+      }
+    }
+    
+    .navbar {
+      position: fixed;
+      top: 0;
+      right: 0;
+      left: 0;
+      z-index: 40;
+      height: 64px;
+      background-color: #fff;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+    
+    .dropdown-menu.show {
+      display: block;
+    }
+  `;
 
   return (
-    <div className="d-flex min-vh-100" style={{ backgroundColor: '#f8f9fa', position: 'relative' }}>
-      <style jsx global>{`
-        body {
-          overflow-x: hidden;
-        }
-        .main-content {
-          margin-left: 240px;
-          transition: margin 0.3s;
-          width: calc(100% - 240px);
-        }
-        .main-content.sidebar-collapsed {
-          margin-left: 56px;
-          width: calc(100% - 56px);
-        }
-        @media (max-width: 991.98px) {
-          .main-content {
-            margin-left: 0 !important;
-            width: 100% !important;
-          }
-        }
-      `}</style>
+    <>
+      <style>{globalStyles}</style>
       
-      {/* Menu latéral existant */}
-      <SideBare 
-        activeId={activeSection}
-        onNavigate={setActiveSection}
-        open={sidebarOpen}
-        onOpenChange={setSidebarOpen}
-        collapsible={true}
-        className="position-fixed"
-        topOffset={0}
-        style={{ zIndex: 1050 }}
-      />
-      
-      {/* Contenu principal */}
-      <div className={`main-content ${!sidebarOpen ? 'sidebar-collapsed' : ''}`}>
-        {/* Barre de navigation supérieure */}
-        <nav className="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+      <div className="main-container">
+        <nav className="navbar navbar-expand-lg navbar-light bg-white">
           <div className="container-fluid">
             <button 
               className="btn btn-link text-dark d-lg-none me-2"
@@ -455,6 +417,8 @@ const ClientDashboard = () => {
             >
               <Menu size={24} />
             </button>
+            
+            <span className="navbar-brand mb-0 h1">🚚 LogiTrack</span>
             
             <div className="d-flex align-items-center ms-auto">
               <div className="position-relative me-3">
@@ -471,14 +435,11 @@ const ClientDashboard = () => {
                 </button>
                 
                 {notifOpen && (
-                  <div 
-                    className="dropdown-menu dropdown-menu-end show"
-                    style={{ minWidth: '300px', maxHeight: '400px', overflowY: 'auto' }}
-                  >
+                  <div className="dropdown-menu dropdown-menu-end show position-absolute" style={{ minWidth: '300px', right: 0 }}>
                     <div className="d-flex justify-content-between align-items-center p-2 border-bottom">
                       <h6 className="mb-0">Notifications</h6>
                       <button 
-                        className="btn btn-sm btn-link"
+                        className="btn btn-sm btn-link text-dark"
                         onClick={() => setNotifOpen(false)}
                       >
                         <X size={16} />
@@ -490,11 +451,11 @@ const ClientDashboard = () => {
                           <div className="d-flex">
                             <div className="me-2">
                               {notif.type === 'success' ? (
-                                <CheckCircle className="text-success" />
+                                <CheckCircle size={16} className="text-success" />
                               ) : notif.type === 'error' ? (
-                                <XCircle className="text-danger" />
+                                <XCircle size={16} className="text-danger" />
                               ) : (
-                                <Bell className="text-primary" />
+                                <Bell size={16} className="text-primary" />
                               )}
                             </div>
                             <div>
@@ -519,7 +480,7 @@ const ClientDashboard = () => {
                   onClick={() => setProfileMenuOpen(!profileMenuOpen)}
                 >
                   <div className="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" 
-                    style={{ width: '32px', height: '32px' }}>
+                    style={{ width: '32px', height: '32px', fontSize: '14px' }}>
                     {userName.charAt(0).toUpperCase()}
                   </div>
                   <span className="ms-2 d-none d-md-inline">{userName}</span>
@@ -527,8 +488,8 @@ const ClientDashboard = () => {
                 </button>
                 
                 {profileMenuOpen && (
-                  <div className="dropdown-menu dropdown-menu-end show">
-                    <button className="dropdown-item" onClick={() => setActiveSection('profil')}>
+                  <div className="dropdown-menu dropdown-menu-end show position-absolute" style={{ right: 0 }}>
+                    <button className="dropdown-item" onClick={() => { setActiveSection('profil'); setProfileMenuOpen(false); }}>
                       <User size={16} className="me-2" />
                       Mon profil
                     </button>
@@ -548,15 +509,30 @@ const ClientDashboard = () => {
           </div>
         </nav>
         
-        {/* Contenu de la section active */}
-        <div className="container-fluid p-4">
-          {activeSection === 'dashboard' && renderDashboard()}
-          {activeSection === 'envois' && renderExpeditionsSection()}
-          {/* Ajoutez d'autres sections ici au besoin */}
+        <SideBare 
+          activeId={activeSection}
+          onNavigate={(section) => {
+            setActiveSection(section);
+            if (window.innerWidth < 992) setSidebarOpen(false);
+          }}
+          open={sidebarOpen}
+          onOpenChange={setSidebarOpen}
+        />
+        
+        <div className={`main-content ${!sidebarOpen ? 'sidebar-collapsed' : ''}`}>
+          <div className="container-fluid">
+            {activeSection === 'dashboard' && renderDashboard()}
+            {activeSection === 'envois' && (
+              <div>
+                <h2 className="mb-4">Mes Expéditions</h2>
+                {renderExpeditionsSection()}
+              </div>
+            )}
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 
-export default ClientDashboard
+export default ClientDashboard;
