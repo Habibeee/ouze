@@ -8,49 +8,49 @@ const menuItems = [
     label: 'Tableau de bord', 
     icon: LayoutGrid,
     component: 'tableauBordClient.jsx',
-    path: '#/dashboard-client'
+    path: '/tableau-bord-client'
   },
   { 
     id: 'recherche', 
     label: 'Trouver un transitaire', 
     icon: Search,
-    component: 'rechercheTransitaire.jsx',
-    path: '#/recherche-transitaire'
+    component: 'profileTransitaire.jsx',
+    path: '/profile-transitaire'
   },
   { 
     id: 'devis', 
     label: 'Nouveau devis', 
     icon: FileText,
     component: 'nouveauDevis.jsx',
-    path: '#/nouveau-devis'
+    path: '/nouveau-devis'
   },
   { 
     id: 'historique-devis', 
     label: 'Historique des devis', 
     icon: FileText,
     component: 'historiqueDevis.jsx',
-    path: '#/historique-devis'
+    path: '/historique-des-devis'
   },
   { 
     id: 'historique', 
     label: 'Historique', 
     icon: Clock,
     component: 'historique.jsx',
-    path: '#/historique'
+    path: '/historique'
   },
   { 
     id: 'envois', 
     label: 'Suivi des envois', 
     icon: Truck,
     component: 'suiviEnvoi.jsx',
-    path: '#/envois'
+    path: '/suivi-envois'
   },
   { 
     id: 'profil', 
     label: 'Mon profil', 
     icon: User,
     component: 'monProfil.jsx',
-    path: '#/profil-client'
+    path: '/mon-profil'
   }
 ];
 
@@ -83,7 +83,8 @@ export default function SideBare({ activeId = 'dashboard', onNavigate, onOpenCha
     
     // Navigation via window.location pour forcer le rechargement de la page si nécessaire
     if (item.path) {
-      window.location.href = item.path;
+      // Ajout du # pour la navigation avec hash
+      window.location.hash = item.path.startsWith('#') ? item.path : `#${item.path}`;
     }
     
     // Fermer le menu si nécessaire
