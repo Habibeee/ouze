@@ -103,7 +103,7 @@ export default function SideBare({ activeId = 'dashboard', onNavigate, onOpenCha
           onClick={toggleOpen}
           style={{
             position: 'fixed',
-            top: 0,
+            top: '64px', // Ajusté pour commencer sous le header
             left: 0,
             right: 0,
             bottom: 0,
@@ -123,6 +123,8 @@ export default function SideBare({ activeId = 'dashboard', onNavigate, onOpenCha
           ...sideBareStyles.sidebar,
           width: isLgUp ? (collapsible ? (open ? '240px' : '56px') : '240px') : '240px',
           transform: isLgUp ? 'none' : (open ? 'translateX(0)' : 'translateX(-100%)'),
+          top: '64px', // Positionné sous le header
+          height: 'calc(100vh - 64px)', // Hauteur ajustée pour ne pas dépasser le footer
           ...(isLgUp && collapsible && !open ? { width: '56px' } : {})
         }}
       >
