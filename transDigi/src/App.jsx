@@ -261,16 +261,22 @@ function App() {
 
   // Styles pour le layout
   const layoutStyles = `
+    :root {
+      --sidebar-width: 240px;
+    }
+    
     .app-container {
       display: flex;
       flex-direction: column;
       min-height: 100vh;
-      transition: transform 0.3s ease-in-out;
-      transform: translateX(0);
+      margin-left: 0;
+      transition: margin-left 0.3s ease-in-out;
+      position: relative;
+      width: 100%;
     }
     
     .app-container.sidebar-open {
-      transform: translateX(240px);
+      margin-left: var(--sidebar-width);
     }
     
     .app-header {
@@ -279,12 +285,12 @@ function App() {
       left: 0;
       right: 0;
       z-index: 1000;
-      width: 100%;
-      transition: transform 0.3s ease-in-out;
+      transition: left 0.3s ease-in-out, right 0.3s ease-in-out;
     }
     
     .app-container.sidebar-open .app-header {
-      transform: translateX(240px);
+      left: var(--sidebar-width);
+      right: calc(-1 * var(--sidebar-width));
     }
     
     .app-content {
@@ -293,14 +299,19 @@ function App() {
       margin-top: 80px; /* Hauteur du header */
       padding-bottom: 60px; /* Espace pour le footer */
       min-height: calc(100vh - 80px); /* Hauteur totale - header */
-      transition: transform 0.3s ease-in-out;
+      transition: margin-left 0.3s ease-in-out;
+      margin-left: 0;
+    }
+    
+    .app-container.sidebar-open .app-content {
+      margin-left: 0;
     }
     
     .app-main {
       flex: 1;
       padding: 20px;
       width: 100%;
-      transition: transform 0.3s ease-in-out;
+      transition: margin-left 0.3s ease-in-out;
     }
     
     .app-sidebar {
@@ -308,28 +319,29 @@ function App() {
       left: 0;
       top: 0;
       bottom: 0;
-      width: 240px;
-      transform: translateX(-100%);
-      transition: transform 0.3s ease-in-out;
+      width: var(--sidebar-width);
+      margin-left: calc(-1 * var(--sidebar-width));
+      transition: margin-left 0.3s ease-in-out;
       z-index: 1100;
       background: white;
       box-shadow: 2px 0 5px rgba(0,0,0,0.1);
     }
     
     .app-sidebar.open {
-      transform: translateX(0);
+      margin-left: 0;
     }
     
     .app-footer {
       margin-top: auto;
       width: 100%;
       position: relative;
-      bottom: 0;
-      transition: transform 0.3s ease-in-out;
+      transition: margin-left 0.3s ease-in-out;
+      left: 0;
+      right: 0;
     }
     
     .app-container.sidebar-open .app-footer {
-      transform: translateX(240px);
+      margin-left: var(--sidebar-width);
     }
     
     @media (max-width: 992px) {
@@ -342,7 +354,7 @@ function App() {
       }
       
       .app-container.sidebar-open {
-        transform: translateX(240px);
+        margin-left: var(--sidebar-width);
       }
     }
   `;
@@ -425,10 +437,16 @@ function App() {
 
   // Default layout for non-client routes
   const defaultLayoutStyles = `
+    :root {
+      --header-height: 80px;
+      --footer-height: 60px;
+    }
+    
     .default-layout {
       display: flex;
       flex-direction: column;
       min-height: 100vh;
+      width: 100%;
     }
     
     .default-header {
@@ -438,23 +456,50 @@ function App() {
       right: 0;
       z-index: 1000;
       width: 100%;
+      transition: left 0.3s ease-in-out;
     }
     
     .default-main {
       flex: 1;
-      margin-top: 80px;
+      margin-top: var(--header-height);
       padding: 20px;
-      min-height: calc(100vh - 140px); /* 80px header + 60px footer */
+      min-height: calc(100vh - var(--header-height) - var(--footer-height));
+      width: 100%;
+      transition: padding-left 0.3s ease-in-out;
     }
     
     .default-footer {
       margin-top: auto;
       width: 100%;
+      transition: padding-left 0.3s ease-in-out;
     }
     
-    @media (max-width: 768px) {
+    @media (max-width: 992px) {
+      :root {
+        --header-height: 60px;
+      }
+      
+      .app-container.sidebar-open {
+        margin-left: 0;
+      }
+      
+      .app-sidebar {
+        margin-left: calc(-1 * var(--sidebar-width));
+        z-index: 1200;
+      }
+      
+      .app-sidebar.open {
+        margin-left: 0;
+        box-shadow: 2px 0 10px rgba(0,0,0,0.2);
+      }
+      
+      .app-container.sidebar-open .app-header,
+      .app-container.sidebar-open .app-footer {
+        transform: translateX(var(--sidebar-width));
+      }
+      
       .default-main {
-        margin-top: 60px;
+        margin-top: var(--header-height);
         padding: 15px;
       }
     }
