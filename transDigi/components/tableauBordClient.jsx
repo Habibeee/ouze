@@ -24,6 +24,27 @@ const MapLoading = () => (
 );
 
 const ClientDashboard = () => {
+  // Fonction pour gérer le clic sur une notification
+  const handleNotificationClick = (notif) => {
+    // Marquer comme lu si nécessaire
+    if (!notif.lu) {
+      // Mettre à jour l'état local
+      setNotifs(notifs.map(n => 
+        n.id === notif.id ? { ...n, lu: true } : n
+      ));
+      // Mettre à jour le compteur de notifications non lues
+      setUnreadCount(prev => Math.max(0, prev - 1));
+    }
+    // Fermer le menu des notifications
+    setNotifOpen(false);
+  };
+
+  // Fonction pour marquer toutes les notifications comme lues
+  const markAllAsRead = () => {
+    setNotifs(notifs.map(n => ({ ...n, lu: true })));
+    setUnreadCount(0);
+  };
+
   // États principaux
   const [section, setSection] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -32,7 +53,7 @@ const ClientDashboard = () => {
   const [mapView, setMapView] = useState(true); // true pour la carte, false pour la liste
   const [selectedExpedition, setSelectedExpedition] = useState(null);
   const mapRef = useRef(null);
-  
+
   // Gestion du redimensionnement de la fenêtre
   useEffect(() => {
     const handleResize = () => {
@@ -53,7 +74,7 @@ const ClientDashboard = () => {
     
     return () => window.removeEventListener('resize', handleResize);
   }, []);
-  
+
   // Mise à jour de la largeur de la sidebar dans les variables CSS
   useLayoutEffect(() => {
     try {
@@ -63,7 +84,7 @@ const ClientDashboard = () => {
       console.error('Erreur lors de la mise à jour de la largeur de la sidebar:', e);
     }
   }, [sidebarOpen]);
-  
+
   // États pour les expéditions
   const [expeditions, setExpeditions] = useState([
     {
@@ -96,6 +117,14 @@ const ClientDashboard = () => {
   const [expeditionsLoading, setExpeditionsLoading] = useState(false);
   const [expeditionsError, setExpeditionsError] = useState(null);
 
+  // États pour les notifications
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [notifs, setNotifs] = useState([]);
+  const [notifLoading, setNotifLoading] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [userName, setUserName] = useState('Utilisateur');
+
   // Autres états existants...
   const [devis, setDevis] = useState([]);
   const [devisLoading, setDevisLoading] = useState(false);
@@ -105,12 +134,6 @@ const ClientDashboard = () => {
   const [confirmCancelId, setConfirmCancelId] = useState(null);
   const [isArchiving, setIsArchiving] = useState(false);
   const [recentActivities, setRecentActivities] = useState([]);
-  const [userName, setUserName] = useState('Utilisateur');
-  const [notifOpen, setNotifOpen] = useState(false);
-  const [notifs, setNotifs] = useState([]);
-  const [notifLoading, setNotifLoading] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
 
   // Fonction pour récupérer les expéditions
   const fetchExpeditions = async () => {
@@ -156,8 +179,6 @@ const ClientDashboard = () => {
     }
   };
 
-  // ... (conservez les autres fonctions existantes)
-
   // Effet pour charger les expéditions au montage
   useEffect(() => {
     fetchExpeditions();
@@ -176,359 +197,482 @@ const ClientDashboard = () => {
   }, []);
 
   // Rendu de la section des expéditions avec la carte
-  const renderExpeditionsSection = () => (
-    <div className="card mb-4">
-      <div className="card-header bg-white d-flex justify-content-between align-items-center">
-        <h5 className="mb-0">Suivi des expéditions en temps réel</h5>
-        <div className="d-flex">
-          <div className="btn-group me-2" role="group">
-            <button 
-              className={`btn btn-sm ${mapView ? 'btn-primary' : 'btn-outline-secondary'}`}
-              onClick={() => setMapView(true)}
-              title="Vue carte"
-            >
-              <MapIcon size={16} />
-            </button>
-            <button 
-              className={`btn btn-sm ${!mapView ? 'btn-primary' : 'btn-outline-secondary'}`}
-              onClick={() => setMapView(false)}
-              title="Vue liste"
-            >
-              <List size={16} />
-            </button>
-          </div>
-          <button 
-            className="btn btn-sm btn-outline-secondary" 
-            onClick={fetchExpeditions}
-            disabled={expeditionsLoading}
-            title="Rafraîchir"
-          >
-            {expeditionsLoading ? (
-              <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-            ) : (
-              <RefreshCw size={16} />
-            )}
-          </button>
-        </div>
-      </div>
-      
-      {expeditionsLoading ? (
-        <div className="text-center p-4">
-          <div className="spinner-border text-primary" role="status">
-            <span className="visually-hidden">Chargement des expéditions...</span>
-          </div>
-        </div>
-      ) : expeditionsError ? (
-        <div className="alert alert-warning m-3">
-          <AlertCircle className="me-2" />
-          {expeditionsError}
-          <button 
-            className="btn btn-sm btn-link p-0 ms-2" 
-            onClick={fetchExpeditions}
-          >
-            Réessayer
-          </button>
-        </div>
-      ) : expeditions.length === 0 ? (
-        <div className="text-muted p-4 text-center">
-          Aucune expédition en cours pour le moment
-        </div>
-      ) : mapView ? (
-        // Vue Carte (UN SEUL MapContainer)
-        <div className="position-relative" style={{ height: '500px' }}>
-          <Suspense fallback={<MapLoading />}>
-            <div style={{ height: '100%', width: '100%' }}>
-              <MapContainer 
-                key="map-container"
-                center={[14.4974, -14.4524]} 
-                zoom={7} 
-                style={{ height: '100%', width: '100%' }}
-                whenCreated={(map) => {
-                  // Nettoyage de la carte précédente si elle existe
-                  if (mapRef.current) {
-                    mapRef.current.remove();
-                  }
-                  // Stocke la référence de la nouvelle carte
-                  mapRef.current = map;
-                }}
-                preferCanvas={true}
-                zoomControl={true}
-                attributionControl={true}
-                doubleClickZoom={true}
-                closePopupOnClick={true}
-                dragging={true}
-                zoomSnap={0.5}
-                zoomDelta={0.5}
-                trackResize={true}
-                touchZoom={true}
-                scrollWheelZoom={true}
-                tap={true}
+  const renderExpeditionsSection = () => {
+    return (
+      <div className="card mb-4">
+        <div className="card-header bg-white d-flex justify-content-between align-items-center">
+          <h5 className="mb-0">Suivi des expéditions en temps réel</h5>
+          <div className="d-flex">
+            <div className="btn-group me-2" role="group">
+              <button 
+                className={`btn btn-sm ${mapView ? 'btn-primary' : 'btn-outline-secondary'}`}
+                onClick={() => setMapView(true)}
+                title="Vue carte"
               >
-                <TileLayer
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                />
-                {expeditions.map((expedition) => (
-                  <Marker 
-                    key={expedition.id} 
-                    position={[expedition.position.lat, expedition.position.lng]}
-                    eventHandlers={{
-                      click: () => setSelectedExpedition(expedition.id === selectedExpedition ? null : expedition.id)
-                    }}
-                  >
-                    <Popup>
-                      <div className="expedition-info-window">
-                        <h6 className="mb-1 fw-bold">{expedition.reference}</h6>
-                        <p className="mb-1">
-                          <MapPin size={14} className="me-1" />
-                          {expedition.destination}
-                        </p>
-                        <p className="mb-1">
-                          <Clock size={14} className="me-1" />
-                          Livraison estimée: {expedition.date_estimee}
-                        </p>
-                        <p className="mb-1">
-                          <strong>Client:</strong> {expedition.client}
-                        </p>
-                        <p className="mb-1">
-                          <strong>Type:</strong> {expedition.type} ({expedition.poids})
-                        </p>
-                        <span className={`badge bg-${getExpeditionStatusColor(expedition.statut)}`}>
-                          {formatExpeditionStatus(expedition.statut)}
-                        </span>
-                        <p className="text-muted small mt-2 mb-0">
-                          Dernière mise à jour: {expedition.derniere_mise_a_jour}
-                        </p>
-                      </div>
-                    </Popup>
-                  </Marker>
-                ))}
-              </MapContainer>
+                <MapIcon size={16} />
+              </button>
+              <button 
+                className={`btn btn-sm ${!mapView ? 'btn-primary' : 'btn-outline-secondary'}`}
+                onClick={() => setMapView(false)}
+                title="Vue liste"
+              >
+                <List size={16} />
+              </button>
             </div>
-          </Suspense>
-
-          {/* Styles pour la carte */}
-          <style jsx global>{`
-            .leaflet-container {
-              width: 100%;
-              height: 100%;
-              z-index: 1;
-            }
-            .expedition-info-window {
-              min-width: 200px;
-            }
-            .expedition-info-window h6 {
-              color: #0d6efd;
-            }
-          `}</style>
-          
-          {/* Légende de la carte */}
-          <div className="position-absolute bottom-0 end-0 m-3 p-2 bg-white rounded shadow-sm" style={{ zIndex: 1000 }}>
-            <div className="d-flex flex-column">
-              <small className="mb-1 fw-bold">Légende:</small>
-              <div className="d-flex align-items-center mb-1">
-                <span className="badge bg-primary me-2" style={{width: '20px', height: '10px'}}></span>
-                <small>En cours</small>
-              </div>
-              <div className="d-flex align-items-center mb-1">
-                <span className="badge bg-danger me-2" style={{width: '20px', height: '10px'}}></span>
-                <small>En retard</small>
-              </div>
-              <div className="d-flex align-items-center mb-1">
-                <span className="badge bg-info me-2" style={{width: '20px', height: '10px'}}></span>
-                <small>En transit</small>
-              </div>
-              <div className="d-flex align-items-center">
-                <span className="badge bg-success me-2" style={{width: '20px', height: '10px'}}></span>
-                <small>Livré</small>
-              </div>
-            </div>
+            <button 
+              className="btn btn-sm btn-outline-secondary" 
+              onClick={fetchExpeditions}
+              disabled={expeditionsLoading}
+              title="Rafraîchir"
+            >
+              {expeditionsLoading ? (
+                <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+              ) : (
+                <RefreshCw size={16} />
+              )}
+            </button>
           </div>
         </div>
-      ) : (
-        // Vue Liste
-        <div className="table-responsive">
-          <table className="table table-hover mb-0">
-            <thead className="table-light">
-              <tr>
-                <th>Référence</th>
-                <th>Destination</th>
-                <th>Client</th>
-                <th>Type</th>
-                <th>Poids</th>
-                <th>Statut</th>
-                <th>Dernière mise à jour</th>
-                <th className="text-end">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {expeditions.map((expedition) => (
-                <tr 
-                  key={expedition.id} 
-                  className={`expedition-list-item ${selectedExpedition === expedition.id ? 'table-active' : ''}`}
-                  onClick={() => {
-                    setSelectedExpedition(expedition.id);
-                    if (window.innerWidth <= 768) {
-                      setMapView(true);
+        
+        {expeditionsLoading ? (
+          <div className="text-center p-4">
+            <div className="spinner-border text-primary" role="status">
+              <span className="visually-hidden">Chargement des expéditions...</span>
+            </div>
+          </div>
+        ) : expeditionsError ? (
+          <div className="alert alert-warning m-3">
+            <AlertCircle className="me-2" />
+            {expeditionsError}
+            <button 
+              className="btn btn-sm btn-link p-0 ms-2" 
+              onClick={fetchExpeditions}
+            >
+              Réessayer
+            </button>
+          </div>
+        ) : expeditions.length === 0 ? (
+          <div className="text-muted p-4 text-center">
+            Aucune expédition en cours pour le moment
+          </div>
+        ) : mapView ? (
+          // Vue Carte (UN SEUL MapContainer)
+          <div className="position-relative" style={{ height: '500px' }}>
+            <Suspense fallback={<MapLoading />}>
+              <div style={{ height: '100%', width: '100%' }}>
+                <MapContainer 
+                  key="map-container"
+                  center={[14.4974, -14.4524]} 
+                  zoom={7} 
+                  style={{ height: '100%', width: '100%' }}
+                  whenCreated={(map) => {
+                    // Nettoyage de la carte précédente si elle existe
+                    if (mapRef.current) {
+                      mapRef.current.remove();
                     }
+                    // Stocke la référence de la nouvelle carte
+                    mapRef.current = map;
                   }}
-                  style={{ cursor: 'pointer' }}
+                  preferCanvas={true}
+                  zoomControl={true}
+                  attributionControl={true}
+                  doubleClickZoom={true}
+                  closePopupOnClick={true}
+                  dragging={true}
+                  zoomSnap={0.5}
+                  zoomDelta={0.5}
+                  trackResize={true}
+                  touchZoom={true}
+                  scrollWheelZoom={true}
+                  tap={true}
                 >
-                  <td className="fw-medium">{expedition.reference}</td>
-                  <td>{expedition.destination}</td>
-                  <td>{expedition.client}</td>
-                  <td>{expedition.type}</td>
-                  <td>{expedition.poids}</td>
-                  <td>
-                    <span className={`badge bg-${getExpeditionStatusColor(expedition.statut)}`}>
-                      {formatExpeditionStatus(expedition.statut)}
-                    </span>
-                  </td>
-                  <td><small>{expedition.derniere_mise_a_jour}</small></td>
-                  <td className="text-end">
-                    <button 
-                      className="btn btn-sm btn-outline-primary"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        console.log('Voir détails:', expedition.id);
+                  <TileLayer
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                  />
+                  {expeditions.map((expedition) => (
+                    <Marker 
+                      key={expedition.id} 
+                      position={[expedition.position.lat, expedition.position.lng]}
+                      eventHandlers={{
+                        click: () => setSelectedExpedition(expedition.id === selectedExpedition ? null : expedition.id)
                       }}
                     >
-                      Détails
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </div>
-  );
+                      <Popup>
+                        <div className="expedition-info-window">
+                          <h6 className="mb-1 fw-bold">{expedition.reference}</h6>
+                          <p className="mb-1">
+                            <MapPin size={14} className="me-1" />
+                            {expedition.destination}
+                          </p>
+                          <p className="mb-1">
+                            <Clock size={14} className="me-1" />
+                            Livraison estimée: {expedition.date_estimee}
+                          </p>
+                          <p className="mb-1">
+                            <strong>Client:</strong> {expedition.client}
+                          </p>
+                          <p className="mb-1">
+                            <strong>Type:</strong> {expedition.type} ({expedition.poids})
+                          </p>
+                          <span className={`badge bg-${getExpeditionStatusColor(expedition.statut)}`}>
+                            {formatExpeditionStatus(expedition.statut)}
+                          </span>
+                          <p className="text-muted small mt-2 mb-0">
+                            Dernière mise à jour: {expedition.derniere_mise_a_jour}
+                          </p>
+                        </div>
+                      </Popup>
+                    </Marker>
+                  ))}
+                </MapContainer>
+              </div>
+            </Suspense>
 
-  // ... (conservez le reste de votre code existant)
-
-  // Dans le rendu du tableau de bord, remplacez l'ancienne section des expéditions par :
-  const renderDashboard = () => (
-    <div className="container-fluid p-4">
-      {/* ... autres parties du tableau de bord ... */}
-      
-      {renderExpeditionsSection()}
-      
-      {/* ... reste du contenu du tableau de bord ... */}
-    </div>
-  );
-
-  // ... (conservez le reste de votre code existant)
-
-  return (
-    <div className="min-h-screen bg-gray-50 flex flex-row">
-      {/* Sidebar */}
-      <SideBare 
-        activeId={section}
-        onNavigate={(id) => {
-          setSection(id);
-          // Fermer le menu sur mobile après la navigation
-          if (isMobile) {
-            setSidebarOpen(false);
-          }
-        }}
-        open={sidebarOpen}
-        onOpenChange={setSidebarOpen}
-        isMobile={isMobile}
-      />
-      
-      {/* Contenu principal */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* En-tête */}
-        <header className="bg-white shadow-sm z-10">
-          <div className="px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-            <div className="flex items-center">
-              <button 
-                onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="mr-4 text-gray-500 hover:text-gray-700 focus:outline-none"
-              >
-                {sidebarOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-              </button>
-              <h1 className="text-xl font-semibold text-gray-900">
-                {section === 'dashboard' && 'Tableau de bord'}
-                {section === 'recherche' && 'Trouver un transitaire'}
-                {section === 'devis' && 'Nouveau devis'}
-                {section === 'historique-devis' && 'Historique des devis'}
-                {section === 'historique' && 'Historique'}
-                {section === 'envois' && 'Suivi des envois'}
-                {section === 'profil' && 'Mon profil'}
-              </h1>
+            {/* Styles pour la carte */}
+            <style jsx global>{`
+              .leaflet-container {
+                width: 100%;
+                height: 100%;
+                z-index: 1;
+              }
+              .expedition-info-window {
+                min-width: 200px;
+              }
+              .expedition-info-window h6 {
+                color: #0d6efd;
+              }
+            `}</style>
+            
+            {/* Légende de la carte */}
+            <div className="position-absolute bottom-0 end-0 m-3 p-2 bg-white rounded shadow-sm" style={{ zIndex: 1000 }}>
+              <div className="d-flex flex-column">
+                <small className="mb-1 fw-bold">Légende:</small>
+                <div className="d-flex align-items-center mb-1">
+                  <span className="badge bg-primary me-2" style={{width: '20px', height: '10px'}}></span>
+                  <small>En cours</small>
+                </div>
+                <div className="d-flex align-items-center mb-1">
+                  <span className="badge bg-danger me-2" style={{width: '20px', height: '10px'}}></span>
+                  <small>En retard</small>
+                </div>
+                <div className="d-flex align-items-center mb-1">
+                  <span className="badge bg-info me-2" style={{width: '20px', height: '10px'}}></span>
+                  <small>En transit</small>
+                </div>
+                <div className="d-flex align-items-center">
+                  <span className="badge bg-success me-2" style={{width: '20px', height: '10px'}}></span>
+                  <small>Livré</small>
+                </div>
+              </div>
             </div>
           </div>
-        </header>
+        ) : (
+          // Vue Liste
+          <div className="table-responsive">
+            <table className="table table-hover mb-0">
+              <thead className="table-light">
+                <tr>
+                  <th>Référence</th>
+                  <th>Destination</th>
+                  <th>Client</th>
+                  <th>Type</th>
+                  <th>Poids</th>
+                  <th>Statut</th>
+                  <th>Dernière mise à jour</th>
+                  <th className="text-end">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {expeditions.map((expedition) => (
+                  <tr 
+                    key={expedition.id} 
+                    className={`expedition-list-item ${selectedExpedition === expedition.id ? 'table-active' : ''}`}
+                    onClick={() => {
+                      setSelectedExpedition(expedition.id);
+                      if (window.innerWidth <= 768) {
+                        setMapView(true);
+                      }
+                    }}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <td className="fw-medium">{expedition.reference}</td>
+                    <td>{expedition.destination}</td>
+                    <td>{expedition.client}</td>
+                    <td>{expedition.type}</td>
+                    <td>{expedition.poids}</td>
+                    <td>
+                      <span className={`badge bg-${getExpeditionStatusColor(expedition.statut)}`}>
+                        {formatExpeditionStatus(expedition.statut)}
+                      </span>
+                    </td>
+                    <td><small>{expedition.derniere_mise_a_jour}</small></td>
+                    <td className="text-end">
+                      <button 
+                        className="btn btn-sm btn-outline-primary"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          console.log('Voir détails:', expedition.id);
+                        }}
+                      >
+                        Détails
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // Rendu principal du tableau de bord
+  const renderDashboard = () => {
+    return (
+      <div className="container-fluid p-4">
+        {renderExpeditionsSection()}
+        {/* ... reste du contenu du tableau de bord ... */}
+      </div>
+    );
+  };
+
+  // Rendu principal du composant
+  return (
+    <div>
+      <style jsx global>{`
+        :root {
+          --sidebar-width: 240px;
+          --header-height: 64px;
+        }
+        
+        .sidebar {
+          width: var(--sidebar-width);
+          transition: width 0.2s ease-in-out;
+        }
+        
+        .sidebar-collapsed {
+          width: 56px;
+        }
+        
+        .main-content {
+          margin-left: var(--sidebar-width);
+          transition: margin 0.2s ease-in-out;
+        }
+        
+        @media (max-width: 991px) {
+          .main-content {
+            margin-left: 0;
+          }
+          
+          .sidebar {
+            position: fixed;
+            z-index: 40;
+            height: 100vh;
+            transform: translateX(-100%);
+            transition: transform 0.2s ease-in-out;
+          }
+          
+          .sidebar-open {
+            transform: translateX(0);
+          }
+          
+          .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 30;
+          }
+          
+          .sidebar-overlay-open {
+            display: block;
+          }
+        }
+      `}</style>
+      <div className="min-h-screen bg-gray-50 flex flex-row">
+        {/* Sidebar */}
+        <SideBare 
+          activeId={section}
+          onNavigate={(id) => {
+            setSection(id);
+            // Fermer le menu sur mobile après la navigation
+            if (isMobile) {
+              setSidebarOpen(false);
+            }
+          }}
+          open={sidebarOpen}
+          onOpenChange={setSidebarOpen}
+          isMobile={isMobile}
+        />
         
         {/* Contenu principal */}
-        <main className="flex-1 overflow-y-auto">
-          {renderDashboard()}
-        </main>
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {/* En-tête */}
+          <header className="bg-white shadow-sm z-10">
+            <div className="px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+              <div className="flex items-center">
+                <button 
+                  onClick={() => setSidebarOpen(!sidebarOpen)}
+                  className="mr-4 text-gray-500 hover:text-gray-700 focus:outline-none"
+                >
+                  {sidebarOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+                </button>
+                <h1 className="text-xl font-semibold text-gray-900">
+                  {section === 'dashboard' && 'Tableau de bord'}
+                  {section === 'recherche' && 'Trouver un transitaire'}
+                  {section === 'devis' && 'Nouveau devis'}
+                  {section === 'historique-devis' && 'Historique des devis'}
+                  {section === 'historique' && 'Historique'}
+                  {section === 'envois' && 'Suivi des envois'}
+                  {section === 'profil' && 'Mon profil'}
+                </h1>
+              </div>
+              
+              {/* Icônes de notification et de profil */}
+              <div className="flex items-center space-x-4">
+                {/* Bouton de notification */}
+                <div className="relative">
+                  <button 
+                    onClick={() => setNotifOpen(!notifOpen)}
+                    className="p-1 rounded-full text-gray-500 hover:text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 relative"
+                  >
+                    <Bell className="h-6 w-6" />
+                    {unreadCount > 0 && (
+                      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                        {unreadCount}
+                      </span>
+                    )}
+                  </button>
+                  
+                  {/* Menu déroulant des notifications */}
+                  {notifOpen && (
+                    <div className="absolute right-0 mt-2 w-80 bg-white rounded-md shadow-lg overflow-hidden z-50 border border-gray-200">
+                      <div className="p-3 bg-gray-50 border-b border-gray-200">
+                        <div className="flex justify-between items-center">
+                          <h3 className="text-sm font-medium text-gray-900">Notifications</h3>
+                          <button 
+                            onClick={() => setNotifOpen(false)}
+                            className="text-gray-400 hover:text-gray-500"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </div>
+                      <div className="max-h-96 overflow-y-auto">
+                        {notifLoading ? (
+                          <div className="p-4 text-center">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
+                          </div>
+                        ) : notifs.length > 0 ? (
+                          <div className="divide-y divide-gray-100">
+                            {notifs.map((notif) => (
+                              <div 
+                                key={notif.id} 
+                                className={`p-3 hover:bg-gray-50 cursor-pointer ${!notif.lu ? 'bg-blue-50' : ''}`}
+                                onClick={() => handleNotificationClick(notif)}
+                              >
+                                <div className="flex items-start">
+                                  <div className="flex-shrink-0 pt-0.5">
+                                    <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+                                      <Bell className="h-5 w-5 text-blue-600" />
+                                    </div>
+                                  </div>
+                                  <div className="ml-3 flex-1">
+                                    <p className="text-sm font-medium text-gray-900">{notif.titre}</p>
+                                    <p className="text-sm text-gray-500 mt-1">{notif.message}</p>
+                                    <p className="text-xs text-gray-400 mt-1">
+                                      {new Date(notif.date).toLocaleString('fr-FR')}
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="p-4 text-center text-sm text-gray-500">
+                            Aucune notification
+                          </div>
+                        )}
+                      </div>
+                      <div className="p-3 bg-gray-50 border-t border-gray-200 text-right">
+                        <button 
+                          onClick={markAllAsRead}
+                          className="text-sm font-medium text-blue-600 hover:text-blue-500"
+                          disabled={unreadCount === 0}
+                        >
+                          Tout marquer comme lu
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                
+                {/* Bouton de profil */}
+                <div className="relative">
+                  <button 
+                    onClick={() => setProfileMenuOpen(!profileMenuOpen)}
+                    className="flex items-center text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  >
+                    <span className="sr-only">Ouvrir le menu utilisateur</span>
+                    <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-medium">
+                      {userName.charAt(0).toUpperCase()}
+                    </div>
+                  </button>
+                  
+                  {/* Menu déroulant du profil */}
+                  {profileMenuOpen && (
+                    <div className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-50">
+                      <div className="py-1">
+                        <div className="px-4 py-2 text-sm text-gray-700 border-b border-gray-100">
+                          <div className="font-medium">{userName}</div>
+                          <div className="text-xs text-gray-500 truncate">Client</div>
+                        </div>
+                        <a
+                          href="#/profil"
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          onClick={() => setProfileMenuOpen(false)}
+                        >
+                          Mon profil
+                        </a>
+                        <a
+                          href="#/parametres"
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          onClick={() => setProfileMenuOpen(false)}
+                        >
+                          Paramètres
+                        </a>
+                        <div className="border-t border-gray-100"></div>
+                        <button
+                          onClick={() => {
+                            // Déconnexion
+                            localStorage.removeItem('authToken');
+                            window.location.href = '#/connexion';
+                          }}
+                          className="w-full text-left block px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                        >
+                          Déconnexion
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </header>
+          
+          {/* Contenu principal */}
+          <main className="flex-1 overflow-y-auto">
+            {renderDashboard()}
+          </main>
+        </div>
       </div>
     </div>
   );
 };
 
-// Styles CSS pour la sidebar
-const styles = `
-  :root {
-    --sidebar-width: 240px;
-    --header-height: 64px;
-  }
-  
-  .sidebar {
-    width: var(--sidebar-width);
-    transition: width 0.2s ease-in-out;
-  }
-  
-  .sidebar-collapsed {
-    width: 56px;
-  }
-  
-  .main-content {
-    margin-left: var(--sidebar-width);
-    transition: margin 0.2s ease-in-out;
-  }
-  
-  @media (max-width: 991px) {
-    .main-content {
-      margin-left: 0;
-    }
-    
-    .sidebar {
-      position: fixed;
-      z-index: 40;
-      height: 100vh;
-      transform: translateX(-100%);
-      transition: transform 0.2s ease-in-out;
-    }
-    
-    .sidebar-open {
-      transform: translateX(0);
-    }
-    
-    .sidebar-overlay {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background-color: rgba(0, 0, 0, 0.5);
-      z-index: 30;
-    }
-    
-    .sidebar-overlay-open {
-      display: block;
-    }
-  }
-`;
-
-// Ajout des styles au DOM
-const styleElement = document.createElement('style');
-styleElement.textContent = styles;
-document.head.appendChild(styleElement);
-
-export default ClientDashboard
+export default ClientDashboard;
