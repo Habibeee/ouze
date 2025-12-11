@@ -265,6 +265,12 @@ function App() {
       display: flex;
       flex-direction: column;
       min-height: 100vh;
+      transition: transform 0.3s ease-in-out;
+      transform: translateX(0);
+    }
+    
+    .app-container.sidebar-open {
+      transform: translateX(240px);
     }
     
     .app-header {
@@ -274,6 +280,11 @@ function App() {
       right: 0;
       z-index: 1000;
       width: 100%;
+      transition: transform 0.3s ease-in-out;
+    }
+    
+    .app-container.sidebar-open .app-header {
+      transform: translateX(240px);
     }
     
     .app-content {
@@ -282,17 +293,31 @@ function App() {
       margin-top: 80px; /* Hauteur du header */
       padding-bottom: 60px; /* Espace pour le footer */
       min-height: calc(100vh - 80px); /* Hauteur totale - header */
+      transition: transform 0.3s ease-in-out;
     }
     
     .app-main {
       flex: 1;
       padding: 20px;
-      margin-left: 0;
-      transition: margin-left 0.3s;
+      width: 100%;
+      transition: transform 0.3s ease-in-out;
     }
     
-    .app-sidebar ~ .app-main {
-      margin-left: 240px; /* Largeur de la sidebar */
+    .app-sidebar {
+      position: fixed;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 240px;
+      transform: translateX(-100%);
+      transition: transform 0.3s ease-in-out;
+      z-index: 1100;
+      background: white;
+      box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+    }
+    
+    .app-sidebar.open {
+      transform: translateX(0);
     }
     
     .app-footer {
@@ -300,15 +325,24 @@ function App() {
       width: 100%;
       position: relative;
       bottom: 0;
+      transition: transform 0.3s ease-in-out;
+    }
+    
+    .app-container.sidebar-open .app-footer {
+      transform: translateX(240px);
     }
     
     @media (max-width: 992px) {
       .app-content {
-        margin-top: 60px; /* Réduit la marge sur mobile */
+        margin-top: 60px;
       }
       
       .app-sidebar ~ .app-main {
         margin-left: 0;
+      }
+      
+      .app-container.sidebar-open {
+        transform: translateX(240px);
       }
     }
   `;
@@ -326,6 +360,19 @@ function App() {
                            baseRoute !== '#/fichiers-recus' && 
                            baseRoute !== '#/profil-client';
     
+    useEffect(() => {
+      const container = document.querySelector('.app-container');
+      if (sidebarOpen) {
+        container.classList.add('sidebar-open');
+      } else {
+        container.classList.remove('sidebar-open');
+      }
+      
+      return () => {
+        container.classList.remove('sidebar-open');
+      };
+    }, [sidebarOpen]);
+
     return (
       <I18nProvider>
         <ToastProvider>
@@ -338,29 +385,29 @@ function App() {
               <Header hideNavbarToggler={true} />
             </header>
             
+            {hasGlobalSidebar && (
+              <aside className={`app-sidebar ${sidebarOpen ? 'open' : ''}`}>
+                <SideBare
+                  topOffset={80}
+                  activeId={clientActiveId}
+                  defaultOpen={true}
+                  closeOnNavigate={false}
+                  open={sidebarOpen}
+                  onOpenChange={(o) => setSidebarOpen(!!o)}
+                  items={[
+                    { id: 'dashboard', label: 'Tableau de bord', icon: LayoutGrid },
+                    { id: 'recherche', label: 'Trouver un transitaire', icon: Search },
+                    { id: 'devis', label: 'Nouveau devis', icon: FileText },
+                    { id: 'historique-devis', label: 'Historique des devis', icon: FileText },
+                    { id: 'historique', label: 'Historique', icon: Clock },
+                    { id: 'envois', label: 'Suivi des envois', icon: Truck },
+                    { id: 'profil', label: 'Mon profil', icon: User }
+                  ]}
+                />
+              </aside>
+            )}
+            
             <div className="app-content">
-              {hasGlobalSidebar && (
-                <aside className="app-sidebar">
-                  <SideBare
-                    topOffset={80}
-                    activeId={clientActiveId}
-                    defaultOpen={true}
-                    closeOnNavigate={false}
-                    open={sidebarOpen}
-                    onOpenChange={(o) => setSidebarOpen(!!o)}
-                    items={[
-                      { id: 'dashboard', label: 'Tableau de bord', icon: LayoutGrid },
-                      { id: 'recherche', label: 'Trouver un transitaire', icon: Search },
-                      { id: 'devis', label: 'Nouveau devis', icon: FileText },
-                      { id: 'historique-devis', label: 'Historique des devis', icon: FileText },
-                      { id: 'historique', label: 'Historique', icon: Clock },
-                      { id: 'envois', label: 'Suivi des envois', icon: Truck },
-                      { id: 'profil', label: 'Mon profil', icon: User }
-                    ]}
-                  />
-                </aside>
-              )}
-              
               <main className="app-main">
                 {renderRoute()}
               </main>
