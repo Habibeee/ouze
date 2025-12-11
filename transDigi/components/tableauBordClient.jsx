@@ -513,16 +513,16 @@ const ClientDashboard = () => {
         {/* Contenu principal */}
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* En-tête */}
-          <header className="bg-white shadow-sm z-10">
-            <div className="px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-              <div className="flex items-center">
+          <header className="bg-white border-b border-gray-200 z-10">
+            <div className="px-6 py-3 flex justify-between items-center">
+              <div className="flex items-center space-x-4">
                 <button 
                   onClick={() => setSidebarOpen(!sidebarOpen)}
-                  className="mr-4 text-gray-500 hover:text-gray-700 focus:outline-none"
+                  className="text-gray-500 hover:text-gray-700 focus:outline-none p-1 hover:bg-gray-100 rounded-md"
                 >
-                  {sidebarOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+                  {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
                 </button>
-                <h1 className="text-xl font-semibold text-gray-900">
+                <h1 className="text-lg font-semibold text-gray-900">
                   {section === 'dashboard' && 'Tableau de bord'}
                   {section === 'recherche' && 'Trouver un transitaire'}
                   {section === 'devis' && 'Nouveau devis'}
@@ -534,14 +534,14 @@ const ClientDashboard = () => {
               </div>
               
               {/* Icônes de notification et de profil */}
-              <div className="flex items-center space-x-4">
+              <div className="ml-auto flex items-center space-x-6 pr-2">
                 {/* Bouton de notification */}
                 <div className="relative">
                   <button 
                     onClick={() => setNotifOpen(!notifOpen)}
-                    className="p-1 rounded-full text-gray-500 hover:text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 relative"
+                    className="p-2 rounded-full text-gray-600 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 relative transition-colors duration-200"
                   >
-                    <Bell className="h-6 w-6" />
+                    <Bell className="h-5 w-5" />
                     {unreadCount > 0 && (
                       <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
                         {unreadCount}
@@ -616,17 +616,17 @@ const ClientDashboard = () => {
                 <div className="relative">
                   <button 
                     onClick={() => setProfileMenuOpen(!profileMenuOpen)}
-                    className="flex items-center text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    className="flex items-center text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
                   >
                     <span className="sr-only">Ouvrir le menu utilisateur</span>
-                    <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-medium">
+                    <div className="h-9 w-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-medium text-base hover:bg-blue-200">
                       {userName.charAt(0).toUpperCase()}
                     </div>
                   </button>
                   
                   {/* Menu déroulant du profil */}
                   {profileMenuOpen && (
-                    <div className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-50">
+                    <div className="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-50">
                       <div className="py-1">
                         <div className="px-4 py-2 text-sm text-gray-700 border-b border-gray-100">
                           <div className="font-medium">{userName}</div>
