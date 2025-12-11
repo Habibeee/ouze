@@ -8,14 +8,14 @@ const menuItems = [
     label: 'Tableau de bord', 
     icon: LayoutGrid,
     component: 'tableauBordClient.jsx',
-    path: '/tableau-bord-client'
+    path: '/dashboard'
   },
   { 
     id: 'recherche', 
     label: 'Trouver un transitaire', 
     icon: Search,
     component: 'profileTransitaire.jsx',
-    path: '/profile-transitaire'
+    path: '/trouver-transitaire'
   },
   { 
     id: 'devis', 
@@ -29,7 +29,7 @@ const menuItems = [
     label: 'Historique des devis', 
     icon: FileText,
     component: 'historiqueDevis.jsx',
-    path: '/historique-des-devis'
+    path: '/historique-devis'
   },
   { 
     id: 'historique', 
@@ -50,7 +50,7 @@ const menuItems = [
     label: 'Mon profil', 
     icon: User,
     component: 'monProfil.jsx',
-    path: '/mon-profil'
+    path: '/profil'
   }
 ];
 
@@ -83,8 +83,10 @@ export default function SideBare({ activeId = 'dashboard', onNavigate, onOpenCha
     
     // Navigation via window.location pour forcer le rechargement de la page si nécessaire
     if (item.path) {
-      // Ajout du # pour la navigation avec hash
-      window.location.hash = item.path.startsWith('#') ? item.path : `#${item.path}`;
+      // Utilisation de l'API History pour une navigation plus propre
+      window.history.pushState({}, '', item.path);
+      // Déclencher un événement personnalisé pour notifier du changement de route
+      window.dispatchEvent(new Event('popstate'));
     }
     
     // Fermer le menu si nécessaire

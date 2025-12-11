@@ -1,27 +1,23 @@
 import React, { useEffect, useState, useLayoutEffect } from 'react';
-import './App.css'
+import './App.css';
 import Header from '../layout/header.jsx';
 import Footer from '../layout/footer.jsx';
 import HomeHero from '../components/index.jsx';
 import SideBare from '../components/sideBare.jsx';
-import { LayoutGrid, Search, FileText, Clock, Truck, User, MapPin } from 'lucide-react';
+import { LayoutGrid, Search, FileText, Clock, Truck, User } from 'lucide-react';
 import Contact from '../components/contact.jsx';
 import Connexion from '../components/connexion.jsx';
 import Signup from '../components/signup.jsx';
 import FormClient from '../components/formClient.jsx';
 import FormulaireTransitaire from '../components/formulaireTransitaire.jsx';
-import RechercheTransitaire from '../components/rechercheTransitaire.jsx';
 import TransitaireDashboard from '../components/tableauBoardTransitare.jsx';
 import ClientDashboard from '../components/tableauBordClient.jsx';
 import AdminDashboard from '../components/tableauBordAdmin.jsx';
 import GestionUtilisateurs from '../components/gestionUtilisateur.jsx';
-import HistoriqueDevis from '../components/historiqueDevis.jsx';
 import HistoriqueDevisTransitaire from '../components/historiqueDevisTransitaire.jsx';
 import ProfilTransitaire from '../components/profilTransitaire.jsx';
-import ModofierProfClient from '../components/modofierProfClient.jsx';
 import DetailDevis from '../components/detailDevis.jsx';
 import DetailDevisClient from '../components/detailDevisClient.jsx';
-import NouveauDevis from '../components/nouveauDevis.jsx';
 import MesFichiersRecusTransitaire from '../components/mesFichiersRecusTransitaire.jsx';
 import MesFichiersRecus from '../components/mesFichiersRecus.jsx';
 import { themeCss } from '../styles/themeStyle.jsx';
@@ -93,6 +89,7 @@ function App() {
     const userType = getUserTypeFromStorage();
     const hasUserType = !!(userType && userType.length);
     const isProtected = [
+      // Anciennes routes maintenues pour la rétrocompatibilité
       '#/dashboard-client',
       '#/dashboard-transitaire',
       '#/dashboard-admin',
@@ -105,9 +102,18 @@ function App() {
       '#/recherche-transitaire',
       '#/envois',
       '#/fichiers-recus',
-      '#/fichiers-recus-transitaire'
+      '#/fichiers-recus-transitaire',
+      // Nouvelles routes du menu latéral
+      '#/dashboard',
+      '#/trouver-transitaire',
+      '#/historique-devis',
+      '#/suivi-envois',
+      '#/profil'
     ].includes(baseRoute);
-    const isAuthPages = ['#/connexion','#/signup','#/client','#/transitaire','#/oauth-callback'].includes(baseRoute) || route.startsWith('#/reinitialiser/') || route.startsWith('#/verifier/');
+    
+    const isAuthPages = ['#/connexion','#/signup','#/client','#/transitaire','#/oauth-callback'].includes(baseRoute) || 
+                       route.startsWith('#/reinitialiser/') || 
+                       route.startsWith('#/verifier/');
 
     if (route === '#/connexion') {
       try {
@@ -121,6 +127,7 @@ function App() {
       window.location.hash = '#/connexion';
       return;
     }
+    
     if (token && hasUserType && (baseRoute === '#/connexion' || baseRoute === '#/signup')) {
       if (userType.includes('admin')) window.location.hash = '#/dashboard-admin';
       else if (userType.startsWith('trans')) window.location.hash = '#/dashboard-transitaire';
@@ -133,44 +140,49 @@ function App() {
     localStorage.setItem('theme', theme);
     try {
       document.body.classList.toggle('theme-dark', theme === 'dark');
-      const baseRoute = (window.location.hash || '#/').split('?')[0];
-      const isLogin = baseRoute === '#/connexion';
+      const currentBaseRoute = (window.location.hash || '#/').split('?')[0];
+      const isLogin = currentBaseRoute === '#/connexion';
       document.body.classList.toggle('login-page', isLogin);
     } catch {}
   }, [theme]);
 
   const baseRoute = (route || '').split('?')[0];
   const isClientRoute = [
+    '#/dashboard',
+    '#/trouver-transitaire',
+    '#/nouveau-devis',
+    '#/historique-devis',
+    '#/historique',
+    '#/suivi-envois',
+    '#/profil',
     '#/dashboard-client',
     '#/recherche-transitaire',
-    '#/nouveau-devis',
-    '#/carte',
-    '#/nouveau-devis-admin',
-    '#/historique',
     '#/profil-client',
-    '#/envois',
-    '#/detail-devis-client',
-    '#/client',
-    '#/transitaire',
-    '#/fichiers-recus',
-    '#/historique-devis',
-    '#/mes-fichiers-recus'
+    '#/envois'
   ].includes(baseRoute);
 
   const clientActiveId = (() => {
-    switch(baseRoute){
-      case '#/dashboard-client': return 'dashboard';
-      case '#/recherche-transitaire': return 'recherche';
-      case '#/nouveau-devis': return 'devis';
-      case '#/nouveau-devis-admin': return 'devis-admin';
-      case '#/historique': return 'historique';
-      case '#/envois': return 'envois';
-      case '#/profil-client': return 'profil';
-      case '#/fichiers-recus': return 'fichiers-recus';
-      case '#/historique-devis': return 'historique-devis';
-      case '#/client': return 'dashboard';
-      case '#/transitaire': return 'dashboard';
-      default: return 'dashboard';
+    switch(baseRoute) {
+      case '#/dashboard':
+      case '#/dashboard-client': 
+        return 'dashboard';
+      case '#/trouver-transitaire':
+      case '#/recherche-transitaire': 
+        return 'recherche';
+      case '#/nouveau-devis':
+        return 'devis';
+      case '#/historique-devis':
+        return 'historique-devis';
+      case '#/historique':
+        return 'historique';
+      case '#/suivi-envois':
+      case '#/envois': 
+        return 'envois';
+      case '#/profil':
+      case '#/profil-client': 
+        return 'profil';
+      default:
+        return 'dashboard';
     }
   })();
 
@@ -179,6 +191,7 @@ function App() {
     if (route.startsWith('#/reinitialiser/')) return <ResetPassword />;
     if (baseRoute === '#/changer-mot-de-passe') return <ChangePassword />;
     if (baseRoute === '#/oauth-callback') return <OAuthCallback />;
+    
     switch (baseRoute) {
       case '#/signup':
         return <Signup />;
@@ -186,26 +199,34 @@ function App() {
         return <FormClient />;
       case '#/transitaire':
         return <FormulaireTransitaire />;
-      case '#/recherche-transitaire':
-        return <ClientDashboard />;
+      case '#/dashboard':
+      case '#/dashboard-client': 
+        return <ClientDashboard section="dashboard" />;
+      case '#/trouver-transitaire':
+      case '#/recherche-transitaire': 
+        return <ClientDashboard section="recherche" />;
+      case '#/nouveau-devis':
+        return <ClientDashboard section="devis" />;
+      case '#/historique-devis':
+        return <ClientDashboard section="historique-devis" />;
+      case '#/historique':
+        return <ClientDashboard section="historique" />;
+      case '#/suivi-envois':
+      case '#/envois': 
+        return <ClientDashboard section="envois" />;
+      case '#/profil':
+      case '#/profil-client': 
+        return <ClientDashboard section="profil" />;
       case '#/dashboard-transitaire':
         return <TransitaireDashboard />;
       case '#/historique-transitaire':
         return <HistoriqueDevisTransitaire />;
-      case '#/dashboard-client':
-        return <ClientDashboard />;
       case '#/dashboard-admin':
         return <AdminDashboard />;
       case '#/gestion-utilisateurs':
         return <GestionUtilisateurs />;
-      case '#/historique':
-        return <ClientDashboard />;
-      case '#/historique-devis':
-        return <HistoriqueDevis />;
       case '#/mes-fichiers-recus':
         return <MesFichiersRecus />;
-      case '#/envois':
-        return <ClientDashboard />;
       case '#/fichiers-recus':
         return <ClientDashboard />;
       case '#/fichiers-recus-transitaire':
@@ -214,12 +235,10 @@ function App() {
         return <DetailDevis />;
       case '#/detail-devis-client':
         return <DetailDevisClient />;
-      case '#/nouveau-devis':
-        return <NouveauDevis />;
       case '#/carte':
         return <CartePage />;
       case '#/nouveau-devis-admin':
-        return <ClientDashboard />;
+        return <ClientDashboard section="devis" />;
       case '#/connexion':
         return <Connexion />;
       case '#/mot-de-passe-oublie':
@@ -232,8 +251,6 @@ function App() {
         return <Contact />;
       case '#/profile':
         return <ProfilTransitaire />;
-      case '#/profil-client':
-        return <ClientDashboard />;
       case '#/apropos':
         return <Apropos />;
       case '#/':
@@ -243,9 +260,18 @@ function App() {
   };
 
   if (isClientRoute) {
-    const hasGlobalSidebar = baseRoute !== '#/client' && baseRoute !== '#/transitaire' && baseRoute !== '#/dashboard-client' && baseRoute !== '#/detail-devis-client'
-      && baseRoute !== '#/recherche-transitaire' && baseRoute !== '#/nouveau-devis' && baseRoute !== '#/nouveau-devis-admin'
-      && baseRoute !== '#/historique' && baseRoute !== '#/envois' && baseRoute !== '#/fichiers-recus' && baseRoute !== '#/profil-client';
+    const hasGlobalSidebar = baseRoute !== '#/client' && 
+                           baseRoute !== '#/transitaire' && 
+                           baseRoute !== '#/dashboard-client' && 
+                           baseRoute !== '#/detail-devis-client' &&
+                           baseRoute !== '#/recherche-transitaire' && 
+                           baseRoute !== '#/nouveau-devis' && 
+                           baseRoute !== '#/nouveau-devis-admin' &&
+                           baseRoute !== '#/historique' && 
+                           baseRoute !== '#/envois' && 
+                           baseRoute !== '#/fichiers-recus' && 
+                           baseRoute !== '#/profil-client';
+    
     return (
       <I18nProvider>
         <ToastProvider>
@@ -259,44 +285,30 @@ function App() {
                 defaultOpen={true}
                 closeOnNavigate={false}
                 open={sidebarOpen}
-                onOpenChange={(o)=>setSidebarOpen(!!o)}
+                onOpenChange={(o) => setSidebarOpen(!!o)}
                 items={[
                   { id: 'dashboard', label: 'Tableau de bord', icon: LayoutGrid },
                   { id: 'recherche', label: 'Trouver un transitaire', icon: Search },
                   { id: 'devis', label: 'Nouveau devis', icon: FileText },
+                  { id: 'historique-devis', label: 'Historique des devis', icon: FileText },
                   { id: 'historique', label: 'Historique', icon: Clock },
                   { id: 'envois', label: 'Suivi des envois', icon: Truck },
-                  { id: 'carte', label: 'Carte des transitaires', icon: MapPin },
-                  { id: 'profile', label: 'Mon profil', icon: User },
+                  { id: 'profil', label: 'Mon profil', icon: User }
                 ]}
-                onNavigate={(id) => {
-                  switch(id){
-                    case 'dashboard': window.location.hash = '#/dashboard-client'; break;
-                    case 'recherche': window.location.hash = '#/recherche-transitaire'; break;
-                    case 'devis': window.location.hash = '#/nouveau-devis'; break;
-                    case 'historique': window.location.hash = '#/historique'; break;
-                    case 'envois': window.location.hash = '#/envois'; break;
-                    case 'carte': window.location.hash = '#/carte'; break;
-                    case 'profile': window.location.hash = '#/profil-client'; break;
-                    default: break;
-                  }
-                }}
               />
             )}
-            <div className="flex-grow-1" style={{ marginLeft: hasGlobalSidebar ? (isLgUp ? (sidebarOpen ? '240px' : '56px') : '0') : '0', transition: 'margin-left .25s ease' }}>
-              <Header showSidebarToggle={false} hideNavbarToggler={false} onToggleSidebar={() => setSidebarOpen(o=>!o)} />
-              <main className="flex-fill">
-                {renderRoute()}
-              </main>
-              <BackToTop />
-              <Footer />
-            </div>
+            <main className="flex-grow-1">
+              {renderRoute()}
+            </main>
+            <BackToTop />
+            <Footer />
           </div>
         </ToastProvider>
       </I18nProvider>
     );
   }
 
+  // Default layout for non-client routes
   return (
     <I18nProvider>
       <ToastProvider>
@@ -311,7 +323,7 @@ function App() {
         </div>
       </ToastProvider>
     </I18nProvider>
-  )
+  );
 }
 
-export default App
+export default App;

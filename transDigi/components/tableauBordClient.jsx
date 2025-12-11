@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, Suspense, lazy } from 'react';
+import React, { useState, useEffect, useRef, Suspense, lazy, useLayoutEffect } from 'react';
 import { 
   Bell, User, Search, Menu, X, 
   FileText, Truck, MapPin, Clock, 
@@ -32,6 +32,37 @@ const ClientDashboard = () => {
   const [mapView, setMapView] = useState(true); // true pour la carte, false pour la liste
   const [selectedExpedition, setSelectedExpedition] = useState(null);
   const mapRef = useRef(null);
+  
+  // Gestion du redimensionnement de la fenêtre
+  useEffect(() => {
+    const handleResize = () => {
+      const isLarge = window.innerWidth >= 992;
+      setIsLgUp(isLarge);
+      setIsMobile(window.innerWidth <= 768);
+      
+      // Sur les grands écrans, forcer la sidebar à être ouverte
+      if (isLarge) {
+        setSidebarOpen(true);
+      } else {
+        setSidebarOpen(false);
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    handleResize(); // Appel initial
+    
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+  
+  // Mise à jour de la largeur de la sidebar dans les variables CSS
+  useLayoutEffect(() => {
+    try {
+      const val = sidebarOpen ? '240px' : '56px';
+      document.documentElement.style.setProperty('--sidebar-width', val);
+    } catch (e) {
+      console.error('Erreur lors de la mise à jour de la largeur de la sidebar:', e);
+    }
+  }, [sidebarOpen]);
   
   // États pour les expéditions
   const [expeditions, setExpeditions] = useState([
@@ -390,21 +421,114 @@ const ClientDashboard = () => {
   // ... (conservez le reste de votre code existant)
 
   return (
-    <div className="d-flex min-vh-100" style={{ backgroundColor: '#f8f9fa', position: 'relative' }}>
-      <style>{`
-        .sidebar-open {
-          overflow: hidden;
-        }
-        .sidebar-collapsed .sidebar {
-          width: 56px;
-        }
-      `}</style>
+    <div className="min-h-screen bg-gray-50 flex flex-row">
+      {/* Sidebar */}
+      <SideBare 
+        activeId={section}
+        onNavigate={(id) => {
+          setSection(id);
+          // Fermer le menu sur mobile après la navigation
+          if (isMobile) {
+            setSidebarOpen(false);
+          }
+        }}
+        open={sidebarOpen}
+        onOpenChange={setSidebarOpen}
+        isMobile={isMobile}
+      />
       
-      {/* ... reste de votre rendu existant ... */}
-      
-      {renderDashboard()}
+      {/* Contenu principal */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* En-tête */}
+        <header className="bg-white shadow-sm z-10">
+          <div className="px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+            <div className="flex items-center">
+              <button 
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+                className="mr-4 text-gray-500 hover:text-gray-700 focus:outline-none"
+              >
+                {sidebarOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              </button>
+              <h1 className="text-xl font-semibold text-gray-900">
+                {section === 'dashboard' && 'Tableau de bord'}
+                {section === 'recherche' && 'Trouver un transitaire'}
+                {section === 'devis' && 'Nouveau devis'}
+                {section === 'historique-devis' && 'Historique des devis'}
+                {section === 'historique' && 'Historique'}
+                {section === 'envois' && 'Suivi des envois'}
+                {section === 'profil' && 'Mon profil'}
+              </h1>
+            </div>
+          </div>
+        </header>
+        
+        {/* Contenu principal */}
+        <main className="flex-1 overflow-y-auto">
+          {renderDashboard()}
+        </main>
+      </div>
     </div>
   );
 };
+
+// Styles CSS pour la sidebar
+const styles = `
+  :root {
+    --sidebar-width: 240px;
+    --header-height: 64px;
+  }
+  
+  .sidebar {
+    width: var(--sidebar-width);
+    transition: width 0.2s ease-in-out;
+  }
+  
+  .sidebar-collapsed {
+    width: 56px;
+  }
+  
+  .main-content {
+    margin-left: var(--sidebar-width);
+    transition: margin 0.2s ease-in-out;
+  }
+  
+  @media (max-width: 991px) {
+    .main-content {
+      margin-left: 0;
+    }
+    
+    .sidebar {
+      position: fixed;
+      z-index: 40;
+      height: 100vh;
+      transform: translateX(-100%);
+      transition: transform 0.2s ease-in-out;
+    }
+    
+    .sidebar-open {
+      transform: translateX(0);
+    }
+    
+    .sidebar-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 30;
+    }
+    
+    .sidebar-overlay-open {
+      display: block;
+    }
+  }
+`;
+
+// Ajout des styles au DOM
+const styleElement = document.createElement('style');
+styleElement.textContent = styles;
+document.head.appendChild(styleElement);
 
 export default ClientDashboard
