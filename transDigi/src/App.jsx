@@ -359,6 +359,26 @@ function App() {
     }
   `;
 
+  useEffect(() => {
+    if (isClientRoute) {
+      const container = document.querySelector('.app-container');
+      if (container) {
+        if (sidebarOpen) {
+          container.classList.add('sidebar-open');
+        } else {
+          container.classList.remove('sidebar-open');
+        }
+      }
+      
+      return () => {
+        const container = document.querySelector('.app-container');
+        if (container) {
+          container.classList.remove('sidebar-open');
+        }
+      };
+    }
+  }, [sidebarOpen, isClientRoute]);
+
   if (isClientRoute) {
     const hasGlobalSidebar = baseRoute !== '#/client' && 
                            baseRoute !== '#/transitaire' && 
@@ -372,19 +392,6 @@ function App() {
                            baseRoute !== '#/fichiers-recus' && 
                            baseRoute !== '#/profil-client';
     
-    useEffect(() => {
-      const container = document.querySelector('.app-container');
-      if (sidebarOpen) {
-        container.classList.add('sidebar-open');
-      } else {
-        container.classList.remove('sidebar-open');
-      }
-      
-      return () => {
-        container.classList.remove('sidebar-open');
-      };
-    }, [sidebarOpen]);
-
     return (
       <I18nProvider>
         <ToastProvider>
