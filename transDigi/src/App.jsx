@@ -259,6 +259,60 @@ function App() {
     }
   };
 
+  // Styles pour le layout
+  const layoutStyles = `
+    .app-container {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+    
+    .app-header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 1000;
+      width: 100%;
+    }
+    
+    .app-content {
+      display: flex;
+      flex: 1;
+      margin-top: 80px; /* Hauteur du header */
+      padding-bottom: 60px; /* Espace pour le footer */
+      min-height: calc(100vh - 80px); /* Hauteur totale - header */
+    }
+    
+    .app-main {
+      flex: 1;
+      padding: 20px;
+      margin-left: 0;
+      transition: margin-left 0.3s;
+    }
+    
+    .app-sidebar ~ .app-main {
+      margin-left: 240px; /* Largeur de la sidebar */
+    }
+    
+    .app-footer {
+      margin-top: auto;
+      width: 100%;
+      position: relative;
+      bottom: 0;
+    }
+    
+    @media (max-width: 992px) {
+      .app-content {
+        margin-top: 60px; /* Réduit la marge sur mobile */
+      }
+      
+      .app-sidebar ~ .app-main {
+        margin-left: 0;
+      }
+    }
+  `;
+
   if (isClientRoute) {
     const hasGlobalSidebar = baseRoute !== '#/client' && 
                            baseRoute !== '#/transitaire' && 
@@ -275,33 +329,47 @@ function App() {
     return (
       <I18nProvider>
         <ToastProvider>
-          <div className="d-flex" style={{ minHeight: '100vh' }}>
+          <div className="app-container">
             <style>{themeCss}</style>
             <style>{clientCss}</style>
-            {hasGlobalSidebar && (
-              <SideBare
-                topOffset={96}
-                activeId={clientActiveId}
-                defaultOpen={true}
-                closeOnNavigate={false}
-                open={sidebarOpen}
-                onOpenChange={(o) => setSidebarOpen(!!o)}
-                items={[
-                  { id: 'dashboard', label: 'Tableau de bord', icon: LayoutGrid },
-                  { id: 'recherche', label: 'Trouver un transitaire', icon: Search },
-                  { id: 'devis', label: 'Nouveau devis', icon: FileText },
-                  { id: 'historique-devis', label: 'Historique des devis', icon: FileText },
-                  { id: 'historique', label: 'Historique', icon: Clock },
-                  { id: 'envois', label: 'Suivi des envois', icon: Truck },
-                  { id: 'profil', label: 'Mon profil', icon: User }
-                ]}
-              />
-            )}
-            <main className="flex-grow-1">
-              {renderRoute()}
-            </main>
-            <BackToTop />
-            <Footer />
+            <style>{layoutStyles}</style>
+            
+            <header className="app-header">
+              <Header hideNavbarToggler={true} />
+            </header>
+            
+            <div className="app-content">
+              {hasGlobalSidebar && (
+                <aside className="app-sidebar">
+                  <SideBare
+                    topOffset={80}
+                    activeId={clientActiveId}
+                    defaultOpen={true}
+                    closeOnNavigate={false}
+                    open={sidebarOpen}
+                    onOpenChange={(o) => setSidebarOpen(!!o)}
+                    items={[
+                      { id: 'dashboard', label: 'Tableau de bord', icon: LayoutGrid },
+                      { id: 'recherche', label: 'Trouver un transitaire', icon: Search },
+                      { id: 'devis', label: 'Nouveau devis', icon: FileText },
+                      { id: 'historique-devis', label: 'Historique des devis', icon: FileText },
+                      { id: 'historique', label: 'Historique', icon: Clock },
+                      { id: 'envois', label: 'Suivi des envois', icon: Truck },
+                      { id: 'profil', label: 'Mon profil', icon: User }
+                    ]}
+                  />
+                </aside>
+              )}
+              
+              <main className="app-main">
+                {renderRoute()}
+              </main>
+            </div>
+            
+            <footer className="app-footer">
+              <BackToTop />
+              <Footer />
+            </footer>
           </div>
         </ToastProvider>
       </I18nProvider>
@@ -309,17 +377,61 @@ function App() {
   }
 
   // Default layout for non-client routes
+  const defaultLayoutStyles = `
+    .default-layout {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+    
+    .default-header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 1000;
+      width: 100%;
+    }
+    
+    .default-main {
+      flex: 1;
+      margin-top: 80px;
+      padding: 20px;
+      min-height: calc(100vh - 140px); /* 80px header + 60px footer */
+    }
+    
+    .default-footer {
+      margin-top: auto;
+      width: 100%;
+    }
+    
+    @media (max-width: 768px) {
+      .default-main {
+        margin-top: 60px;
+        padding: 15px;
+      }
+    }
+  `;
+  
   return (
     <I18nProvider>
       <ToastProvider>
-        <div className="d-flex flex-column min-vh-100">
+        <div className="default-layout">
           <style>{themeCss}</style>
-          <Header hideNavbarToggler={false} />
-          <main className="flex-fill">
+          <style>{defaultLayoutStyles}</style>
+          
+          <header className="default-header">
+            <Header hideNavbarToggler={true} />
+          </header>
+          
+          <main className="default-main">
             {renderRoute()}
           </main>
-          <BackToTop />
-          <Footer />
+          
+          <footer className="default-footer">
+            <BackToTop />
+            <Footer />
+          </footer>
         </div>
       </ToastProvider>
     </I18nProvider>
