@@ -38,13 +38,31 @@ export const headerCss = `
     /* Also lighten the Menu btn-link icon (lucide) on mobile when dark */
     [data-theme="dark"] .navbar-compact .btn.btn-link { color: #ffffff !important; }
   }
-  @media (max-width: 575.98px) {
-    .navbar-compact .container-fluid { padding-left: .5rem !important; padding-right: .5rem !important; }
-    .navbar-compact .btn.px-4 { padding-left: .75rem !important; padding-right: .75rem !important; }
-    /* Forcer le bouton menu mobile (trois traits) à se coller à gauche */
-    .navbar-compact .mobile-menu-toggle {
-      margin-left: 0 !important;
-      margin-right: auto !important;
+  @media (max-width: 991.98px) {
+    .mobile-menu-toggle {
+      display: flex !important;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      padding: 0;
+      border: none;
+      background: transparent;
+      color: #0b5f8a;
+    }
+    
+    [data-theme="dark"] .mobile-menu-toggle {
+      color: #ffffff;
+    }
+    
+    .navbar-compact .container-fluid { 
+      padding-left: 1rem !important; 
+      padding-right: 1rem !important; 
+    }
+    
+    .navbar-compact .btn.px-4 { 
+      padding-left: 1rem !important; 
+      padding-right: 1rem !important; 
     }
   }
   @media (max-width: 575.98px) {

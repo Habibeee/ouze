@@ -64,13 +64,27 @@ function Header() {
           </a>
 
           {/* Bouton menu mobile */}
-          <button 
-            className="mobile-menu-toggle d-lg-none" 
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            aria-label="Menu"
-          >
-            <Menu size={24} />
-          </button>
+          <div className="ms-auto d-flex align-items-center">
+            <button 
+              className="mobile-menu-toggle d-lg-none" 
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              aria-label="Menu"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '40px',
+                height: '40px',
+                padding: 0,
+                border: 'none',
+                background: 'transparent',
+                color: theme === 'dark' ? '#ffffff' : '#0b5f8a',
+                cursor: 'pointer'
+              }}
+            >
+              <Menu size={24} />
+            </button>
+          </div>
 
           {/* Menu desktop (visible uniquement sur grand écran) */}
           <div className="d-none d-lg-flex align-items-center ms-auto">
