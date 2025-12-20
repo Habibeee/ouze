@@ -495,10 +495,43 @@ function IndexPage() {
   return (
     <div>
       <style>{`
+        /* Suppression de l'espace blanc et mise en pleine largeur du hero */
+        .hero-section { 
+          margin-top: 0 !important;
+          padding-top: 0 !important;
+          min-height: 80vh !important;
+          position: relative;
+          overflow: hidden;
+        }
+        
+        /* Ajustement du carrousel pour qu'il prenne toute la largeur */
+        #heroCarousel, 
+        #heroCarousel .carousel-inner, 
+        #heroCarousel .carousel-item, 
+        #heroCarousel .carousel-item img {
+          width: 100% !important;
+          height: 100% !important;
+          object-fit: cover;
+        }
+        
+        /* Ajustement du conteneur du contenu */
+        .hero-section .container.position-relative {
+          padding-top: 0 !important;
+          padding-bottom: 0 !important;
+        }
+        
+        @media (max-width: 991.98px) {
+          .hero-section { min-height: 60vh !important; }
+        }
+        
+        @media (max-width: 767.98px) {
+          .hero-section { min-height: 50vh !important; }
+        }
+        
         @media (max-width: 575.98px) {
-          .hero-section { min-height: auto !important; position: relative; overflow: hidden; margin-bottom: 0 !important; }
-          /* Revenir à une hauteur de carrousel un peu plus grande mais coller la section suivante */
-          #heroCarousel { height: 34vh !important; }
+          .hero-section { min-height: 40vh !important; position: relative; overflow: hidden; margin-bottom: 0 !important; }
+          /* Ajustement de la hauteur du carrousel sur mobile */
+          #heroCarousel { height: 40vh !important; }
           #heroCarousel .carousel-inner,
           #heroCarousel .carousel-item,
           #heroCarousel .carousel-item img { height: 34vh !important; object-fit: cover; }
@@ -536,8 +569,8 @@ function IndexPage() {
         .btn-client { border: 2px solid transparent !important; transition: background-color .2s ease, color .2s ease, border-color .2s ease; }
         .btn-client:hover { background-color: transparent !important; color: var(--btn-color, var(--bs-success)) !important; border-color: var(--btn-color, var(--bs-success)) !important; }
       `}</style>
-      <section className="position-relative text-white hero-section" style={{ minHeight: '70vh' }}>
-        <div id="heroCarousel" className="carousel slide position-absolute top-0 start-0 w-100 h-100" data-bs-ride="carousel" data-bs-interval="3000" data-bs-pause="false">
+      <section className="position-relative text-white hero-section" style={{ minHeight: '80vh', marginTop: 0, paddingTop: 0 }}>
+        <div id="heroCarousel" className="carousel slide position-absolute top-0 start-0 w-100 h-100 m-0 p-0" data-bs-ride="carousel" data-bs-interval="3000" data-bs-pause="false" style={{ margin: 0, padding: 0 }}>
           <div className="carousel-indicators">
             <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="0" className="active" aria-current="true" aria-label="Slide 1"></button>
             <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="1" aria-label="Slide 2"></button>
@@ -564,7 +597,7 @@ function IndexPage() {
           </button>
         </div>
 
-        <div className="container position-relative d-flex align-items-center justify-content-center" style={{ minHeight: '70vh' }}>
+        <div className="container position-relative d-flex align-items-center justify-content-center" style={{ minHeight: '80vh' }}>
           <div className="text-center">
             <h1 className="display-3 fw-bold mb-4">
               {t('home.hero.title.line1')}<br />{t('home.hero.title.line2')}
