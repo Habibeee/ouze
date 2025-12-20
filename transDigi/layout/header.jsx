@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { headerStyles, headerCss } from '../styles/headerStyle.jsx';
-import { ArrowLeft, LogOut, Menu } from 'lucide-react';
+import { ArrowLeft, LogOut, MoreVertical } from 'lucide-react';
 import { getAuth, clearAuth } from '../services/authStore';
 import { useI18n } from '../src/i18n.jsx';
 
@@ -82,7 +82,7 @@ function Header() {
                 cursor: 'pointer'
               }}
             >
-              <Menu size={24} />
+              <MoreVertical size={24} />
             </button>
           </div>
 
@@ -326,12 +326,11 @@ function Header() {
                   color: theme === 'dark' ? '#ffffff' : '#0b5f8a',
                   cursor: 'pointer',
                   padding: '0.5rem',
-                  borderRadius: '50%',
-                  width: '40px',
-                  height: '40px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
+                  width: '40px',
+                  height: '40px',
                   backgroundColor: theme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(11, 95, 138, 0.1)'
                 }}
                 aria-label={theme === 'dark' ? 'Passer en mode clair' : 'Passer en mode sombre'}
