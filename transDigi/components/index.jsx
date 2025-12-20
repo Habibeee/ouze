@@ -126,10 +126,17 @@ import { useI18n } from '../src/i18n.jsx';
       <style>{`
         @media (max-width: 575.98px) {
           /* Sur mobile, on réduit la hauteur pour éviter le grand espace vide */
-          .hero-section, .hero-inner { min-height: 60vh !important; padding-bottom: 0 !important; }
+          .hero-section, .hero-inner { min-height: calc(100vh - 60px) !important; padding-bottom: 0 !important; margin: 0 !important; }
           .hero-section .carousel-inner,
           .hero-section .carousel-item,
-          .hero-section .carousel-item img { height: 60vh !important; object-fit: cover; }
+          .hero-section .carousel-item img { 
+            height: 100vh !important; 
+            width: 100% !important;
+            object-fit: cover;
+            object-position: center;
+            margin: 0;
+            padding: 0;
+          }
           .hero-section .display-4 { font-size: 1.75rem !important; }
           .hero-section .lead { font-size: 1rem !important; }
           .hero-cta { gap: .5rem !important; }
@@ -165,9 +172,15 @@ import { useI18n } from '../src/i18n.jsx';
       `}</style>
       <section
         className="position-relative text-white hero-section"
-        style={indexStyles.heroSection}
+        style={{
+          ...indexStyles.heroSection,
+          margin: 0,
+          padding: 0,
+          width: '100%',
+          overflow: 'hidden'
+        }}
       >
-      <div id="heroCarousel" className="carousel slide position-absolute top-0 start-0 w-100 h-100" data-bs-ride="carousel" data-bs-interval="3000" data-bs-pause="false">
+      <div id="heroCarousel" className="carousel slide position-absolute top-0 start-0 w-100 h-100" data-bs-ride="carousel" data-bs-interval="3000" data-bs-pause="false" style={{ margin: 0, padding: 0 }}>
         <div className="carousel-indicators">
           <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="0" className="active" aria-current="true" aria-label="Slide 1"></button>
           <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="1" aria-label="Slide 2"></button>
@@ -194,9 +207,14 @@ import { useI18n } from '../src/i18n.jsx';
         </button>
       </div>
 
-      <div className="position-absolute top-0 start-0 w-100 h-100 bg-transparent" aria-hidden="true" />
+      <div className="position-absolute top-0 start-0 w-100 h-100 bg-transparent" aria-hidden="true" style={{ zIndex: 1 }} />
 
-      <div className="container-fluid position-relative d-flex align-items-center justify-content-center py-5 px-0 hero-inner" style={indexStyles.heroInner}>
+      <div className="container-fluid position-relative d-flex align-items-center justify-content-center py-5 px-0 hero-inner" style={{
+        ...indexStyles.heroInner,
+        margin: 0,
+        padding: '0 15px',
+        zIndex: 2
+      }}>
         <div className="row mx-0 w-100 justify-content-center">
           <div className="col-12 col-lg-8 px-4 px-md-5 text-center">
             <h1 className="display-4 fw-bold lh-1 mb-3">

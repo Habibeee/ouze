@@ -54,7 +54,7 @@ function Header() {
   };
 
   return (
-    <nav className="navbar navbar-expand-lg navbar-light bg-white border-bottom shadow-sm fixed-top w-100 navbar-compact">
+    <nav className="navbar navbar-expand-lg navbar-light bg-white border-bottom shadow-sm fixed-top w-100 navbar-compact" style={{ marginBottom: '0' }}>
       <style>{headerCss}</style>
       <div className="container-fluid px-1 py-0">
         <button
