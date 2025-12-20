@@ -256,10 +256,97 @@ function Header() {
               {t('nav.contact')}
             </a>
 
-            <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: `1px solid ${theme === 'dark' ? '#333' : '#eee'}` }}>
+            <div style={{ 
+              marginTop: '1rem', 
+              paddingTop: '1rem', 
+              borderTop: `1px solid ${theme === 'dark' ? '#333' : '#eee'}`,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '1rem',
+              alignItems: 'center'
+            }}>
+              {/* Boutons FR/EN */}
+              <div className="d-flex align-items-center" style={{
+                padding: '0.5rem',
+                borderRadius: '0.5rem',
+                backgroundColor: theme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(11, 95, 138, 0.1)'
+              }}>
+                <button 
+                  onClick={() => {
+                    setLang('fr');
+                    setIsMobileMenuOpen(false);
+                  }}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: lang === 'fr' ? (theme === 'dark' ? '#ffffff' : '#0b5f8a') : (theme === 'dark' ? '#9ca3af' : '#6c757d'),
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    padding: '0.25rem 0.75rem',
+                    borderRadius: '0.25rem',
+                    backgroundColor: lang === 'fr' ? (theme === 'dark' ? 'rgba(255, 255, 255, 0.2)' : 'rgba(11, 95, 138, 0.2)') : 'transparent'
+                  }}
+                >
+                  FR
+                </button>
+                <span style={{ 
+                  color: theme === 'dark' ? '#9ca3af' : '#6c757d',
+                  fontWeight: '600'
+                }}>/</span>
+                <button 
+                  onClick={() => {
+                    setLang('en');
+                    setIsMobileMenuOpen(false);
+                  }}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: lang === 'en' ? (theme === 'dark' ? '#ffffff' : '#0b5f8a') : (theme === 'dark' ? '#9ca3af' : '#6c757d'),
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    padding: '0.25rem 0.75rem',
+                    borderRadius: '0.25rem',
+                    backgroundColor: lang === 'en' ? (theme === 'dark' ? 'rgba(255, 255, 255, 0.2)' : 'rgba(11, 95, 138, 0.2)') : 'transparent'
+                  }}
+                >
+                  EN
+                </button>
+              </div>
+
+              {/* Bouton thème */}
               <button
                 type="button"
-                className={`btn w-100 mb-3 ${isLoggedIn ? 'btn-outline-danger' : 'btn-success'}`}
+                onClick={() => {
+                  toggleTheme();
+                  setIsMobileMenuOpen(false);
+                }}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: theme === 'dark' ? '#ffffff' : '#0b5f8a',
+                  cursor: 'pointer',
+                  padding: '0.5rem',
+                  borderRadius: '50%',
+                  width: '40px',
+                  height: '40px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: theme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(11, 95, 138, 0.1)'
+                }}
+                aria-label={theme === 'dark' ? 'Passer en mode clair' : 'Passer en mode sombre'}
+              >
+                {theme === 'dark' ? (
+                  <i className="bi bi-brightness-high" style={{ fontSize: '1.25rem' }}></i>
+                ) : (
+                  <i className="bi bi-moon-stars" style={{ fontSize: '1.25rem' }}></i>
+                )}
+              </button>
+
+              {/* Bouton Se connecter */}
+              <button
+                type="button"
+                className={`btn ${isLoggedIn ? 'btn-outline-danger' : 'btn-success'}`}
                 onClick={() => {
                   if (isLoggedIn) {
                     clearAuth();
@@ -269,6 +356,12 @@ function Header() {
                     window.location.hash = '#/connexion';
                   }
                   setIsMobileMenuOpen(false);
+                }}
+                style={{
+                  width: 'auto',
+                  minWidth: '150px',
+                  padding: '0.5rem 1rem',
+                  marginTop: '0.5rem'
                 }}
               >
                 {isLoggedIn ? (
@@ -280,87 +373,6 @@ function Header() {
                   t('nav.login')
                 )}
               </button>
-
-              <div className="d-flex align-items-center justify-content-between mb-3">
-                <div style={{ color: theme === 'dark' ? '#ffffff' : '#0b5f8a', fontWeight: '600' }}>
-                  {t('language')}:
-                </div>
-                <div className="d-flex align-items-center">
-                  <button 
-                    onClick={() => {
-                      setLang('fr');
-                      setIsMobileMenuOpen(false);
-                    }}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      color: lang === 'fr' ? (theme === 'dark' ? '#ffffff' : '#0b5f8a') : (theme === 'dark' ? '#9ca3af' : '#6c757d'),
-                      fontWeight: '600',
-                      cursor: 'pointer',
-                      padding: '0.25rem 0.5rem',
-                      borderRadius: '0.25rem',
-                      backgroundColor: lang === 'fr' ? (theme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(11, 95, 138, 0.1)') : 'transparent'
-                    }}
-                  >
-                    FR
-                  </button>
-                  <span style={{ margin: '0 4px', color: theme === 'dark' ? '#9ca3af' : '#6c757d' }}>/</span>
-                  <button 
-                    onClick={() => {
-                      setLang('en');
-                      setIsMobileMenuOpen(false);
-                    }}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      color: lang === 'en' ? (theme === 'dark' ? '#ffffff' : '#0b5f8a') : (theme === 'dark' ? '#9ca3af' : '#6c757d'),
-                      fontWeight: '600',
-                      cursor: 'pointer',
-                      padding: '0.25rem 0.5rem',
-                      borderRadius: '0.25rem',
-                      backgroundColor: lang === 'en' ? (theme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(11, 95, 138, 0.1)') : 'transparent'
-                    }}
-                  >
-                    EN
-                  </button>
-                </div>
-              </div>
-
-              <div className="d-flex align-items-center justify-content-between">
-                <div style={{ color: theme === 'dark' ? '#ffffff' : '#0b5f8a', fontWeight: '600' }}>
-                  {t('theme')}:
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    toggleTheme();
-                    setIsMobileMenuOpen(false);
-                  }}
-                  className="btn"
-                  style={{
-                    backgroundColor: theme === 'dark' ? '#f8f9fa' : '#212529',
-                    color: theme === 'dark' ? '#212529' : '#f8f9fa',
-                    border: 'none',
-                    padding: '0.25rem 0.75rem',
-                    borderRadius: '0.375rem',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem'
-                  }}
-                >
-                  {theme === 'dark' ? (
-                    <>
-                      <i className="bi bi-brightness-high"></i>
-                      <span>Clair</span>
-                    </>
-                  ) : (
-                    <>
-                      <i className="bi bi-moon-stars"></i>
-                      <span>Sombre</span>
-                    </>
-                  )}
-                </button>
-              </div>
             </div>
           </div>
         </>
