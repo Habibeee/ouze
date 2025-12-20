@@ -173,14 +173,10 @@ import { useI18n } from '../src/i18n.jsx';
       <section
         className="position-relative text-white hero-section"
         style={{
-          ...indexStyles.heroSection,
-          margin: 0,
-          padding: 0,
-          width: '100%',
-          overflow: 'hidden'
+          ...indexStyles.heroSection
         }}
       >
-      <div id="heroCarousel" className="carousel slide position-absolute top-0 start-0 w-100 h-100" data-bs-ride="carousel" data-bs-interval="3000" data-bs-pause="false" style={{ margin: 0, padding: 0 }}>
+      <div id="heroCarousel" className="carousel slide position-absolute top-0 start-0 w-100 h-100" data-bs-ride="carousel" data-bs-interval="3000" data-bs-pause="false" style={{ margin: 0, padding: 0, position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}>
         <div className="carousel-indicators">
           <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="0" className="active" aria-current="true" aria-label="Slide 1"></button>
           <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="1" aria-label="Slide 2"></button>
@@ -209,12 +205,7 @@ import { useI18n } from '../src/i18n.jsx';
 
       <div className="position-absolute top-0 start-0 w-100 h-100 bg-transparent" aria-hidden="true" style={{ zIndex: 1 }} />
 
-      <div className="container-fluid position-relative d-flex align-items-center justify-content-center py-5 px-0 hero-inner" style={{
-        ...indexStyles.heroInner,
-        margin: 0,
-        padding: '0 15px',
-        zIndex: 2
-      }}>
+      <div className="container-fluid d-flex align-items-center justify-content-center hero-inner" style={indexStyles.heroInner}>
         <div className="row mx-0 w-100 justify-content-center">
           <div className="col-12 col-lg-8 px-4 px-md-5 text-center">
             <h1 className="display-4 fw-bold lh-1 mb-3">

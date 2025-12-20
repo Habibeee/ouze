@@ -1,7 +1,25 @@
 export const indexStyles = {
   // Hero section heights (adjust when header height changes)
-  heroSection: { minHeight: 'calc(100vh - 60px)', paddingTop: '0' },
-  heroInner: { minHeight: 'calc(100vh - 60px)' },
+  heroSection: { 
+    minHeight: '100vh', 
+    margin: '0', 
+    padding: '0',
+    position: 'relative',
+    top: '0',
+    left: '0',
+    width: '100%',
+    overflow: 'hidden'
+  },
+  heroInner: { 
+    minHeight: '100vh',
+    margin: '0',
+    padding: '0',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+    zIndex: 2
+  },
   // Images
   coverImg: { objectFit: 'cover' },
   // Service icons - Nouvelles couleurs de la charte
