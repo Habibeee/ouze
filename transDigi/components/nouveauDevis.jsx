@@ -9,12 +9,20 @@ import {
   Search,
   Clock,
   Truck,
-  User
+  User,
+  Bell,
+  Menu
 } from 'lucide-react';
 import { nouveauDevisCss } from '../styles/nouveauDeviStyle.jsx';
 import { createDevis, searchTranslatairesClient } from '../services/apiClient.js';
+import SideBare from './sideBare';
+import { clientCss } from '../styles/tableauBordClientStyle.jsx';
+import { clientStyles } from '../styles/tableauBordClientStyle.jsx';
 
 const NouveauDevis = () => {
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const avatarUrl = 'https://i.pravatar.cc/64?img=5';
   const { success, error: toastError } = useToast();
   const [translataires, setTranslataires] = useState([]);
   const [loadingTranslataires, setLoadingTranslataires] = useState(false);
@@ -294,10 +302,92 @@ const NouveauDevis = () => {
     }
   };
 
+  // Gestion du redimensionnement pour la sidebar
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 768) {
+        setSidebarOpen(false);
+      } else {
+        setSidebarOpen(true);
+      }
+    };
+    
+    window.addEventListener('resize', handleResize);
+    handleResize(); // Appel initial
+    
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   return (
-    <>
-      <style>{nouveauDevisCss}</style>
-      <div className="bg-body" style={{ backgroundColor: 'var(--bg)', minHeight: '100vh', width: '100%', maxWidth: '100vw', overflowX: 'hidden', position: 'relative' }}>
+    <div className="app-container" style={{ display: 'flex', minHeight: '100vh' }}>
+      <style>{clientStyles}</style>
+      
+      {/* Sidebar */}
+      <SideBare 
+        activeId="devis"
+        onNavigate={(id) => {}}
+        open={sidebarOpen}
+        onOpenChange={setSidebarOpen}
+      />
+      
+      {/* Contenu principal */}
+      <div className="app-content" style={{ 
+        flex: 1, 
+        marginLeft: sidebarOpen ? 'var(--sidebar-width, 240px)' : '56px',
+        transition: 'margin-left 0.3s ease-in-out',
+        padding: '20px',
+        backgroundColor: '#f9fafb',
+        minHeight: '100vh',
+        width: '100%',
+        maxWidth: '100vw',
+        overflowX: 'hidden'
+      }}>
+        {/* En-tête */}
+        <header style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: '20px',
+          padding: '10px 0',
+          borderBottom: '1px solid #e5e7eb'
+        }}>
+          <div className="flex items-center">
+            <button 
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="md:hidden mr-4 p-2 rounded-full hover:bg-gray-100"
+            >
+              {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
+            </button>
+            <h1 className="text-2xl font-semibold">Nouveau devis</h1>
+          </div>
+          
+          <div className="flex items-center space-x-4">
+            <button className="p-2 rounded-full hover:bg-gray-100">
+              <Bell size={20} className="text-gray-600" />
+            </button>
+            <div className="relative">
+              <button 
+                className="flex items-center space-x-2 focus:outline-none"
+                onClick={() => setProfileMenuOpen(!profileMenuOpen)}
+              >
+                <img 
+                  src={avatarUrl} 
+                  alt="Profile" 
+                  className="w-8 h-8 rounded-full"
+                />
+              </button>
+              {profileMenuOpen && (
+                <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10">
+                  <a href="#/profil" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Mon profil</a>
+                  <a href="#/connexion" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Déconnexion</a>
+                </div>
+              )}
+            </div>
+          </div>
+        </header>
+        
+        <div className="bg-body" style={{ backgroundColor: 'var(--bg)', minHeight: 'calc(100vh - 100px)', width: '100%', maxWidth: '100%', overflowX: 'hidden', position: 'relative' }}>
+          <style>{nouveauDevisCss}</style>
         <div className="container px-2 px-md-3 py-3 py-md-5" style={{ maxWidth: '100%', overflowX: 'hidden' }}>
           <div className="row justify-content-center">
             <div className="col-12 col-lg-10 col-xl-8">
@@ -643,8 +733,9 @@ const NouveauDevis = () => {
             </div>
           </div>
         </div>
+        </div>
       </div>
-    </>
+    </div>
   );
 };
 

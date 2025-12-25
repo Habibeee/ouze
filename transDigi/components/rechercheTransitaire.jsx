@@ -1,13 +1,19 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { 
-  MapPin, Wrench, Building2, Search, Star,
-  CheckCircle, Clock, AlertCircle, ArrowUpDown
+  MapPin, Wrench, Building2, Search as SearchIcon, Star,
+  CheckCircle, Clock, AlertCircle, ArrowUpDown, User, Bell, X
 } from 'lucide-react';
 import { transitaireStyles, transitaireCss } from '../styles/rechercheTransitaireStyle.jsx';
 import { searchTranslatairesClient } from '../services/apiClient.js';
-import { useI18n } from '../src/i18n.jsx';
+import { useI18n } from '../src/i18n';
+import SideBare from './sideBare';
+import { clientCss } from '../styles/tableauBordClientStyle.jsx';
+import { clientStyles } from '../styles/tableauBordClientStyle.jsx';
 
 const RechercheTransitaire = () => {
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const avatarUrl = 'https://i.pravatar.cc/64?img=5';
   const { t, lang } = useI18n();
   const [searchFilters, setSearchFilters] = useState({ location: '', service: '', company: '' });
   const [page, setPage] = useState(1);
@@ -205,8 +211,91 @@ const RechercheTransitaire = () => {
     );
   }
 
+  // Gestion du redimensionnement pour la sidebar
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 768) {
+        setSidebarOpen(false);
+      } else {
+        setSidebarOpen(true);
+      }
+    };
+    
+    window.addEventListener('resize', handleResize);
+    handleResize(); // Appel initial
+    
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   return (
-    <div className="bg-body" style={{ ...transitaireStyles.app, backgroundColor: 'var(--bg)', width: '100%', maxWidth: '100vw', overflowX: 'hidden' }}>
+    <div className="app-container" style={{ display: 'flex', minHeight: '100vh' }}>
+      <style>{clientStyles}</style>
+      
+      {/* Sidebar */}
+      <SideBare 
+        activeId="recherche"
+        onNavigate={(id) => {}}
+        open={sidebarOpen}
+        onOpenChange={setSidebarOpen}
+      />
+      
+      {/* Contenu principal */}
+      <div className="app-content" style={{ 
+        flex: 1, 
+        marginLeft: sidebarOpen ? 'var(--sidebar-width, 240px)' : '56px',
+        transition: 'margin-left 0.3s ease-in-out',
+        padding: '20px',
+        backgroundColor: '#f9fafb',
+        minHeight: '100vh',
+        width: '100%',
+        maxWidth: '100vw',
+        overflowX: 'hidden'
+      }}>
+        {/* En-tête */}
+        <header style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: '20px',
+          padding: '10px 0',
+          borderBottom: '1px solid #e5e7eb'
+        }}>
+          <div className="flex items-center">
+            <button 
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="md:hidden mr-4 p-2 rounded-full hover:bg-gray-100"
+            >
+              {sidebarOpen ? <X size={20} /> : <SearchIcon size={20} />}
+            </button>
+            <h1 className="text-2xl font-semibold">Trouver un transitaire</h1>
+          </div>
+          
+          <div className="flex items-center space-x-4">
+            <button className="p-2 rounded-full hover:bg-gray-100">
+              <Bell size={20} className="text-gray-600" />
+            </button>
+            <div className="relative">
+              <button 
+                className="flex items-center space-x-2 focus:outline-none"
+                onClick={() => setProfileMenuOpen(!profileMenuOpen)}
+              >
+                <img 
+                  src={avatarUrl} 
+                  alt="Profile" 
+                  className="w-8 h-8 rounded-full"
+                />
+              </button>
+              {profileMenuOpen && (
+                <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10">
+                  <a href="#/profil" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Mon profil</a>
+                  <a href="#/connexion" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Déconnexion</a>
+                </div>
+              )}
+            </div>
+          </div>
+        </header>
+        
+        <div className="bg-body" style={{ ...transitaireStyles.app, backgroundColor: 'var(--bg)', width: '100%', maxWidth: '100%', overflowX: 'hidden' }}>
       <style>{transitaireCss}</style>
 
       {/* Hero Section */}
@@ -404,6 +493,8 @@ const RechercheTransitaire = () => {
         </nav>
       </div>
 
+        </div>
+      </div>
     </div>
   );
 };
