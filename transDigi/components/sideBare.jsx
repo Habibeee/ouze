@@ -7,42 +7,35 @@ const menuItems = [
     id: 'dashboard', 
     label: 'Tableau de bord', 
     icon: LayoutGrid,
-    component: 'tableauBordClient.jsx',
-    path: '/dashboard'
+    component: 'TableauBordClient.jsx',
+    path: '/dashboard-client'
   },
   { 
     id: 'recherche', 
     label: 'Trouver un transitaire', 
     icon: Search,
-    component: 'profileTransitaire.jsx',
+    component: 'RechercheTransitaire.jsx',
     path: '/trouver-transitaire'
   },
   { 
     id: 'devis', 
     label: 'Nouveau devis', 
     icon: FileText,
-    component: 'nouveauDevis.jsx',
+    component: 'NouveauDevisAdmin.jsx',
     path: '/nouveau-devis'
-  },
-  { 
-    id: 'historique-devis', 
-    label: 'Historique des devis', 
-    icon: FileText,
-    component: 'historiqueDevis.jsx',
-    path: '/historique-devis'
   },
   { 
     id: 'historique', 
     label: 'Historique', 
     icon: Clock,
-    component: 'historique.jsx',
+    component: 'HistoriqueDevis.jsx',
     path: '/historique'
   },
   { 
     id: 'envois', 
     label: 'Suivi des envois', 
     icon: Truck,
-    component: 'suiviEnvoi.jsx',
+    component: 'SuiviEnvoi.jsx',
     path: '/suivi-envois'
   },
   { 
