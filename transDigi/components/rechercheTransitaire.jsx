@@ -1,39 +1,17 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { 
-  MapPin, Wrench, Building2, Search as SearchIcon, Star,
-  CheckCircle, Clock, AlertCircle, ArrowUpDown, User, Bell, X
+  MapPin, Wrench, Building2, Search, Star,
+  CheckCircle, Clock, AlertCircle, ArrowUpDown
 } from 'lucide-react';
 import { transitaireStyles, transitaireCss } from '../styles/rechercheTransitaireStyle.jsx';
 import { searchTranslatairesClient } from '../services/apiClient.js';
 import { useI18n } from '../src/i18n.jsx';
-import SideBare from './sideBare';
-import { clientCss } from '../styles/tableauBordClientStyle.jsx';
-import { clientStyles } from '../styles/tableauBordClientStyle.jsx';
 
 const RechercheTransitaire = () => {
   const { t, lang } = useI18n();
   const [searchFilters, setSearchFilters] = useState({ location: '', service: '', company: '' });
   const [page, setPage] = useState(1);
   const pageSize = 6;
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
-  const avatarUrl = 'https://i.pravatar.cc/64?img=5';
-
-  // Gestion du redimensionnement pour la sidebar
-  useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth < 768) {
-        setSidebarOpen(false);
-      } else {
-        setSidebarOpen(true);
-      }
-    };
-    
-    window.addEventListener('resize', handleResize);
-    handleResize(); // Appel initial
-    
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
   const [items, setItems] = useState([
     // Données de test (à supprimer en production)
     {
@@ -227,271 +205,205 @@ const RechercheTransitaire = () => {
     );
   }
 
-
   return (
-    <div className="app-container" style={{ display: 'flex', minHeight: '100vh' }}>
-      <style>{clientStyles}</style>
-      
-      {/* Sidebar */}
-      <SideBare 
-        activeId="recherche"
-        onNavigate={(id) => {}}
-        open={sidebarOpen}
-        onOpenChange={setSidebarOpen}
-      />
-      
-      {/* Contenu principal */}
-      <div className="app-content" style={{ 
-        flex: 1, 
-        marginLeft: sidebarOpen ? 'var(--sidebar-width, 240px)' : '56px',
-        transition: 'margin-left 0.3s ease-in-out',
-        padding: '20px',
-        backgroundColor: '#f9fafb',
-        minHeight: '100vh'
-      }}>
-        {/* En-tête */}
-        <header style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: '20px',
-          padding: '10px 0',
-          borderBottom: '1px solid #e5e7eb'
-        }}>
-          <div className="flex items-center">
-            <button 
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="md:hidden mr-4 p-2 rounded-full hover:bg-gray-100"
-            >
-              {sidebarOpen ? <X size={20} /> : <SearchIcon size={20} />}
-            </button>
-            <h1 className="text-2xl font-semibold">Trouver un transitaire</h1>
-          </div>
-          
-          <div className="flex items-center space-x-4">
-            <button className="p-2 rounded-full hover:bg-gray-100">
-              <Bell size={20} className="text-gray-600" />
-            </button>
-            <div className="relative">
-              <button 
-                className="flex items-center space-x-2 focus:outline-none"
-                onClick={() => setProfileMenuOpen(!profileMenuOpen)}
-              >
-                <img 
-                  src={avatarUrl} 
-                  alt="Profile" 
-                  className="w-8 h-8 rounded-full"
-                />
-              </button>
-              {profileMenuOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10">
-                  <a href="#/profil" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Mon profil</a>
-                  <a href="#/connexion" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Déconnexion</a>
-                </div>
-              )}
-            </div>
-          </div>
-        </header>
-        
-        <div className="recherche-transitaire" style={transitaireStyles}>
-          <style>{transitaireCss}</style>
-      
-      {/* En-tête */}
-      <div className="container py-4">
-        <div className="text-center mb-4">
-          <h1 className="h2 h1-md fw-bold mb-2 mb-md-3">{t('client.search.title')}</h1>
+    <div className="bg-body" style={{ ...transitaireStyles.app, backgroundColor: 'var(--bg)', width: '100%', maxWidth: '100vw', overflowX: 'hidden' }}>
+      <style>{transitaireCss}</style>
+
+      {/* Hero Section */}
+      <div className="container px-2 px-md-3 py-3 py-md-5">
+        <div className="text-center mb-3 mb-md-5">
+          <h1 className="h2 h1-md fw-bold mb-2 mb-md-3" style={transitaireStyles.heroTitle}>{t('client.search.title')}</h1>
           <p className="text-muted small" style={{ fontSize: '0.95rem' }}>{t('client.search.subtitle')}</p>
         </div>
-      </div>
 
-      {/* Search Bar */}
-      <div className="card border-0 shadow-sm mb-3 mb-md-4">
-        <div className="card-body p-2 p-md-4">
-          <div className="row g-2 g-md-3">
-            <div className="col-12 col-md-3">
-              <div className="input-group">
-                <span className="input-group-text border-end-0"><MapPin size={20} className="text-muted" /></span>
-                <input type="text" className="form-control border-start-0" placeholder={t('client.search.filters.location')} value={searchFilters.location} onChange={(e)=>setSearchFilters({...searchFilters, location:e.target.value})} />
+        {/* Search Bar */}
+        <div className="card border-0 shadow-sm mb-3 mb-md-4">
+          <div className="card-body p-2 p-md-4">
+            <div className="row g-2 g-md-3">
+              <div className="col-12 col-md-3">
+                <div className="input-group">
+                  <span className="input-group-text border-end-0"><MapPin size={20} className="text-muted" /></span>
+                  <input type="text" className="form-control border-start-0" placeholder={t('client.search.filters.location')} value={searchFilters.location} onChange={(e)=>setSearchFilters({...searchFilters, location:e.target.value})} />
+                </div>
               </div>
-            </div>
-            <div className="col-12 col-md-3">
-              <div className="input-group">
-                <span className="input-group-text border-end-0"><Wrench size={20} className="text-muted" /></span>
-                <input type="text" className="form-control border-start-0" placeholder={t('client.search.filters.service')} value={searchFilters.service} onChange={(e)=>setSearchFilters({...searchFilters, service:e.target.value})} />
+              <div className="col-12 col-md-3">
+                <div className="input-group">
+                  <span className="input-group-text border-end-0"><Wrench size={20} className="text-muted" /></span>
+                  <input type="text" className="form-control border-start-0" placeholder={t('client.search.filters.service')} value={searchFilters.service} onChange={(e)=>setSearchFilters({...searchFilters, service:e.target.value})} />
+                </div>
               </div>
-            </div>
-            <div className="col-12 col-md-3">
-              <div className="input-group">
-                <span className="input-group-text border-end-0"><Building2 size={20} className="text-muted" /></span>
-                <input type="text" className="form-control border-start-0" placeholder={t('client.search.filters.company')} value={searchFilters.company} onChange={(e)=>setSearchFilters({...searchFilters, company:e.target.value})} />
+              <div className="col-12 col-md-3">
+                <div className="input-group">
+                  <span className="input-group-text border-end-0"><Building2 size={20} className="text-muted" /></span>
+                  <input type="text" className="form-control border-start-0" placeholder={t('client.search.filters.company')} value={searchFilters.company} onChange={(e)=>setSearchFilters({...searchFilters, company:e.target.value})} />
+                </div>
               </div>
-            </div>
-            <div className="col-12 col-md-3">
-              <button
-                className="btn w-100 text-white"
-                style={transitaireStyles.publishBtn}
-                onClick={() => { fetchTrans(); }}
-              >
-                <Search size={20} className="me-2" /> {t('client.search.button.submit')}
-              </button>
+              <div className="col-12 col-md-3">
+                <button
+                  className="btn w-100 text-white"
+                  style={transitaireStyles.publishBtn}
+                  onClick={() => { fetchTrans(); }}
+                >
+                  <Search size={20} className="me-2" /> {t('client.search.button.submit')}
+                </button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Results Header */}
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <p className="text-muted mb-0">
-          {loading
-            ? t('client.search.results.loading')
-            : (err
-              ? err
-              : (total === 0
-                ? t('client.search.results.none')
-                : (() => {
-                    const from = Math.min((page-1)*pageSize+1, total);
-                    const to = Math.min(page*pageSize, total);
-                    const tpl = t('client.search.results.range');
-                    return tpl
-                      .replace('{{from}}', String(from))
-                      .replace('{{to}}', String(to))
-                      .replace('{{total}}', String(total));
-                  })()
-                )
-              )}
-        </p>
-        <button className="btn btn-outline-secondary btn-sm d-flex align-items-center gap-2">
-          <ArrowUpDown size={16} /> {t('client.search.sort.relevance')}
-        </button>
-      </div>
+        {/* Results Header */}
+        <div className="d-flex justify-content-between align-items-center mb-4">
+          <p className="text-muted mb-0">
+            {loading
+              ? t('client.search.results.loading')
+              : (err
+                ? err
+                : (total === 0
+                  ? t('client.search.results.none')
+                  : (() => {
+                      const from = Math.min((page-1)*pageSize+1, total);
+                      const to = Math.min(page*pageSize, total);
+                      const tpl = t('client.search.results.range');
+                      return tpl
+                        .replace('{{from}}', String(from))
+                        .replace('{{to}}', String(to))
+                        .replace('{{total}}', String(total));
+                    })()
+                  )
+                )}
+          </p>
+          <button className="btn btn-outline-secondary btn-sm d-flex align-items-center gap-2">
+            <ArrowUpDown size={16} /> {t('client.search.sort.relevance')}
+          </button>
+        </div>
 
-      {/* Transitaire Cards */}
-      <div className="row g-4 mb-5">
-        {pageItems.map((transitaire, index) => (
-          <div key={index} className="col-12 col-lg-4">
-            <div className="card border-0 shadow-sm h-100" style={transitaireStyles.cardHover}>
-              <div className="card-body p-3">
-                {/* Header */}
-                <div className="d-flex align-items-start justify-content-between mb-3">
-                  <div className="d-flex align-items-center gap-3">
-                    <div
-                      className="rounded-circle overflow-hidden d-flex align-items-center justify-content-center bg-light border"
-                      style={{ ...transitaireStyles.companyLogo }}
-                    >
-                      <img
-                        src={transitaire.logoUrl}
-                        alt={transitaire.name}
-                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                      />
-                    </div>
-                    <div>
-                      <h5 className="mb-1 fw-bold">{transitaire.name}</h5>
-                      <p className="text-muted small mb-0">{transitaire.location}</p>
-                    </div>
-                  </div>
-                  {transitaire.verified && (
-                    <div className="d-flex align-items-center gap-1" style={transitaireStyles.verified}>
-                      <CheckCircle size={16} />
-                      <span className="small">{t('client.search.badge.verified')}</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Description */}
-                <p className="text-muted small mb-3" style={{ minHeight: '80px' }}>{transitaire.description}</p>
-
-                {/* Rating */}
-                <div className="mb-3">{renderStars(transitaire.rating, transitaire.ratingsCount)}</div>
-
-                {/* Secteurs d'activité */}
-                <div className="mb-4">
-                  {Array.isArray(transitaire.services) && transitaire.services.length ? (
-                    <div className="d-flex flex-wrap gap-2">
-                      {transitaire.services.map((label, idx) => (
-                        <span key={idx} className="badge py-2 px-3" style={transitaireStyles.serviceBadge}>
-                          {label}
-                        </span>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-muted small mb-0">{t('client.search.services.none')}</p>
-                  )}
-                </div>
-
-                {/* Action Button */}
-                <div className="d-grid gap-2">
-                  {(() => {
-                    return (
-                      <button
-                        className="btn text-white w-100"
-                        style={transitaireStyles.primaryBtn}
-                        onClick={() => {
-                          try {
-                            if (transitaire.id) {
-                              // Stocker les informations du transitaire dans localStorage
-                              localStorage.setItem('pendingTranslataireId', String(transitaire.id));
-                              localStorage.setItem('pendingTranslataireName', String(transitaire.name || ''));
-                              
-                              // Utiliser directement la navigation vers nouveau-devis avec les paramètres
-                              const params = new URLSearchParams();
-                              params.append('translataireId', transitaire.id);
-                              if (transitaire.name) {
-                                params.append('translataireName', transitaire.name);
-                              }
-                              
-                              // Rediriger directement vers la page de création de devis
-                              window.location.hash = `#/nouveau-devis?${params.toString()}`;
-                              
-                              // Forcer le rechargement si nécessaire
-                              window.dispatchEvent(new Event('hashchange'));
-                              
-                              // Faire défiler vers le haut de la page
-                              window.scrollTo(0, 0);
-                            }
-                          } catch (e) {
-                            console.error('Erreur lors de la sélection du transitaire:', e);
-                          }
-                        }}
+        {/* Transitaire Cards */}
+        <div className="row g-4 mb-5">
+          {pageItems.map((transitaire, index) => (
+            <div key={index} className="col-12 col-lg-4">
+              <div className="card border-0 shadow-sm h-100" style={transitaireStyles.cardHover}>
+                <div className="card-body p-3">
+                  {/* Header */}
+                  <div className="d-flex align-items-start justify-content-between mb-3">
+                    <div className="d-flex align-items-center gap-3">
+                      <div
+                        className="rounded-circle overflow-hidden d-flex align-items-center justify-content-center bg-light border"
+                        style={{ ...transitaireStyles.companyLogo }}
                       >
-                        {t('client.search.quote_button')}
-                      </button>
-                    );
-                  })()}
-                  <div className="d-flex align-items-center gap-2 text-muted small">
-                    <AlertCircle size={16} />
-                    <span>Ce transitaire sera responsable de votre demande</span>
+                        <img
+                          src={transitaire.logoUrl}
+                          alt={transitaire.name}
+                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        />
+                      </div>
+                      <div>
+                        <h5 className="mb-1 fw-bold">{transitaire.name}</h5>
+                        <p className="text-muted small mb-0">{transitaire.location}</p>
+                      </div>
+                    </div>
+                    {transitaire.verified && (
+                      <div className="d-flex align-items-center gap-1" style={transitaireStyles.verified}>
+                        <CheckCircle size={16} />
+                        <span className="small">{t('client.search.badge.verified')}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Description */}
+                  <p className="text-muted small mb-3" style={{ minHeight: '80px' }}>{transitaire.description}</p>
+
+                  {/* Rating */}
+                  <div className="mb-3">{renderStars(transitaire.rating, transitaire.ratingsCount)}</div>
+
+                  {/* Secteurs d'activité */}
+                  <div className="mb-4">
+                    {Array.isArray(transitaire.services) && transitaire.services.length ? (
+                      <div className="d-flex flex-wrap gap-2">
+                        {transitaire.services.map((label, idx) => (
+                          <span key={idx} className="badge py-2 px-3" style={transitaireStyles.serviceBadge}>
+                            {label}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-muted small mb-0">{t('client.search.services.none')}</p>
+                    )}
+                  </div>
+
+                  {/* Action Button */}
+                  <div className="d-grid gap-2">
+                    {(() => {
+                      return (
+                        <button
+                          className="btn text-white w-100"
+                          style={transitaireStyles.primaryBtn}
+                          onClick={() => {
+                            try {
+                              if (transitaire.id) {
+                                // Stocker les informations du transitaire dans localStorage
+                                localStorage.setItem('pendingTranslataireId', String(transitaire.id));
+                                localStorage.setItem('pendingTranslataireName', String(transitaire.name || ''));
+                                
+                                // Utiliser directement la navigation vers nouveau-devis avec les paramètres
+                                const params = new URLSearchParams();
+                                params.append('translataireId', transitaire.id);
+                                if (transitaire.name) {
+                                  params.append('translataireName', transitaire.name);
+                                }
+                                
+                                // Rediriger directement vers la page de création de devis
+                                window.location.hash = `#/nouveau-devis?${params.toString()}`;
+                                
+                                // Forcer le rechargement si nécessaire
+                                window.dispatchEvent(new Event('hashchange'));
+                                
+                                // Faire défiler vers le haut de la page
+                                window.scrollTo(0, 0);
+                              }
+                            } catch (e) {
+                              console.error('Erreur lors de la sélection du transitaire:', e);
+                            }
+                          }}
+                        >
+                          {t('client.search.quote_button')}
+                        </button>
+                      );
+                    })()}
+                    <div className="d-flex align-items-center gap-2 text-muted small">
+                      <AlertCircle size={16} />
+                      <span>Ce transitaire sera responsable de votre demande</span>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
+
+        {/* Pagination */}
+        <nav>
+          <ul className="pagination justify-content-center">
+            <li className={`page-item ${page === 1 ? 'disabled' : ''}`}>
+              <button className="page-link" onClick={() => setPage(p => Math.max(1, p - 1))}>{t('client.search.pagination.prev')}</button>
+            </li>
+            {Array.from({ length: totalPages }).map((_, i) => (
+              <li key={i} className={`page-item ${page === i+1 ? 'active' : ''}`}>
+                <button
+                  className="page-link"
+                  style={page === i+1 ? { backgroundColor: '#0EA5E9', borderColor: '#0EA5E9' } : undefined}
+                  onClick={() => setPage(i + 1)}
+                >
+                  {i + 1}
+                </button>
+              </li>
+            ))}
+            <li className={`page-item ${page === totalPages ? 'disabled' : ''}`}>
+              <button className="page-link" onClick={() => setPage(p => Math.min(totalPages, p + 1))}>{t('client.search.pagination.next')}</button>
+            </li>
+          </ul>
+        </nav>
       </div>
 
-      {/* Pagination */}
-      <nav>
-        <ul className="pagination justify-content-center">
-          <li className={`page-item ${page === 1 ? 'disabled' : ''}`}>
-            <button className="page-link" onClick={() => setPage(p => Math.max(1, p - 1))}>{t('client.search.pagination.prev')}</button>
-          </li>
-          {Array.from({ length: totalPages }).map((_, i) => (
-            <li key={i} className={`page-item ${page === i+1 ? 'active' : ''}`}>
-              <button
-                className="page-link"
-                style={page === i+1 ? { backgroundColor: '#0EA5E9', borderColor: '#0EA5E9' } : undefined}
-                onClick={() => setPage(i + 1)}
-              >
-                {i + 1}
-              </button>
-            </li>
-          ))}
-          <li className={`page-item ${page === totalPages ? 'disabled' : ''}`}>
-            <button className="page-link" onClick={() => setPage(p => Math.min(totalPages, p + 1))}>{t('client.search.pagination.next')}</button>
-          </li>
-        </ul>
-      </nav>
-        </div>
-      </div>
     </div>
   );
 };
