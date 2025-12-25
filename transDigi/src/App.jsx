@@ -34,8 +34,8 @@ import { I18nProvider } from './i18n.jsx';
 import { clientCss } from '../styles/tableauBordClientStyle.jsx';
 import BackToTop from '../components/BackToTop.jsx';
 import CartePage from './pages/CartePage.jsx';
-import RechercheTransitaire from '../components/RechercheTransitaire.jsx';
-import NouveauDevisAdmin from '../components/NouveauDevisAdmin.jsx';
+import RechercheTransitaire from '../components/rechercheTransitaire.jsx';
+import NouveauDevis from '../components/nouveauDevis.jsx';
 
 function App() {
   const [route, setRoute] = useState(window.location.hash || '#/');
@@ -208,7 +208,7 @@ function App() {
       case '#/recherche-transitaire': 
         return <RechercheTransitaire />;
       case '#/nouveau-devis':
-        return <NouveauDevisAdmin />;
+        return <NouveauDevis />;
       case '#/historique-devis':
         return <ClientDashboard section="historique-devis" />;
       case '#/historique':
